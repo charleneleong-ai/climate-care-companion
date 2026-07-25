@@ -22,7 +22,7 @@ from typing import Any
 
 from contracts import AgeBand, Condition, ExposureFeatures, MedClass, Person, Tier
 from core.corpus import Corpus
-from core.rules import EXPOSURE_RULES, HEATING_DAY_MAX, VULNERABILITY_RULES
+from core.rules import EXPOSURE_RULES, HEATING_DAY_MAX, VULNERABILITY_RULES, VulnKind
 from core.scoring import RiskScorer
 from core.vulnerability import VulnerabilityScorer
 
@@ -90,7 +90,45 @@ class RuleExporter:
                 name: med_class.value
                 for name, med_class in sorted(self.corpus.med_classes.items())
             },
+            "med_class_weights": {
+                rule.value: rule.weight
+                for rule in VULNERABILITY_RULES
+                if rule.kind is VulnKind.MED_CLASS
+            },
+            "interactions": self.interaction_rules(),
         }
+
+    @staticmethod
+    def interaction_rules() -> list[dict[str, Any]]:
+        """The clinical content the TypeScript app has no equivalent of.
+
+        Its profile carries one `medication` checkbox worth a couple of degrees.
+        That cannot distinguish lithium — where dehydration is a toxicity risk and
+        the spec's single heaviest vulnerability weight — from a beta blocker. Nor
+        can it express a combination, which is where the advice that matters lives.
+        """
+        # Local import by necessity: actions depends on core.corpus, so a
+        # top-level import here would close the cycle.
+        from actions.interactions import InteractionTable
+
+        return [
+            {
+                "code": rule.code,
+                "min_peak_air": rule.min_peak_air,
+                "max_indoor_day": rule.max_indoor_day,
+                "requires_conditions": sorted(c.value for c in rule.requires_conditions),
+                "requires_med_classes": sorted(
+                    m.value for m in rule.requires_med_classes
+                ),
+                "min_tier": rule.min_tier.name.title(),
+                "advice_caregiver": rule.advice_caregiver,
+                "advice_person": rule.advice_person,
+                "watch_for": rule.watch_for,
+                "escalate_to": rule.escalate_to,
+                "supersedes": sorted(c.value for c in rule.supersedes),
+            }
+            for rule in InteractionTable.load().rules
+        ]
 
     @staticmethod
     def cases() -> tuple[ParityCase, ...]:
