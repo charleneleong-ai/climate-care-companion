@@ -42,9 +42,30 @@ def test_response_states_it_is_not_medical_advice(client):
     assert client.get("/people/doris/assessment").json()["not_medical_advice"] is True
 
 
+VALID_SOURCES = {"live", "archive", "cache", "fixture", "self_report"}
+
+
 def test_exposure_provenance_is_reported(client):
-    """A fixture must not be presented as a live forecast."""
-    assert client.get("/people/doris/assessment").json()["exposure"]["source"] == "fixture"
+    """A cached figure must never be presented as a live one. The value matters
+    less than the fact that one is always stated."""
+    source = client.get("/people/doris/assessment").json()["exposure"]["source"]
+    assert source in VALID_SOURCES
+
+
+def test_the_read_path_survives_the_weather_service_being_down(client, monkeypatch):
+    """NFR-04. With a warm cache the answer is stale and says so; with a cold one
+    the failure is honest rather than invented."""
+    from api import main
+
+    class Dead:
+        def get(self, *args, **kwargs):
+            raise TimeoutError("Open-Meteo is unreachable")
+
+    monkeypatch.setattr(main.WEATHER, "http", Dead())
+    response = client.get("/people/doris/assessment")
+    assert response.status_code in {200, 503}
+    if response.status_code == 200:
+        assert response.json()["exposure"]["source"] == "cache"
 
 
 def test_unknown_person_returns_404_not_500(client):

@@ -1,5 +1,23 @@
 # Reconciling the two risk models
 
+> **DECIDED — 25 July 2026: converge on Python.**
+>
+> One engine. The TypeScript keeps the map, the onboarding and the assistant; it
+> stops scoring. The rest of this document is the reasoning that led there and
+> the record of what each model was better at, because the Python has to absorb
+> those strengths rather than ignore them.
+>
+> The objection to converging was NFR-04 — the app must work with no network.
+> That objection does not survive reading the requirement: it asks the system to
+> serve the **last cached assessment**, not to recompute one. A cache satisfies
+> it. The client-side engine was solving a problem the brief never posed.
+>
+> First step, done: `exposure/openmeteo.py` gives Python the live forecast the
+> TypeScript had, and goes further — hourly data, so FR-07's 22:00–07:00
+> overnight minimum is the real figure rather than a daily minimum standing in
+> for it. NFR-03's three-second timeout and NFR-04's cache fallback are
+> implemented there, with `ExposureSource` recording which happened.
+
 There are now two independent implementations of "how dangerous is this weather
 for this person", built from the same brief and arriving at genuinely different
 answers. This records what each does, where each is better, and what was done

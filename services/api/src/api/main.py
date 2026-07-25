@@ -1,12 +1,14 @@
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
+
+import httpx
 
 from contracts import AlertLevel, ExposureFeatures, ExposureSource, Place, ReasonCode
 from core.corpus import Corpus
 from core.scoring import RiskScorer
 from core.vulnerability import VulnerabilityScorer
 from fastapi import FastAPI, HTTPException
-from exposure.indoor import IndoorModel
+from exposure.openmeteo import OpenMeteoClient
 from persons.loader import PersonaLoader
 
 app = FastAPI(
@@ -20,39 +22,28 @@ SCORER = RiskScorer(CORPUS)
 VULNERABILITY = VulnerabilityScorer()
 PERSONAS = PersonaLoader()
 
-INDOOR = IndoorModel()
+WEATHER = OpenMeteoClient(httpx.Client())
+"""Live. NFR-03 gives it three seconds, NFR-04 falls back to the last snapshot,
+and ExposureSource says which happened — so a stale figure is never presented as
+a fresh one."""
 
-# Outdoor weather is still fixed — Track 0 replaces this with a live Open-Meteo
-# client behind the same type, and ExposureSource keeps the provenance honest
-# meanwhile. The indoor figures are no longer fixed: they are computed per person
-# from their own dwelling, which is the whole point of recording it.
-OUTDOOR_NIGHT_MIN = 17.0
-OUTDOOR_DAY_MAX = 29.0
+# Where the person is, until postcodes.io geocoding lands. Bedford, because that
+# is the section 8.6 worked example and the highest heat-mortality rate in
+# England last summer.
+FALLBACK_LAT, FALLBACK_LON = 52.1364, -0.4669
 
 
-def exposure_for(place: Place) -> ExposureFeatures:
-    """FR-11 applied to this person's dwelling.
+def exposure_for(place: Place, day: date) -> ExposureFeatures:
+    """Live forecast, then FR-07 to FR-11 applied to this person's dwelling.
 
     A top-floor south-facing flat and a ground-floor north-facing bungalow see the
-    same weather and a different bedroom, which is the difference the offset exists
-    to carry.
+    same weather and a different bedroom, which is the difference the offset
+    exists to carry.
     """
-    return ExposureFeatures(
-        date=date(2025, 7, 19),
-        overnight_min=OUTDOOR_NIGHT_MIN,
-        peak_apparent=OUTDOOR_DAY_MAX,
-        peak_air=OUTDOOR_DAY_MAX,
-        hours_above_26=7,
-        indoor_night_est=INDOOR.night(
-            OUTDOOR_NIGHT_MIN, OUTDOOR_DAY_MAX, place.dwelling_offset
-        ),
-        indoor_day_est=INDOOR.day(
-            OUTDOOR_NIGHT_MIN, OUTDOOR_DAY_MAX, place.dwelling_offset
-        ),
-        spell_day=3,
-        alert_level=AlertLevel.NOT_CHECKED,
-        source=ExposureSource.FIXTURE,
-    )
+    latitude = place.lat or FALLBACK_LAT
+    longitude = place.lon or FALLBACK_LON
+    forecast = WEATHER.fetch(latitude, longitude, datetime.now(UTC))
+    return WEATHER.features_for(forecast, day, place.dwelling_offset)
 
 
 @app.get("/health")
@@ -60,6 +51,7 @@ def health() -> dict[str, Any]:
     return {
         "status": "ok",
         "personas": len(PERSONAS.load()),
+        "weather": "live (Open-Meteo)",
         "reason_codes": len(ReasonCode),
         "reasons_loaded": len(CORPUS.reasons),
         "actions_loaded": len(CORPUS.actions),
@@ -82,7 +74,16 @@ def get_assessment(person_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=f"no person with id {person_id!r}")
 
     place = PERSONAS.places()[person_id]
-    exposure = exposure_for(place)
+    try:
+        exposure = exposure_for(place, date.today())
+    except LookupError as exc:
+        # No live forecast and nothing cached. Inventing one would be worse than
+        # saying so — a caregiver acting on a fabricated figure is the failure
+        # this whole system exists to prevent.
+        raise HTTPException(
+            status_code=503,
+            detail="No forecast available and no cached assessment to fall back on.",
+        ) from exc
     assessment = SCORER.assess(exposure, VULNERABILITY.profile(person))
     return {
         "person_id": person.id,

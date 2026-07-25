@@ -222,10 +222,14 @@ version = "0.1.0"
 source = { editable = "packages/exposure" }
 dependencies = [
     { name = "climatise-contracts" },
+    { name = "httpx" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "climatise-contracts", editable = "packages/contracts" }]
+requires-dist = [
+    { name = "climatise-contracts", editable = "packages/contracts" },
+    { name = "httpx", specifier = ">=0.28" },
+]
 
 [[package]]
 name = "climatise-geography"
