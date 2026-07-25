@@ -3,148 +3,1170 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Climate Companion</title>
-<link rel="manifest" href="manifest.json">
-<script type="module" src="../shared/tier.js"></script>
+<title>Climate Companion — questionnaire and personal risk</title>
 <style>
-/* NFR-05: usable at 360px. NFR-06: body text >= 16px, tap targets >= 44px. */
 :root{
-  --ground:#F6F8F9; --panel:#FFFFFF; --ink:#152029; --ink-2:#546775;
-  --line:#DCE3E8; --signal:#0B7B77;
-  --low:#0B7B77; --elevated:#A85D18; --high:#C05A2E; --severe:#B03A2C;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-}
-@media(prefers-color-scheme:dark){
-  :root{--ground:#0F1519;--panel:#161E24;--ink:#E2E9ED;--ink-2:#93A4B0;--line:#26323A;--signal:#4FC3BE}
+  --bg:#f4f6f8; --card:#ffffff; --ink:#16202b; --muted:#55636f; --line:#d8dee5;
+  --accent:#0b5c8a; --accent-ink:#ffffff;
+  --low:#1c6b4a; --low-bg:#e6f3ec;
+  --elev:#7a5a00; --elev-bg:#fdf3d9;
+  --high:#9a4a09; --high-bg:#fdeadb;
+  --sev:#8a1220; --sev-bg:#fbe3e6;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
-     font-size:16px;line-height:1.6}
-.wrap{max-width:560px;margin:0 auto;padding:16px 16px 64px}
-header{padding:20px 0 16px;border-bottom:1px solid var(--line)}
-h1{font-size:20px;font-weight:500;margin:0}
-.sub{font-size:14px;color:var(--ink-2)}
-
-.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
-      padding:16px;margin-top:14px}
-
-/* NFR-07: shape plus text plus colour. Never colour alone. */
-.tier{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:18px}
-.tier::before{content:"";width:16px;height:16px;display:inline-block;background:currentColor}
-.shape-circle::before{border-radius:50%}
-.shape-square::before{border-radius:2px}
-.shape-triangle::before{clip-path:polygon(50% 0,100% 100%,0 100%)}
-.shape-diamond::before{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
-.tier-low{color:var(--low)} .tier-elevated{color:var(--elevated)}
-.tier-high{color:var(--high)} .tier-severe{color:var(--severe)}
-
-.modelled{border-bottom:1px dotted var(--ink-2);cursor:help}
-
-ul.checklist{list-style:none;padding:0;margin:10px 0 0}
-ul.checklist li{padding:12px 0;border-top:1px solid var(--line);min-height:44px}
-
-/* Escalation ladder: rung n+1 is absent from the DOM until rung n is presented. */
-.rung{display:none}
-.rung.shown{display:block}
-button{font:inherit;min-height:44px;min-width:44px;padding:10px 18px;
-       border:1px solid var(--line);border-radius:8px;background:var(--panel);
-       color:var(--ink);cursor:pointer}
-button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
-
-.disclaimer{margin-top:24px;font-size:14px;color:var(--ink-2)}
-.offline{display:none;background:#FBF0E3;color:#A85D18;padding:10px 14px;
-         border-radius:8px;font-size:14px;margin-top:12px}
-.offline.on{display:block}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px; line-height:1.55; color:var(--ink); background:var(--bg);
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px 80px}
+header.app{background:var(--accent);color:#fff;padding:14px 0 0}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-size:20px;margin:0;letter-spacing:.2px}
+.brand .sub{font-size:13px;opacity:.85}
+nav.tabs{display:flex;gap:4px;margin-top:12px;overflow-x:auto}
+nav.tabs button{
+  appearance:none;border:0;background:rgba(255,255,255,.14);color:#fff;
+  font:inherit;font-size:15px;padding:12px 16px;min-height:44px;cursor:pointer;
+  border-radius:8px 8px 0 0;white-space:nowrap;
+}
+nav.tabs button[aria-selected="true"]{background:var(--bg);color:var(--ink);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
+.card h2{font-size:21px;margin:0 0 4px;line-height:1.3}
+.card h3{font-size:16px;margin:18px 0 6px}
+.muted{color:var(--muted);font-size:14px}
+fieldset{border:0;margin:0;padding:0}
+legend, .qlabel{display:block;font-weight:600;margin:20px 0 4px;font-size:17px;padding:0}
+.hint{font-size:14px;color:var(--muted);margin:0 0 8px}
+input[type=text],input[type=tel],select,textarea{
+  width:100%;font:inherit;font-size:16px;padding:11px 12px;min-height:44px;
+  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)
+}
+input:focus-visible,select:focus-visible,button:focus-visible,label.opt:focus-within{outline:3px solid #0b5c8a;outline-offset:2px}
+.err{border-color:var(--sev)!important;background:#fff8f8}
+.errmsg{color:var(--sev);font-size:14px;font-weight:600;margin-top:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.opt{
+  display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:#fff;
+  border-radius:10px;padding:11px 15px;min-height:48px;cursor:pointer;font-size:16px
+}
+.opt input{width:20px;height:20px;margin:0;flex:none}
+.opt.sel{border-color:var(--accent);border-width:2px;background:#e8f1f7;font-weight:600;padding:10px 14px}
+.opt.wide{width:100%}
+button.btn{
+  appearance:none;font:inherit;font-size:16px;font-weight:600;border-radius:8px;
+  padding:12px 20px;min-height:48px;cursor:pointer;border:1px solid var(--accent);
+  background:var(--accent);color:var(--accent-ink)
+}
+button.btn.sec{background:#fff;color:var(--accent)}
+button.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted);font-weight:400}
+button.link{background:none;border:0;color:var(--accent);font:inherit;font-size:15px;text-decoration:underline;cursor:pointer;padding:6px 2px;min-height:36px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.steps{display:flex;gap:5px;margin-bottom:10px}
+.steps i{flex:1;height:7px;border-radius:4px;background:var(--line)}
+.steps i.on{background:var(--accent)}
+.tier{border-radius:12px;padding:18px;border:2px solid}
+.tier .badge{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.7px;text-transform:uppercase}
+.tier h2{font-size:30px;margin:8px 0 2px}
+.t-Low{background:var(--low-bg);border-color:var(--low);color:var(--low)}
+.t-Elevated{background:var(--elev-bg);border-color:var(--elev);color:var(--elev)}
+.t-High{background:var(--high-bg);border-color:var(--high);color:var(--high)}
+.t-Severe{background:var(--sev-bg);border-color:var(--sev);color:var(--sev)}
+.reason{border-left:4px solid var(--line);padding:8px 0 8px 13px;margin:12px 0}
+.reason.k-exposure{border-left-color:#9a4a09}
+.reason.k-vuln{border-left-color:#5b3fa0}
+.reason.k-flag{border-left-color:#0b5c8a}
+.reason b{display:block;font-size:16px}
+.reason span{font-size:14.5px;color:var(--muted)}
+ul.check{list-style:none;padding:0;margin:8px 0}
+ul.check li{display:flex;gap:11px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:9px;margin:8px 0;background:#fff}
+ul.check li input{width:24px;height:24px;margin-top:1px;flex:none}
+ul.check li.done label{text-decoration:line-through;color:var(--muted)}
+.rung{border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0;background:#fff}
+.rung.locked{opacity:.42}
+.rung .n{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+.note{background:#eef2f6;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:11px 13px;font-size:14.5px;margin:14px 0}
+.warn{background:#fdf3d9;border-left-color:#7a5a00}
+.modelled{font-size:11px;font-weight:700;color:#5b3fa0;background:#efeaf9;border:1px solid #cfc2ee;border-radius:4px;padding:1px 6px;white-space:nowrap;letter-spacing:.4px}
+.timeline{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.day{flex:none;width:94px;border:1px solid var(--line);border-radius:9px;padding:9px;background:#fff;text-align:center}
+.day .d{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.4px}
+.day .mx{font-size:21px;font-weight:700}
+.day .mn{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14.5px;display:flex;align-items:center;gap:8px;max-width:100%}
+.chip .cls{color:var(--muted);font-size:13px}
+.chip.unknown{border-style:dashed}
+.chip button{border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted);padding:0 4px;line-height:1;min-height:32px}
+footer.legal{font-size:12px;color:var(--muted);padding:20px 0;border-top:1px solid var(--line);margin-top:24px}
+.hidden{display:none!important}
+.pass{color:var(--low);font-weight:700}
+.fail{color:var(--sev);font-weight:700}
+code{background:#eef2f6;padding:1px 5px;border-radius:4px;font-size:13px}
+.review dt{font-weight:600;font-size:14px;color:var(--muted);margin-top:14px}
+.review dd{margin:2px 0 0;font-size:16.5px}
+.empty{text-align:center;padding:30px 10px}
+@media (max-width:420px){ .brand h1{font-size:18px} .card{padding:14px} .opt{width:100%} }
 </style>
+<script type="module" src="../shared/tier.js"></script>
 </head>
 <body>
-<div class="wrap">
 
-<header>
-  <h1>Climate Companion</h1>
-  <div class="sub">Risk for the person you look after</div>
+<header class="app">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Climate Companion</h1>
+      <span class="sub">Climatise · v0.1 demonstrator · not medical advice</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-form"  aria-selected="true"  onclick="go('form')">Questionnaire</button>
+      <button role="tab" id="tab-risk"  aria-selected="false" onclick="go('risk')">My risk</button>
+      <button role="tab" id="tab-tests" aria-selected="false" onclick="go('tests')">Checks</button>
+    </nav>
+  </div>
 </header>
 
-<div class="offline" id="offline">
-  Showing the last saved assessment. You are offline.
+<div class="wrap">
+  <section id="panel-form"></section>
+  <section id="panel-risk" class="hidden"></section>
+  <section id="panel-tests" class="hidden"></section>
+
+  <footer class="legal">
+    Weather modelled on Open-Meteo (CC BY 4.0); live calls stubbed in this demonstrator.
+    Postcode resolution modelled on postcodes.io. UKHSA alert status stubbed.
+    Government sources Crown copyright, Open Government Licence v3.0.<br><br>
+    <strong>Demonstrator only.</strong> Medication rules have not been reviewed by a registered pharmacist (SC-4).
+    Indoor temperatures are modelled, not measured (SC-5). Your answers stay on this device and are not transmitted (SC-6).
+  </footer>
 </div>
 
-<!-- Rung 2: personal tier. Rungs 0 and 1 (regional alert, forecast) render above
-     it once Track 0's live exposure client lands. -->
-<div class="card">
-  <div id="tierSlot"></div>
-  <p id="tierAction" class="sub"></p>
-</div>
+<script>
+/* =====================================================================
+   STORAGE — temporary database (spec §7 tables), localStorage-backed
+   with an in-memory fallback so the file works from any context.
+   ===================================================================== */
+const Store = (() => {
+  let mem = {}; let ok = true;
+  try { localStorage.setItem('__cc','1'); localStorage.removeItem('__cc'); } catch(e){ ok=false; }
+  const get = k => { try { return ok ? localStorage.getItem(k) : mem[k]; } catch(e){ return mem[k]; } };
+  const set = (k,v) => { try { ok ? localStorage.setItem(k,v) : (mem[k]=v); } catch(e){ mem[k]=v; } };
+  return {
+    read(t){ const r=get('cc.'+t); return r?JSON.parse(r):[]; },
+    write(t,rows){ set('cc.'+t, JSON.stringify(rows)); },
+    insert(t,row){ const rows=this.read(t); row.id=row.id||(t[0]+'_'+Date.now()+'_'+Math.floor(Math.random()*1e4)); rows.push(row); this.write(t,rows); return row; },
+    reset(){ ['person','med','place','exposure','assessment','notification'].forEach(t=>this.write(t,[])); set('cc.meta.draft',''); },
+    meta(k,v){ if(v===undefined){ const r=get('cc.meta.'+k); return r?JSON.parse(r):null; } set('cc.meta.'+k, JSON.stringify(v)); }
+  };
+})();
 
-<!-- Rung 3: medication flags. Rung 4: checklist. -->
-<div class="card rung" id="rung3">
-  <h2 style="font-size:16px;margin:0">Why</h2>
-  <ul class="checklist" id="reasons"></ul>
-</div>
+/* =====================================================================
+   REFERENCE DATA
+   ===================================================================== */
 
-<div class="card rung" id="rung4">
-  <h2 style="font-size:16px;margin:0">What to do</h2>
-  <ul class="checklist" id="checklist"></ul>
-  <p class="sub" id="checklistPending">
-    Track A owns the checklist. Reason codes above are already in place.
-  </p>
-</div>
-
-<p class="disclaimer">
-  This is a demonstrator, not medical advice, and it has not been clinically
-  validated. Never change a prescribed medicine on the basis of this app — speak
-  to a pharmacist or GP. Indoor temperatures shown are modelled estimates, not
-  measurements.
-</p>
-
-</div>
-
-<script type="module">
-import { renderTier, TIERS } from "../shared/tier.js";
-
-const API = "http://localhost:8000";
-const CACHE_KEY = "climatise:last-assessment";
-
-function show(id) { document.getElementById(id).classList.add("shown"); }
-
-function render(data, fromCache) {
-  document.getElementById("offline").classList.toggle("on", fromCache);
-
-  const slot = document.getElementById("tierSlot");
-  slot.replaceChildren(renderTier(data.tier));
-  document.getElementById("tierAction").textContent = TIERS[data.tier].action;
-
-  // Rung 3 only once rung 2 has been presented (spec section 9.1).
-  const reasons = document.getElementById("reasons");
-  reasons.replaceChildren(...data.reasons.map(r => {
-    const li = document.createElement("li");
-    const title = document.createElement("strong");
-    title.textContent = r.title;
-    const body = document.createElement("div");
-    body.className = "sub";
-    body.textContent = r.explanation;
-    li.append(title, body);
-    return li;
-  }));
-  if (data.reasons.length) show("rung3");
-  if (data.tier !== "LOW") show("rung4");
+// §8.3 medication class lookup (+ common synonyms). Scored on class, never on name (FR-14).
+const MED_CLASS = {
+  furosemide:'diuretic', frusemide:'diuretic', bendroflumethiazide:'diuretic',
+  indapamide:'diuretic', spironolactone:'diuretic', bumetanide:'diuretic', 'co-amilofruse':'diuretic',
+  oxybutynin:'anticholinergic', amitriptyline:'anticholinergic', solifenacin:'anticholinergic',
+  tolterodine:'anticholinergic', hyoscine:'anticholinergic', procyclidine:'anticholinergic', nortriptyline:'anticholinergic',
+  bisoprolol:'beta blocker', atenolol:'beta blocker', propranolol:'beta blocker',
+  metoprolol:'beta blocker', carvedilol:'beta blocker', nebivolol:'beta blocker',
+  ramipril:'ACE / ARB', lisinopril:'ACE / ARB', perindopril:'ACE / ARB', enalapril:'ACE / ARB',
+  losartan:'ACE / ARB', candesartan:'ACE / ARB', irbesartan:'ACE / ARB', valsartan:'ACE / ARB',
+  olanzapine:'antipsychotic', quetiapine:'antipsychotic', haloperidol:'antipsychotic',
+  risperidone:'antipsychotic', aripiprazole:'antipsychotic',
+  sertraline:'SSRI', citalopram:'SSRI', escitalopram:'SSRI', fluoxetine:'SSRI', paroxetine:'SSRI',
+  'lithium carbonate':'lithium', lithium:'lithium', priadel:'lithium', camcolit:'lithium',
+  insulin:'heat-sensitive', 'gtn spray':'heat-sensitive', gtn:'heat-sensitive',
+  'glyceryl trinitrate':'heat-sensitive', 'insulin glargine':'heat-sensitive', lantus:'heat-sensitive'
+};
+const MED_MECHANISM = {
+  'diuretic':'increases fluid and salt loss',
+  'anticholinergic':'makes it harder to sweat',
+  'beta blocker':'reduces blood flow to the skin',
+  'ACE / ARB':'blunts thirst and adds strain on the kidneys',
+  'antipsychotic':'affects the brain’s temperature control',
+  'SSRI':'raises the risk of low blood sodium',
+  'lithium':'levels can rise if you become dehydrated',
+  'heat-sensitive':'the medicine itself degrades above 25°C'
+};
+function classify(name){
+  const n = (name||'').trim().toLowerCase();
+  if (MED_CLASS[n]) return MED_CLASS[n];
+  for (const k in MED_CLASS) if (n.startsWith(k) || (k.startsWith(n) && n.length>4)) return MED_CLASS[k];
+  return 'unclassified';
 }
 
-async function load() {
-  const cached = localStorage.getItem(CACHE_KEY);
-  try {
-    const res = await fetch(`${API}/people/doris/assessment`);
-    if (!res.ok) throw new Error(res.statusText);
-    const data = await res.json();
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-    render(data, false);
-  } catch {
-    // NFR-04: render a complete assessment with no network.
-    if (cached) render(JSON.parse(cached), true);
+// FR-11 dwelling_offset lookup: type + floor + how much sun the bedroom takes, less air conditioning.
+// `aspect` is stored as a compass value for the §7 data model, but it is asked as a question about
+// sun on the bedroom — people know when their room gets the sun far better than which way it faces.
+const OFFSET_TYPE   = { flat:1.2, terraced:0.8, semi:0.6, detached:0.4, bungalow:0.5, care_home:0.8 };
+const OFFSET_FLOOR  = { ground:0.0, middle:0.6, top:1.2 };
+const OFFSET_ASPECT = { north:0.0, east:0.2, west:0.4, south:0.6, unknown:0.3 };
+const SUN_LABEL = { south:'sun for most of the day', west:'afternoon and evening sun',
+                    east:'morning sun only', north:'shaded', unknown:'sun exposure not known' };
+// A fan does NOT appear here. A fan moves air across the body; it does not lower the temperature
+// of the room, so it cannot change the modelled indoor figure. It changes what you are told to do,
+// not how hot the room is. Air conditioning does lower room temperature.
+function dwellingOffset(p){
+  let o = (OFFSET_TYPE[p.dwelling_type]??0.6) + (OFFSET_FLOOR[p.floor]??0.0) + (OFFSET_ASPECT[p.aspect]??0.3);
+  if (p.has_aircon) o -= 1.5;
+  return Math.round(o*10)/10;
+}
+
+// EI-4 postcodes.io — stubbed lookup by outward code.
+const POSTCODES = {
+  MK40:{d:'Bedford',    r:'East of England', lat:52.136, lon:-0.467},
+  MK41:{d:'Bedford',    r:'East of England', lat:52.152, lon:-0.443},
+  NW1 :{d:'Camden',     r:'London',          lat:51.535, lon:-0.143},
+  N7  :{d:'Camden',     r:'London',          lat:51.552, lon:-0.116},
+  B15 :{d:'Birmingham', r:'West Midlands',   lat:52.462, lon:-1.925},
+  B29 :{d:'Birmingham', r:'West Midlands',   lat:52.432, lon:-1.945},
+  M14 :{d:'Manchester', r:'North West',      lat:53.446, lon:-2.222},
+  M20 :{d:'Manchester', r:'North West',      lat:53.420, lon:-2.230},
+  NE3 :{d:'Newcastle',  r:'North East',      lat:55.003, lon:-1.633},
+  TR1 :{d:'Cornwall',   r:'South West',      lat:50.263, lon:-5.051}
+};
+function resolvePostcode(pc){
+  const out = (pc||'').toUpperCase().replace(/\s+/g,'').slice(0,-3) || 'MK40';
+  return POSTCODES[out] || POSTCODES[Object.keys(POSTCODES).find(k=>k[0]===out[0])] || POSTCODES.MK40;
+}
+const validPostcode = pc => /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test((pc||'').trim());
+
+/* =====================================================================
+   L1. EXPOSURE — simulated Open-Meteo (EI-1). Deterministic dummy data.
+   ===================================================================== */
+const SCENARIOS = {
+  // `seed` = days of the spell already elapsed before day 0, so a replay starts mid-episode.
+  heat2025:{ label:'Heat episode — 17–19 Jul 2025 replay', alert:'None in force', seed:2,
+             day:[29,31,33,32,28,25,24], night:[17,19,21,20,18,15,14], rh:[52,55,58,60,55,50,48] },
+  typical: { label:'Typical British summer', alert:'None in force', seed:0,
+             day:[22,23,21,24,22,20,21], night:[12,13,11,14,12,10,11], rh:[65,66,70,64,68,72,70] },
+  cold:    { label:'Winter cold snap', alert:'Cold-Health Alert — Amber (stubbed)', seed:2,
+             day:[3,2,1,4,5,3,2],        night:[-2,-3,-4,-1,0,-2,-3],  rh:[85,88,90,86,84,87,89] }
+};
+const DISTRICT_DELTA = { Bedford:0, Camden:1.5, Birmingham:0.8, Manchester:-0.5, Newcastle:-1.2, Cornwall:-0.8 };
+let SCENARIO = Store.meta('scenario') || 'heat2025';
+
+function forecast(district){
+  const s = SCENARIOS[SCENARIO], dd = DISTRICT_DELTA[district] ?? 0;
+  const out = []; let heatRun = s.seed||0, coldRun = s.seed||0;
+  for (let i=0;i<7;i++){
+    const day_max   = Math.round((s.day[i]   + dd)*10)/10;
+    const night_min = Math.round((s.night[i] + dd*0.7)*10)/10;
+    const rh = s.rh[i];
+    let peak_apparent = day_max;                                   // humid air feels hotter once already warm
+    if (day_max >= 27 && rh >= 60) peak_apparent = day_max + 2;
+    else if (day_max >= 27 && rh >= 55) peak_apparent = day_max + 1;
+    peak_apparent = Math.round(peak_apparent*10)/10;
+    if (day_max >= 24) heatRun++; else heatRun = 0;                // FR-09 spell_day
+    if (day_max <= 5)  coldRun++; else coldRun = 0;
+    const d = new Date(); d.setDate(d.getDate()+i);
+    out.push({
+      date:d.toISOString().slice(0,10),
+      label:d.toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short'}),
+      overnight_min:night_min, peak_air:day_max, peak_apparent, humidity:rh,
+      hours_above_26: Math.max(0, Math.round((day_max-26)*1.5)),
+      spell_day: Math.max(heatRun, coldRun), source:'simulated', retrieved_at:new Date().toISOString()
+    });
   }
+  return out;
 }
 
-load();
+// FR-10 / FR-11 — indoor estimation. Labelled as modelled wherever displayed (SC-5).
+function estimateIndoor(day, offset, heating_affordable){
+  // FR-11 as specified — a passive model of a building with no heating input.
+  let night = 0.6*day.overnight_min + 0.4*day.peak_air + offset;
+  let dayT  = 0.3*day.overnight_min + 0.55*day.peak_air + offset + 2;
+  // HEATING_FLOOR (deviation from FR-11, documented in Checks): FR-11 contains no heating term,
+  // so in winter it returns 3°C living rooms and everyone scores INDOOR_BELOW_12 regardless of
+  // circumstance. Below 18°C outdoors, indoor is floored at what heating can realistically hold,
+  // and affordability of heating becomes the variable that matters.
+  if (day.peak_air < 18){
+    const base     = heating_affordable ? 19.5 : 14.0;
+    const struggle = Math.max(0, (5 - day.peak_air) * 0.35);
+    const floorDay = base + offset*0.5 - struggle;
+    dayT  = Math.max(dayT,  floorDay);
+    night = Math.max(night, floorDay - 2.5);
+  }
+  return { indoor_night_est: Math.round(night*10)/10, indoor_day_est: Math.round(dayT*10)/10 };
+}
+
+/* =====================================================================
+   L3. RISK FUSION — pure function. No I/O, no DB, no system time (AC-1).
+   ===================================================================== */
+const EXPOSURE_RULES = [
+  {code:'NIGHT_NO_RECOVERY', w:3, test:e=> e.overnight_min >= 20,
+   title:'No overnight recovery',
+   why:'The outside air will not fall below 20°C tonight. The body relies on cool nights to shed the heat it built up during the day.'},
+  {code:'BEDROOM_UNSAFE', w:3, test:e=> e.indoor_night >= 26,
+   title:'Bedroom too hot to sleep safely',
+   why:'Your bedroom is modelled at 26°C or above overnight. Sleeping in this is a strain on the heart and on fluid balance.'},
+  {code:'BEDROOM_WARM', w:1, test:e=> e.indoor_night >= 24 && e.indoor_night < 26,
+   title:'Bedroom warmer than is comfortable',
+   why:'Your bedroom is modelled between 24 and 26°C overnight. Sleep will be broken and you will lose more fluid than usual.'},
+  {code:'PEAK_HEAT', w:2, test:e=> e.peak_apparent >= 30,
+   title:'Peak daytime heat',
+   why:'The temperature it will feel like reaches 30°C or more. Being outdoors in the middle of the day carries real risk.'},
+  {code:'SUSTAINED_SPELL', w:2, test:e=> e.spell_day >= 3 && e.peak_air >= 24,
+   title:'Third day or more of a warm spell',
+   why:'Heat accumulates. Buildings and bodies that have not cooled down for three days are working from a higher baseline.'},
+  // COLD_GUARD (deviation from §8.1, documented in Checks): the FR-11 indoor formula returns a
+  // value below the outdoor maximum in mild weather, so an unguarded INDOOR_BELOW_18 fires on
+  // ordinary British summer days and fails the spec's own no-cry-wolf criterion (§13). Cold codes
+  // are therefore evaluated only when outdoor peak air is below 18°C — a plausible heating day.
+  {code:'INDOOR_BELOW_18', w:2, test:e=> e.peak_air < 18 && e.indoor_day < 18 && e.indoor_day >= 16,
+   title:'Home below 18°C',
+   why:'Living below 18°C raises blood pressure and thickens the blood, which is why cold weather shows up as heart attacks and strokes.'},
+  {code:'INDOOR_BELOW_16', w:3, test:e=> e.peak_air < 18 && e.indoor_day < 16 && e.indoor_day >= 12,
+   title:'Home below 16°C',
+   why:'Below 16°C the lungs’ defences are weakened and chest infections become markedly more likely.'},
+  {code:'INDOOR_BELOW_12', w:4, test:e=> e.peak_air < 18 && e.indoor_day < 12,
+   title:'Home dangerously cold',
+   why:'Below 12°C there is a real risk of hypothermia, particularly overnight and particularly for someone who is not moving much.'}
+];
+
+const VULN_RULES = [
+  {code:'AGE_85_PLUS', w:3, test:v=> v.age_band==='85+',
+   title:'Aged 85 or over',
+   why:'Above 85 the body’s ability to sense temperature and to sweat is much reduced. This group carries by far the highest weather-related death rate.'},
+  {code:'AGE_75_84', w:2, test:v=> v.age_band==='75-84',
+   title:'Aged 75 to 84',
+   why:'Thirst and temperature regulation both weaken with age, so harm can build up before it is noticed.'},
+  {code:'LIVES_ALONE', w:2, test:v=> v.lives_alone===true,
+   title:'Lives alone',
+   why:'Nobody is present to notice early confusion, unsteadiness or a drop in fluid intake.'},
+  {code:'DEMENTIA', w:2, test:v=> v.conditions.includes('dementia'),
+   title:'Dementia or memory problems',
+   why:'Dementia affects both the recognition of thirst and the ability to act on feeling too hot or too cold.'},
+  {code:'CARDIOVASCULAR', w:2, test:v=> v.conditions.includes('cardiovascular'),
+   title:'Heart or circulation condition',
+   why:'Extreme temperature forces the heart to work harder — pumping blood to the skin in heat, and against narrowed vessels in cold.'},
+  {code:'RENAL', w:2, test:v=> v.conditions.includes('renal'),
+   title:'Kidney condition',
+   why:'Kidneys under strain cope poorly with dehydration and with shifts in salt balance.'},
+  {code:'RESPIRATORY', w:1, test:v=> v.conditions.includes('respiratory'),
+   title:'Lung or breathing condition',
+   why:'Both cold air and hot polluted air make breathing harder and can trigger a flare-up.'},
+  {code:'MOBILITY_LIMITED', w:1, test:v=> v.mobility_limited===true,
+   title:'Difficulty moving around the home',
+   why:'Moving to a cooler or warmer room, fetching a drink, or adjusting the heating all become harder.'},
+  {code:'MED_LITHIUM', w:3, test:v=> v.classes.includes('lithium'),
+   title:'Taking lithium',
+   why:'Lithium levels in the blood rise if you become dehydrated, and can reach toxic levels.'},
+  {code:'MED_DIURETIC', w:2, test:v=> v.classes.includes('diuretic'),
+   title:'Taking a water tablet (diuretic)',
+   why:'Water tablets increase fluid and salt loss, on top of what is lost through sweating.'},
+  {code:'MED_ANTICHOLINERGIC', w:2, test:v=> v.classes.includes('anticholinergic'),
+   title:'Taking an anticholinergic medicine',
+   why:'These medicines make it harder to sweat, which removes the body’s main way of cooling itself.'},
+  {code:'MED_ANTIPSYCHOTIC', w:2, test:v=> v.classes.includes('antipsychotic'),
+   title:'Taking an antipsychotic medicine',
+   why:'These affect the part of the brain that regulates body temperature.'},
+  {code:'MED_ACE_ARB', w:1, test:v=> v.classes.includes('ACE / ARB'),
+   title:'Taking a blood pressure medicine (ACE inhibitor or ARB)',
+   why:'These blunt the sensation of thirst and add strain on the kidneys when fluid is short.'},
+  {code:'MED_BETA_BLOCKER', w:1, test:v=> v.classes.includes('beta blocker'),
+   title:'Taking a beta blocker',
+   why:'Beta blockers reduce blood flow to the skin, which is how the body sheds heat.'},
+  {code:'MED_SSRI', w:1, test:v=> v.classes.includes('SSRI'),
+   title:'Taking an SSRI antidepressant',
+   why:'SSRIs raise the risk of low blood sodium, which heat and heavy fluid loss push in the same direction.'}
+];
+
+// AC-1: pure.
+function scoreRisk(exposure, vuln){
+  const exposureReasons = [];
+  for (const r of EXPOSURE_RULES) if (r.test(exposure))
+    exposureReasons.push({code:r.code, kind:'exposure', weight:r.w, title:r.title, why:r.why});
+
+  const vulnReasons = [];
+  for (const r of VULN_RULES) if (r.test(vuln))
+    vulnReasons.push({code:r.code, kind:'vuln', weight:r.w, title:r.title, why:r.why});
+
+  // FR-15: heat-sensitive storage flag (advisory, carries no risk weight)
+  const flags = [];
+  if (vuln.classes.includes('heat-sensitive') && exposure.peak_air >= 25)
+    flags.push({code:'MED_STORAGE_HEAT', kind:'flag', weight:0,
+      title:'A medicine you take is damaged by heat',
+      why:'Insulin and GTN spray lose strength above 25°C. This is about where the medicine is kept, not about how you take it.'});
+
+  const exposure_score      = exposureReasons.reduce((a,r)=>a+r.weight, 0);
+  const vulnerability_score = vulnReasons.reduce((a,r)=>a+r.weight, 0);
+  const multiplier          = 1 + (vulnerability_score/10);
+  const risk_score          = Math.round(exposure_score * multiplier * 100)/100;
+
+  let tier;                                        // FR-18: no exposure means no risk
+  if (exposure_score === 0)  tier='Low';
+  else if (risk_score < 2)   tier='Low';
+  else if (risk_score < 5)   tier='Elevated';
+  else if (risk_score < 9)   tier='High';
+  else                       tier='Severe';
+
+  const reasons = exposure_score === 0 ? flags
+    : [...exposureReasons.sort((a,b)=>b.weight-a.weight),
+       ...vulnReasons.sort((a,b)=>b.weight-a.weight), ...flags];
+
+  return {tier, risk_score, exposure_score, vulnerability_score, multiplier:Math.round(multiplier*100)/100, reasons};
+}
+
+/* =====================================================================
+   L4. ACTIONS — every reason code maps to at least one action (AC-3).
+   SC-1: no action ever advises altering a prescribed medicine.
+   Optional `needs` tailors the wording of an action to what the person has
+   ('fan' | 'no_fan' | 'aircon' | 'no_aircon'); optional `when(e)` gates it on
+   today's exposure. Both refine actions already derived from a reason code,
+   so the checklist still comes solely from the reason codes (FR-19).
+   ===================================================================== */
+const TIER_RANK = {Low:0, Elevated:1, High:2, Severe:3};
+const ACTIONS = {
+  NIGHT_NO_RECOVERY:[
+    {t:'Open windows once the outside air is cooler than inside — usually after 9pm — and close them again by about 8am.', min:'Low'},
+    {t:'Put a jug of water and a glass beside the bed before you settle for the night.', min:'Low'},
+    {t:'Set the fan to blow across the room rather than straight at your face, and stand a bowl of cold water in front of it.', min:'Low', needs:'fan'},
+    {t:'Ask someone to phone you first thing tomorrow, so that a bad night gets noticed.', min:'High', esc:'Family, neighbour or carer'}
+  ],
+  BEDROOM_UNSAFE:[
+    {t:'Sleep tonight in the coolest room in the home, even if it is not your usual bed. A shaded, ground-floor room is best.', min:'Low'},
+    {t:'Damp a flannel and keep it on the back of your neck or your forearms while you settle.', min:'Low'},
+    {t:'Cool the bedroom for an hour before you go to bed, and close the door to keep the cool air in.', min:'Low', needs:'aircon'},
+    {t:'With no fan and no air conditioning, cooling has to come from water and air movement: a damp sheet, an open window with the door propped to draw a through-draught.', min:'Low', needs:'no_fan'},
+    {t:'Arrange for someone to stay, or to check on you overnight.', min:'High', esc:'Family, neighbour or carer'}
+  ],
+  BEDROOM_WARM:[
+    {t:'Close the bedroom curtains or blinds from mid-morning, before the sun gets round to that side and warms the room up.', min:'Low'},
+    {t:'Switch off anything giving out heat in the bedroom — lamps, televisions, chargers.', min:'Low'},
+    {t:'Run the fan in the bedroom for half an hour before you get in, with the door and a window open, to shift the warm air that has collected there.', min:'Low', needs:'fan'},
+    {t:'Cool the bedroom for an hour before bed and then close the door to hold the cool air in.', min:'Low', needs:'aircon'}
+  ],
+  PEAK_HEAT:[
+    {t:'Stay out of direct sun between 11am and 3pm. Move any errands to early morning.', min:'Low'},
+    {t:'Drink water at regular intervals through the day, without waiting to feel thirsty.', min:'Low'},
+    {t:'Run cool water over your wrists at the tap for a minute or two, a few times during the afternoon.', min:'Elevated'},
+    {t:'Once the air is hotter than about 35°C a fan is blowing hot air over you and stops helping. Use damp cloths and cool water instead, and keep the fan for the evening.', min:'Low', needs:'fan', when:e=>e.peak_air>=33}
+  ],
+  SUSTAINED_SPELL:[
+    {t:'This is the third day or more of warm weather. Heat has built up in the building — treat today as more serious than the first hot day, not less.', min:'Low'},
+    {t:'Check the temperature in the room you sit in most, with a thermometer if you have one.', min:'Elevated'}
+  ],
+  INDOOR_BELOW_18:[
+    {t:'Heat the one room you spend the day in to at least 18°C, rather than trying to heat the whole home.', min:'Low'},
+    {t:'Wear several thin layers rather than one thick one, and keep your feet warm.', min:'Low'},
+    {t:'Have at least one hot meal and regular hot drinks through the day.', min:'Low'}
+  ],
+  INDOOR_BELOW_16:[
+    {t:'Heat the room you use most, and close the doors to rooms you are not using.', min:'Low'},
+    {t:'Ask your council about the Household Support Fund and the Warm Home Discount — both exist for exactly this.', min:'Elevated', esc:'Local authority'},
+    {t:'Spend part of the day somewhere warm and public — a library, community centre or warm space.', min:'Elevated', esc:'Warm space'}
+  ],
+  INDOOR_BELOW_12:[
+    {t:'Do not spend tonight in the home at this temperature if there is any alternative. Ask family, a neighbour or the council.', min:'Low', esc:'Local authority emergency line'},
+    {t:'Contact the council’s adult social care team today. A home this cold is a statutory concern, not a private problem.', min:'Low', esc:'Adult social care'},
+    {t:'If you become confused, very drowsy, or your skin feels cold to the touch on the chest or stomach, call 999.', min:'Severe', esc:'999'}
+  ],
+  AGE_85_PLUS:[
+    {t:'Above 85 the usual warning signs arrive late. Act on the forecast rather than on how you feel.', min:'Low'},
+    {t:'Agree a daily check-in with someone for the length of this spell.', min:'Elevated', esc:'Family, neighbour or carer'}
+  ],
+  AGE_75_84:[
+    {t:'Thirst is a poor guide at this age. Set a routine — a glass with each meal and each medicine round.', min:'Low'}
+  ],
+  LIVES_ALONE:[
+    {t:'Tell one person that this spell is difficult for you, and ask them to make contact each day until it passes.', min:'Low'},
+    {t:'Keep a phone within reach of where you sit and where you sleep.', min:'Elevated'}
+  ],
+  DEMENTIA:[
+    {t:'Leave drinks in plain sight where they will be noticed, rather than in a cupboard or on a tray.', min:'Low'},
+    {t:'Lay out clothing suitable for the weather, since judging it can be difficult.', min:'Low'},
+    {t:'New or worsening confusion during a hot or cold spell is a warning sign, not just a bad day. Seek advice the same day.', min:'Elevated', esc:'GP or NHS 111'}
+  ],
+  CARDIOVASCULAR:[
+    {t:'Avoid heavy exertion while these conditions last, including carrying shopping and gardening.', min:'Low'},
+    {t:'If you have been told to monitor your weight or blood pressure at home, keep to that routine through this spell.', min:'Elevated'}
+  ],
+  RENAL:[
+    {t:'If your kidney team has given you a personal fluid target, follow that target rather than any general advice about drinking more.', min:'Low', esc:'Kidney team or GP'}
+  ],
+  RESPIRATORY:[
+    {t:'Keep reliever inhalers or medicines where you can reach them without moving about.', min:'Low'},
+    {t:'On cold days, breathe through a loose scarf over the mouth when you first go outside.', min:'Low'}
+  ],
+  MOBILITY_LIMITED:[
+    {t:'Move what you need — drinks, phone, medicines, a fan or a blanket — to where you actually sit, before the worst of the day.', min:'Low'}
+  ],
+  MED_LITHIUM:[
+    {t:'Lithium levels rise when you are dehydrated. Keep your fluid intake steady, and ask your pharmacist or GP whether a blood test is due during this spell.', min:'Low', esc:'Pharmacist or GP'},
+    {t:'Continue taking your medicine exactly as prescribed, and get advice the same day if you have vomiting, diarrhoea, tremor or unusual drowsiness.', min:'Elevated', esc:'GP or NHS 111'}
+  ],
+  MED_DIURETIC:[
+    {t:'Water tablets increase fluid loss, and hot weather adds to it. Keep taking them exactly as prescribed, and ask your pharmacist to review your fluid intake for this spell.', min:'Low', esc:'Pharmacist'},
+    {t:'Weigh yourself at the same time each day if you already do so — a fast change is worth reporting.', min:'Elevated', esc:'GP'}
+  ],
+  MED_ANTICHOLINERGIC:[
+    {t:'This medicine makes sweating harder, so cooling has to come from outside the body: cool drinks, damp cloths, shade, air movement.', min:'Low'},
+    {t:'Ask your pharmacist to check your full list for how it behaves in this weather. Keep taking everything as prescribed until they advise you.', min:'Elevated', esc:'Pharmacist'}
+  ],
+  MED_ANTIPSYCHOTIC:[
+    {t:'This medicine affects temperature control, so a hot room is riskier for you than for others in it. Getting the room cooler matters more.', min:'Low'},
+    {t:'Ask your pharmacist or GP to review this medicine in the context of the current weather. Keep taking it as prescribed meanwhile.', min:'Elevated', esc:'Pharmacist or GP'}
+  ],
+  MED_ACE_ARB:[
+    {t:'This medicine blunts thirst, so drink to a routine rather than to how you feel.', min:'Low'},
+    {t:'If you become unwell with vomiting or diarrhoea, contact your GP or pharmacist the same day for advice about your medicines.', min:'Elevated', esc:'Pharmacist or GP'}
+  ],
+  MED_BETA_BLOCKER:[
+    {t:'This medicine limits how much heat your skin can shed, so cooling from outside matters more for you. Use the fan while the air is cooler than skin temperature, along with damp cloths.', min:'Low', needs:'fan'},
+    {t:'This medicine limits how much heat your skin can shed, so cooling from outside matters more for you: damp cloths on the wrists and neck, cool drinks, and the shadiest room in the home.', min:'Low', needs:'no_fan'}
+  ],
+  MED_SSRI:[
+    {t:'This medicine raises the risk of low blood sodium. Drink water steadily rather than in large quantities at once, and mention new confusion or headache to your GP.', min:'Low', esc:'GP or pharmacist'}
+  ],
+  MED_STORAGE_HEAT:[
+    {t:'Move heat-sensitive medicines somewhere cool and dark — not a windowsill, not a car, not a bathroom. Insulin in use goes in the coolest cupboard; unopened supplies go in the fridge.', min:'Low'},
+    {t:'If a medicine looks cloudy or discoloured, or has been left in the heat, ask your pharmacist for a replacement.', min:'Low', esc:'Pharmacist'}
+  ]
+};
+
+// §9.1 escalation ladder
+const LADDER = [
+  {n:0, q:'Is the region under alert?',                     r:'Context banner',       min:'Low'},
+  {n:1, q:'What is the forecast at this address?',          r:'Exposure timeline',    min:'Low'},
+  {n:2, q:'Does your profile make it dangerous?',           r:'Personal tier',        min:'Low'},
+  {n:3, q:'Do your medicines amplify it?',                  r:'Medicine flags',       min:'Elevated'},
+  {n:4, q:'Can it be fixed at home?',                       r:'Checklist',            min:'Elevated'},
+  {n:5, q:'If not, who nearby can help?',                   r:'Pharmacy, cool space', min:'High'},
+  {n:6, q:'Who has a statutory duty?',                      r:'Council, GP, NHS 111', min:'High'},
+  {n:7, q:'Is this acute?',                                 r:'999',                  min:'Severe'}
+];
+
+// L5 seeded resource stub (FR-23)
+const RESOURCES = [
+  {type:'pharmacy',   name:'Harpur Street Pharmacy',       area:'Bedford',    hours:'09:00–18:00, Sat 09:00–13:00'},
+  {type:'cool_space', name:'Bedford Central Library',      area:'Bedford',    hours:'09:00–19:00'},
+  {type:'cool_space', name:'Queens Park Community Centre', area:'Bedford',    hours:'10:00–16:00'},
+  {type:'pharmacy',   name:'Camden High Street Pharmacy',  area:'Camden',     hours:'08:00–20:00'},
+  {type:'cool_space', name:'Swiss Cottage Library',        area:'Camden',     hours:'09:00–19:00'},
+  {type:'pharmacy',   name:'Selly Oak Pharmacy',           area:'Birmingham', hours:'09:00–18:30'},
+  {type:'cool_space', name:'The Library of Birmingham',    area:'Birmingham', hours:'10:00–18:00'},
+  {type:'pharmacy',   name:'Fallowfield Pharmacy',         area:'Manchester', hours:'09:00–18:00'},
+  {type:'cool_space', name:'Manchester Central Library',   area:'Manchester', hours:'09:00–20:00'},
+  {type:'pharmacy',   name:'Gosforth Pharmacy',            area:'Newcastle',  hours:'09:00–18:00'},
+  {type:'cool_space', name:'Newcastle City Library',       area:'Newcastle',  hours:'09:00–19:00'},
+  {type:'pharmacy',   name:'Truro Boscawen Pharmacy',      area:'Cornwall',   hours:'09:00–17:30'},
+  {type:'cool_space', name:'Truro Library',                area:'Cornwall',   hours:'09:30–17:00'}
+];
+
+/* =====================================================================
+   PERSISTENCE + ASSESSMENT PIPELINE
+   ===================================================================== */
+function savePerson(d){
+  Store.reset();
+  const geo = resolvePostcode(d.postcode);
+  const person = Store.insert('person', {
+    name:d.name, age_band:d.age_band, lives_alone:d.lives_alone, mobility_limited:d.mobility_limited,
+    conditions:d.conditions||[], carer:d.carer||'', carer_phone:d.carer_phone||'', created_at:new Date().toISOString()
+  });
+  (d.meds||[]).forEach(n => Store.insert('med', {person_id:person.id, drug_name:n, drug_class:classify(n)}));
+  const place = {
+    person_id:person.id, postcode:d.postcode.toUpperCase(), lat:geo.lat, lon:geo.lon,
+    admin_district:geo.d, region:geo.r, dwelling_type:d.dwelling_type, floor:d.floor, aspect:d.aspect,
+    has_fan:!!d.has_fan, has_aircon:!!d.has_aircon, heating_affordable:d.heating_affordable !== false
+  };
+  place.dwelling_offset = dwellingOffset(place);
+  Store.insert('place', place);
+  Store.meta('answers', d);
+  return person;
+}
+function assessPerson(personId){
+  const person = Store.read('person').find(p=>p.id===personId);
+  const place  = Store.read('place').find(p=>p.person_id===personId);
+  const meds   = Store.read('med').filter(m=>m.person_id===personId);
+  if (!person || !place) return null;
+
+  const enriched = forecast(place.admin_district)
+    .map(d => ({...d, ...estimateIndoor(d, place.dwelling_offset, place.heating_affordable)}));
+  const today = enriched[0];
+
+  const exposureInput = {
+    overnight_min:today.overnight_min, peak_air:today.peak_air, peak_apparent:today.peak_apparent,
+    spell_day:today.spell_day, indoor_night:today.indoor_night_est, indoor_day:today.indoor_day_est
+  };
+  const vulnInput = {
+    age_band:person.age_band, lives_alone:person.lives_alone, mobility_limited:person.mobility_limited,
+    conditions:person.conditions||[], classes:[...new Set(meds.map(m=>m.drug_class))]
+  };
+  const result = scoreRisk(exposureInput, vulnInput);
+
+  const prior = Store.read('assessment').filter(a=>a.person_id===personId).slice(-1)[0];
+  const rose  = prior && TIER_RANK[result.tier] > TIER_RANK[prior.tier];
+  const rec = Store.insert('assessment', {
+    person_id:personId, computed_at:new Date().toISOString(),
+    window_start:today.date, window_end:enriched[6].date,
+    tier:result.tier, risk_score:result.risk_score, exposure_score:result.exposure_score,
+    vulnerability_score:result.vulnerability_score, multiplier:result.multiplier,
+    reasons_json:result.reasons, exposure_snapshot:exposureInput, forecast:enriched, scenario:SCENARIO
+  });
+  if (rose) Store.insert('notification', {person_id:personId, assessment_id:rec.id, channel:'push',
+    sent_at:new Date().toISOString(), from_tier:prior.tier, to_tier:result.tier});
+  return rec;
+}
+function currentPerson(){ return Store.read('person')[0] || null; }
+function latestAssessment(id){ const a=Store.read('assessment').filter(x=>x.person_id===id); return a.length?a[a.length-1]:null; }
+
+/* =====================================================================
+   UI PLUMBING
+   ===================================================================== */
+let TAB='form';
+function go(t){
+  TAB=t;
+  ['form','risk','tests'].forEach(k=>{
+    document.getElementById('panel-'+k).classList.toggle('hidden', k!==t);
+    document.getElementById('tab-'+k).setAttribute('aria-selected', String(k===t));
+  });
+  if(t==='form') renderForm();
+  if(t==='risk') renderRisk();
+  if(t==='tests') renderTests();
+  window.scrollTo(0,0);
+}
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* =====================================================================
+   QUESTIONNAIRE — patient self-completing, first person
+   ===================================================================== */
+const BLANK = {name:'', age_band:'', lives_alone:null, mobility_limited:null, conditions:[], meds:[],
+               postcode:'', dwelling_type:'', floor:'', aspect:'', has_fan:null, has_aircon:null,
+               heating_affordable:null, carer:'', carer_phone:''};
+let DRAFT = Object.assign({}, BLANK, Store.meta('draft')||{});
+let STEP  = 0;
+let ERRORS = {};
+const saveDraft = () => Store.meta('draft', DRAFT);
+
+const EXAMPLE = {name:'Doris', age_band:'85+', lives_alone:true, mobility_limited:false,
+  conditions:['dementia'], meds:['furosemide','ramipril'], postcode:'MK40 1SU',
+  dwelling_type:'flat', floor:'top', aspect:'west', has_fan:true, has_aircon:false, heating_affordable:true,
+  carer:'Ellen, my daughter', carer_phone:'07700 900123'};
+
+const STEPS = [
+  {
+    title:'About you',
+    intro:'Six short steps. Your answers stay on this device — nothing is sent anywhere.',
+    fields:['name','age_band','lives_alone','mobility_limited'],
+    render:()=>`
+      ${q('name','What should we call you?','Your first name is enough.',
+          `<input type="text" id="f_name" class="${ERRORS.name?'err':''}" value="${esc(DRAFT.name)}"
+                  autocomplete="given-name" oninput="DRAFT.name=this.value;saveDraft()" placeholder="First name">`)}
+      ${q('age_band','Which age group are you in?','Age is the single strongest factor in how the body copes with heat and cold.',
+          radios('age_band',[['under-65','Under 65'],['65-74','65 to 74'],['75-84','75 to 84'],['85+','85 or over']]))}
+      ${q('lives_alone','Do you live on your own?','If you live alone, there is nobody to notice early warning signs.',
+          radios('lives_alone',[[true,'Yes, I live alone'],[false,'No, I live with someone']]))}
+      ${q('mobility_limited','Do you find it hard to move around your home?','For example, getting to another room, or to the kitchen for a drink.',
+          radios('mobility_limited',[[true,'Yes, I find it hard'],[false,'No, I get about fine']]))}
+    `
+  },
+  {
+    title:'Your health',
+    intro:'Tick anything that applies to you. Tick nothing if none of these apply.',
+    fields:[],
+    render:()=>`
+      ${q('conditions','Do you have any of these?','Each of these changes how your body handles extreme temperature.',
+          checks('conditions',[
+            ['dementia','Dementia or memory problems'],
+            ['cardiovascular','A heart or circulation condition'],
+            ['renal','A kidney condition'],
+            ['respiratory','A lung or breathing condition'],
+            ['diabetes','Diabetes']
+          ]))}
+      <div class="note">This is not a diagnosis, and this tool is not a medical device. It works out whether the weather where you live is likely to be a problem for you (SC-2).</div>
+    `
+  },
+  {
+    title:'Your medicines',
+    intro:'Some ordinary, well-prescribed medicines change how the body copes with heat. It helps to know which ones you take.',
+    fields:[],
+    render:()=>`
+      <div class="qlabel">Add each medicine you take</div>
+      <p class="hint">Type the name and press Add. There is no need to include doses. Leave this blank if you take none.</p>
+      <div class="row">
+        <input type="text" id="f_med" list="medlist" placeholder="e.g. furosemide" style="flex:1;min-width:190px"
+               autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addMed()}">
+        <button class="btn sec" type="button" onclick="addMed()">Add</button>
+      </div>
+      <datalist id="medlist">${Object.keys(MED_CLASS).map(k=>`<option value="${k}">`).join('')}</datalist>
+      <div class="chips" id="medChips">${medChips()}</div>
+      <div class="note">You will never be told here to change, pause or alter a prescribed medicine. Where a medicine matters, you are pointed to your pharmacist or GP (SC-1).</div>
+    `
+  },
+  {
+    title:'Where you live',
+    intro:'The building matters as much as the weather. A top-floor flat can be 5°C hotter than the street outside.',
+    fields:['postcode','dwelling_type','floor','aspect','has_fan','has_aircon','heating_affordable'],
+    render:()=>`
+      ${q('postcode','What is your postcode?','Used to find the forecast for your address. It is not sent anywhere.',
+          `<input type="text" id="f_pc" class="${ERRORS.postcode?'err':''}" value="${esc(DRAFT.postcode)}"
+                  autocomplete="postal-code" oninput="DRAFT.postcode=this.value;saveDraft();showGeo()" placeholder="e.g. MK40 1SU">
+           <div class="muted" id="geoOut" style="margin-top:7px"></div>`)}
+      ${q('dwelling_type','What kind of home do you live in?','',
+          radios('dwelling_type',[['flat','Flat'],['terraced','Terraced house'],['semi','Semi-detached'],['detached','Detached'],['bungalow','Bungalow'],['care_home','Care home']]))}
+      ${q('floor','Which floor do you sleep on?','Heat rises, so the top floor is the hottest place in any building.',
+          radios('floor',[['ground','Ground floor'],['middle','A middle floor'],['top','Top floor']]))}
+      ${q('aspect','Does the sun come into your bedroom?','A room that takes the sun can be several degrees hotter by bedtime than one that stays shaded.',
+          radios('aspect',[
+            ['south','Yes — for most of the day'],
+            ['west','Yes — in the afternoon and evening'],
+            ['east','Yes — in the morning only'],
+            ['north','No — it stays shaded'],
+            ['unknown','I am not sure']]))}
+      ${q('has_fan','Do you have an electric fan you can use?','',
+          radios('has_fan',[[true,'Yes'],[false,'No']]))}
+      ${q('has_aircon','Do you have air conditioning?','Asked separately from the fan, because a fan moves air across you while air conditioning actually cools the room. Only the second one changes how hot your home is.',
+          radios('has_aircon',[[true,'Yes'],[false,'No']]))}
+      ${q('heating_affordable','Can you afford to heat your home when you need to?','Asked because cold homes cause more deaths each year than hot ones. There is no wrong answer.',
+          radios('heating_affordable',[[true,'Yes'],[false,'Not really']]))}
+    `
+  },
+  {
+    title:'Who can help',
+    intro:'If your risk rises, this is the person you would be pointed to first.',
+    fields:[],
+    render:()=>`
+      ${q('carer','Is there someone who looks out for you?','Optional. A name and how you know them is enough.',
+          `<input type="text" id="f_carer" value="${esc(DRAFT.carer)}" oninput="DRAFT.carer=this.value;saveDraft()" placeholder="e.g. Ellen, my daughter">`)}
+      ${q('carer_phone','Their phone number','Optional. Kept on this device only.',
+          `<input type="tel" id="f_ph" value="${esc(DRAFT.carer_phone)}" oninput="DRAFT.carer_phone=this.value;saveDraft()" placeholder="e.g. 07700 900123">`)}
+    `
+  },
+  {
+    title:'Check your answers',
+    intro:'Change anything that is not right before you continue.',
+    fields:[],
+    render:()=>reviewList()
+  }
+];
+
+function q(key,label,hint,control){
+  return `<div class="qblock">
+    <div class="qlabel" id="lab_${key}">${esc(label)}</div>
+    ${hint?`<p class="hint">${esc(hint)}</p>`:''}
+    ${control}
+    ${ERRORS[key]?`<div class="errmsg" role="alert">${esc(ERRORS[key])}</div>`:''}
+  </div>`;
+}
+function radios(field,opts){
+  return '<div class="opts" role="radiogroup" aria-labelledby="lab_'+field+'">' + opts.map(([v,l])=>{
+    const sel = DRAFT[field]!==null && DRAFT[field]!==undefined && String(DRAFT[field])===String(v);
+    const val = typeof v==='boolean' ? v : "'"+v+"'";
+    return `<label class="opt ${sel?'sel':''}"><input type="radio" name="${field}" ${sel?'checked':''}
+      onchange="setField('${field}', ${val})"><span>${esc(l)}</span></label>`;
+  }).join('') + '</div>';
+}
+function checks(field,opts){
+  return '<div class="opts">' + opts.map(([v,l])=>{
+    const sel = DRAFT[field].includes(v);
+    return `<label class="opt wide ${sel?'sel':''}"><input type="checkbox" ${sel?'checked':''}
+      onchange="toggleField('${field}','${v}')"><span>${esc(l)}</span></label>`;
+  }).join('') + '</div>';
+}
+function setField(f,v){ DRAFT[f]=v; delete ERRORS[f]; saveDraft(); renderForm(); }
+function toggleField(f,v){ const a=DRAFT[f], i=a.indexOf(v); i<0?a.push(v):a.splice(i,1); saveDraft(); renderForm(); }
+
+function medChips(){
+  if(!DRAFT.meds.length) return '<span class="muted">No medicines added yet.</span>';
+  return DRAFT.meds.map((m,i)=>{
+    const c = classify(m);
+    const known = c!=='unclassified';
+    return `<span class="chip ${known?'':'unknown'}">
+      <span><strong>${esc(m)}</strong><br><span class="cls">${known ? esc(c)+' — '+esc(MED_MECHANISM[c]) : 'not recognised — it will not change your score'}</span></span>
+      <button type="button" onclick="rmMed(${i})" aria-label="Remove ${esc(m)}">&times;</button></span>`;
+  }).join('');
+}
+function addMed(){
+  const el=document.getElementById('f_med'); const v=el.value.trim();
+  if(!v) return;
+  if(!DRAFT.meds.some(m=>m.toLowerCase()===v.toLowerCase())) DRAFT.meds.push(v);
+  el.value=''; saveDraft(); document.getElementById('medChips').innerHTML=medChips(); el.focus();
+}
+function rmMed(i){ DRAFT.meds.splice(i,1); saveDraft(); document.getElementById('medChips').innerHTML=medChips(); }
+function showGeo(){
+  const out=document.getElementById('geoOut'); if(!out) return;
+  if(!validPostcode(DRAFT.postcode)){ out.innerHTML = DRAFT.postcode ? '<span class="muted">Keep typing…</span>' : ''; return; }
+  const g=resolvePostcode(DRAFT.postcode);
+  out.innerHTML = `Found: <strong>${esc(g.d)}</strong>, ${esc(g.r)} <span class="modelled">POSTCODES.IO STUBBED</span>`;
+}
+
+const LABELS = {
+  age_band:{'under-65':'Under 65','65-74':'65 to 74','75-84':'75 to 84','85+':'85 or over'},
+  dwelling_type:{flat:'Flat',terraced:'Terraced house',semi:'Semi-detached',detached:'Detached',bungalow:'Bungalow',care_home:'Care home'},
+  floor:{ground:'Ground floor',middle:'A middle floor',top:'Top floor'},
+  aspect:{south:'Sun for most of the day',west:'Afternoon and evening sun',east:'Morning sun only',
+          north:'Stays shaded',unknown:'Not sure'},
+  conditions:{dementia:'Dementia or memory problems',cardiovascular:'Heart or circulation condition',
+              renal:'Kidney condition',respiratory:'Lung or breathing condition',diabetes:'Diabetes'}
+};
+const yesNo = v => v===true?'Yes':v===false?'No':'Not answered';
+
+function reviewList(){
+  const rows = [
+    ['Name', DRAFT.name || 'Not answered', 0],
+    ['Age group', LABELS.age_band[DRAFT.age_band] || 'Not answered', 0],
+    ['Lives alone', yesNo(DRAFT.lives_alone), 0],
+    ['Hard to move around the home', yesNo(DRAFT.mobility_limited), 0],
+    ['Health conditions', DRAFT.conditions.length ? DRAFT.conditions.map(c=>LABELS.conditions[c]).join(', ') : 'None ticked', 1],
+    ['Medicines', DRAFT.meds.length ? DRAFT.meds.map(m=>`${m} <span class="muted">(${classify(m)})</span>`).join(', ') : 'None added', 2],
+    ['Postcode', DRAFT.postcode ? DRAFT.postcode.toUpperCase()+' — '+resolvePostcode(DRAFT.postcode).d : 'Not answered', 3],
+    ['Home', [LABELS.dwelling_type[DRAFT.dwelling_type], LABELS.floor[DRAFT.floor]].filter(Boolean).join(', ') || 'Not answered', 3],
+    ['Sun in the bedroom', LABELS.aspect[DRAFT.aspect] || 'Not answered', 3],
+    ['Electric fan', yesNo(DRAFT.has_fan), 3],
+    ['Air conditioning', yesNo(DRAFT.has_aircon), 3],
+    ['Can afford to heat the home', yesNo(DRAFT.heating_affordable), 3],
+    ['Someone who looks out for you', DRAFT.carer ? DRAFT.carer + (DRAFT.carer_phone?' · '+DRAFT.carer_phone:'') : 'Not given', 4]
+  ];
+  const off = dwellingOffset({dwelling_type:DRAFT.dwelling_type, floor:DRAFT.floor, aspect:DRAFT.aspect, has_aircon:DRAFT.has_aircon});
+  return `<dl class="review">${rows.map(([k,v,s])=>`
+      <dt>${esc(k)} <button class="link" type="button" onclick="jumpTo(${s})">Change</button></dt>
+      <dd>${v}</dd>`).join('')}</dl>
+    <div class="note">From your building alone, rooms are modelled at <strong>${off>=0?'+':''}${off}°C</strong> against the outdoor temperature <span class="modelled">MODELLED</span>. This estimate is the largest source of error in the whole system, at roughly ±3–5°C (SC-5).
+    ${DRAFT.has_fan ? ' Your fan is not part of that figure — a fan cools you rather than the room, so it changes the advice you get, not the temperature.' : ''}</div>`;
+}
+function jumpTo(s){ STEP=s; ERRORS={}; renderForm(); }
+
+function validate(){
+  ERRORS = {};
+  const f = STEPS[STEP].fields;
+  if (f.includes('name') && !DRAFT.name.trim()) ERRORS.name = 'Please tell us what to call you.';
+  if (f.includes('age_band') && !DRAFT.age_band) ERRORS.age_band = 'Please choose an age group — it is the strongest single factor in the score.';
+  if (f.includes('lives_alone') && DRAFT.lives_alone===null) ERRORS.lives_alone = 'Please choose one.';
+  if (f.includes('mobility_limited') && DRAFT.mobility_limited===null) ERRORS.mobility_limited = 'Please choose one.';
+  if (f.includes('postcode') && !validPostcode(DRAFT.postcode)) ERRORS.postcode = 'Please enter a full UK postcode, for example MK40 1SU.';
+  if (f.includes('dwelling_type') && !DRAFT.dwelling_type) ERRORS.dwelling_type = 'Please choose one.';
+  if (f.includes('floor') && !DRAFT.floor) ERRORS.floor = 'Please choose one.';
+  if (f.includes('aspect') && !DRAFT.aspect) ERRORS.aspect = 'Please say whether the sun comes into your bedroom, or that you are not sure.';
+  if (f.includes('has_fan') && DRAFT.has_fan===null) ERRORS.has_fan = 'Please say whether you have a fan.';
+  if (f.includes('has_aircon') && DRAFT.has_aircon===null) ERRORS.has_aircon = 'Please say whether you have air conditioning.';
+  if (f.includes('heating_affordable') && DRAFT.heating_affordable===null) ERRORS.heating_affordable = 'Please choose one.';
+  return Object.keys(ERRORS).length===0;
+}
+
+function renderForm(){
+  const s = STEPS[STEP], last = STEP===STEPS.length-1;
+  document.getElementById('panel-form').innerHTML = `
+    <div class="card">
+      <div class="steps" role="progressbar" aria-valuenow="${STEP+1}" aria-valuemin="1" aria-valuemax="${STEPS.length}">
+        ${STEPS.map((_,i)=>`<i class="${i<=STEP?'on':''}"></i>`).join('')}
+      </div>
+      <div class="muted">Step ${STEP+1} of ${STEPS.length}</div>
+      <h2>${esc(s.title)}</h2>
+      <p class="hint">${esc(s.intro)}</p>
+      ${Object.keys(ERRORS).length?`<div class="note" style="border-left-color:var(--sev);background:#fbe3e6" role="alert">
+        <strong>There is something to check</strong><ul style="margin:6px 0 0;padding-left:20px">
+        ${Object.values(ERRORS).map(e=>`<li>${esc(e)}</li>`).join('')}</ul></div>`:''}
+      ${s.render()}
+      <div class="row" style="margin-top:26px">
+        ${STEP>0?'<button class="btn sec" type="button" onclick="stepBack()">Back</button>':''}
+        <button class="btn" type="button" onclick="stepNext()">${last?'See my risk':'Continue'}</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="spread">
+        <span class="muted">Trying this out rather than filling it in for yourself?</span>
+        <div class="row">
+          <button class="btn ghost" type="button" onclick="loadExample()">Use the example</button>
+          <button class="btn ghost" type="button" onclick="startAgain()">Clear answers</button>
+        </div>
+      </div>
+    </div>`;
+  if (STEP===3) showGeo();
+  const firstErr = Object.keys(ERRORS)[0];
+  if (firstErr) { const el=document.getElementById('lab_'+firstErr); if(el) el.scrollIntoView({block:'center'}); }
+}
+function stepBack(){ if(STEP>0){ STEP--; ERRORS={}; renderForm(); window.scrollTo(0,0);} }
+function stepNext(){
+  if(!validate()){ renderForm(); return; }
+  if(STEP < STEPS.length-1){ STEP++; renderForm(); window.scrollTo(0,0); return; }
+  const person = savePerson(DRAFT);
+  assessPerson(person.id);
+  go('risk');
+}
+function loadExample(){ DRAFT = JSON.parse(JSON.stringify(EXAMPLE)); STEP=0; ERRORS={}; saveDraft(); renderForm(); }
+function startAgain(){
+  if(!confirm('Clear all your answers and start the questionnaire again?')) return;
+  Store.reset(); DRAFT = JSON.parse(JSON.stringify(BLANK)); STEP=0; ERRORS={}; saveDraft(); renderForm();
+}
+function editAnswers(){ DRAFT = Object.assign({}, BLANK, Store.meta('answers')||{}); STEP=STEPS.length-1; ERRORS={}; saveDraft(); go('form'); }
+
+/* =====================================================================
+   MY RISK
+   ===================================================================== */
+function setScenario(v){
+  SCENARIO=v; Store.meta('scenario', v);
+  const p=currentPerson(); if(p) assessPerson(p.id);
+  renderRisk();
+}
+function renderRisk(){
+  const el = document.getElementById('panel-risk');
+  const person = currentPerson();
+  if(!person){
+    el.innerHTML = `<div class="card empty">
+      <h2>Nothing to show yet</h2>
+      <p class="muted">Fill in the questionnaire and your personal risk will appear here.</p>
+      <button class="btn" type="button" onclick="go('form')" style="margin-top:10px">Start the questionnaire</button>
+    </div>`;
+    return;
+  }
+  let a = latestAssessment(person.id);
+  if(!a || a.scenario!==SCENARIO) a = assessPerson(person.id);
+
+  const place = Store.read('place').find(p=>p.person_id===person.id);
+  const meds  = Store.read('med').filter(m=>m.person_id===person.id);
+  const rank  = TIER_RANK[a.tier];
+  const e     = a.exposure_snapshot;
+  const s     = SCENARIOS[SCENARIO];
+  const noAlert = s.alert==='None in force';
+
+  const meaning = {Low:'No action needed beyond your usual routine.',
+    Elevated:'Check in on this today.', High:'Act before this evening.',
+    Severe:'Act now. Do not spend tonight alone if that can be avoided.'}[a.tier];
+  const shape = {Low:'●',Elevated:'▲',High:'◆',Severe:'✦'}[a.tier];
+
+  const has = {fan:!!place.has_fan, no_fan:!place.has_fan && !place.has_aircon,
+               aircon:!!place.has_aircon, no_aircon:!place.has_aircon};
+  const seen=new Set(), checklist=[];
+  a.reasons_json.forEach(r => (ACTIONS[r.code]||[]).forEach(act=>{
+    if(TIER_RANK[act.min] > rank) return;
+    if(act.needs && !has[act.needs]) return;
+    if(act.when && !act.when(e)) return;
+    if(seen.has(act.t)) return;
+    seen.add(act.t); checklist.push(act);
+  }));
+  const local = RESOURCES.filter(r=>r.area===place.admin_district);
+
+  el.innerHTML = `
+  <div class="card">
+    <div class="spread">
+      <div>
+        <h2 style="margin:0">${esc(person.name)}</h2>
+        <div class="muted">${esc(place.postcode)} · ${esc(place.admin_district)} · assessed ${new Date(a.computed_at).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})}</div>
+      </div>
+      <button class="btn sec" type="button" onclick="editAnswers()">Change my answers</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="spread">
+      <div><strong>Demonstration weather</strong><div class="muted">Live forecast calls are stubbed. Switch scenario to see the score respond.</div></div>
+      <select onchange="setScenario(this.value)" style="max-width:270px" aria-label="Weather scenario">
+        ${Object.entries(SCENARIOS).map(([k,v])=>`<option value="${k}" ${k===SCENARIO?'selected':''}>${esc(v.label)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="note ${noAlert?'':'warn'}">
+      <strong>Rung 0 — regional alert status:</strong> ${esc(s.alert)}.
+      ${noAlert ? 'No national warning is in force. Your personal risk below is worked out regardless — this is the case the system exists for.'
+                : 'A national alert is in force, but it is issued for a region, not for a person.'}
+    </div>
+  </div>
+
+  <div class="card tier t-${a.tier}">
+    <span class="badge">${shape} Rung 2 · your personal risk</span>
+    <h2>${a.tier}</h2>
+    <p style="margin:2px 0 10px;color:var(--ink)"><strong>${esc(meaning)}</strong></p>
+    <p style="color:inherit;opacity:.8;font-size:14px;margin:0">
+      exposure ${a.exposure_score} × ${a.multiplier} (your vulnerability score ${a.vulnerability_score}) = <strong>${a.risk_score}</strong>
+    </p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Rung 1 — the next seven days at ${esc(place.postcode)}</h3>
+    <div class="timeline">
+      ${a.forecast.map((d,i)=>`<div class="day" style="${i===0?'border-color:var(--accent);border-width:2px':''}">
+        <div class="d">${i===0?'TODAY':esc(d.label.split(',')[0].toUpperCase())}</div>
+        <div class="mx">${d.peak_air}°</div>
+        <div class="mn">night ${d.overnight_min}°</div>
+        <div class="mn" style="color:#5b3fa0">bed ${d.indoor_night_est}°</div>
+      </div>`).join('')}
+    </div>
+    <table style="margin-top:12px">
+      <tr><th>Outdoors today</th><td>peak ${e.peak_air}°C, feels like ${e.peak_apparent}°C, overnight low ${e.overnight_min}°C, day ${e.spell_day} of the spell</td></tr>
+      <tr><th>Indoors today <span class="modelled">MODELLED</span></th><td>daytime ${e.indoor_day}°C, overnight ${e.indoor_night}°C
+        <div class="muted">Estimated from your building: ${place.dwelling_offset>=0?'+':''}${place.dwelling_offset}°C for a ${esc(place.floor)}-floor ${esc((place.dwelling_type||'').replace('_',' '))} with ${esc(SUN_LABEL[place.aspect]||'unknown sun exposure')} in the bedroom${place.has_aircon?', with air conditioning':''}. Not measured — accurate to roughly ±3–5°C (SC-5).${place.has_fan?' Your fan is deliberately excluded: it cools you, not the room.':''}</div></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Why this rating</h3>
+    ${a.reasons_json.length ? a.reasons_json.map(r=>`
+      <div class="reason k-${r.kind}">
+        <b>${esc(r.title)} ${r.weight?`<span class="muted" style="font-weight:400">+${r.weight}</span>`:''}</b>
+        <span>${esc(r.why)}</span>
+      </div>`).join('')
+      : '<p>Nothing in the current forecast crosses a threshold for you.</p>'}
+    ${a.exposure_score===0 && a.vulnerability_score>0 ? `<div class="note">Your vulnerability score is ${a.vulnerability_score}, but the weather is not currently a problem, so your risk is Low. The score multiplies exposure rather than adding to it — which is what stops a frail person from sitting permanently on alert (§8.4).</div>`:''}
+  </div>
+
+  ${rank>=1 && meds.length ? `<div class="card">
+    <h3 style="margin-top:0">Rung 3 — your medicines</h3>
+    <table>${meds.map(m=>`<tr><td><strong>${esc(m.drug_name)}</strong></td><td>${esc(m.drug_class)}</td>
+      <td class="muted">${esc(MED_MECHANISM[m.drug_class]||'no known temperature interaction')}</td></tr>`).join('')}</table>
+    <div class="note warn">Keep taking everything exactly as prescribed. Nothing here is a reason to change a medicine. Your community pharmacist can review the whole list without an appointment (SC-1).</div>
+  </div>`:''}
+
+  ${rank>=1 ? `<div class="card">
+    <h3 style="margin-top:0">Rung 4 — what you can do at home</h3>
+    <p class="muted">Every item comes from one of the reasons above. Tick them off as you go.</p>
+    <ul class="check">${checklist.map((c,i)=>`<li id="ck${i}">
+      <input type="checkbox" id="cb${i}" onchange="document.getElementById('ck${i}').classList.toggle('done',this.checked)">
+      <label for="cb${i}">${esc(c.t)}${c.esc?` <span class="muted">— ${esc(c.esc)}</span>`:''}</label></li>`).join('')}</ul>
+  </div>` : `<div class="card">
+    <h3 style="margin-top:0">What to do</h3>
+    <ul class="check"><li><input type="checkbox" id="cbr"><label for="cbr">Nothing beyond your usual routine. Check back if the forecast changes.</label></li></ul>
+  </div>`}
+
+  ${rank>=2 ? `<div class="card">
+    <h3 style="margin-top:0">Rung 5 — help near ${esc(place.admin_district)}</h3>
+    <table>${local.length ? local.map(r=>`<tr><td><strong>${esc(r.name)}</strong><div class="muted">${r.type==='pharmacy'?'Pharmacy':'Cool or warm space'}</div></td><td class="muted">${esc(r.hours)}</td></tr>`).join('')
+      : '<tr><td class="muted">No seeded resources for this district in the demonstrator.</td></tr>'}</table>
+    <p class="muted">Seeded data (FR-23 stub). Real cool-space data lands in v0.2.</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Rung 6 — who has a duty to help</h3>
+    <table>
+      <tr><td><strong>${esc(place.admin_district)} adult social care</strong></td><td class="muted">Statutory duty where someone is at risk in their own home</td></tr>
+      <tr><td><strong>Your GP practice</strong></td><td class="muted">Medicines review, and same-day advice if you become unwell</td></tr>
+      <tr><td><strong>NHS 111</strong></td><td class="muted">When you need advice and the practice is closed</td></tr>
+      ${person.carer?`<tr><td><strong>${esc(person.carer)}</strong>${person.carer_phone?`<div class="muted">${esc(person.carer_phone)}</div>`:''}</td><td class="muted">The person you named</td></tr>`:''}
+    </table>
+  </div>`:''}
+
+  ${rank>=3 ? `<div class="card tier t-Severe">
+    <span class="badge">✦ Rung 7 · call 999 if any of these appear</span>
+    <ul style="color:var(--ink);margin:10px 0 0;padding-left:20px">
+      <li>Cannot be woken, or is confused in a way that is new</li>
+      <li>Has stopped passing urine</li>
+      <li>Skin is hot and dry, with no sweating</li>
+      <li>Fitting, or collapse</li>
+    </ul>
+    <p style="color:var(--ink);font-size:14px;margin-bottom:0">These are the only circumstances in which this tool points to 999 (SC-3).</p>
+  </div>`:''}
+
+  <div class="card">
+    <h3 style="margin-top:0">How far this has escalated</h3>
+    ${LADDER.map(l=>`<div class="rung ${TIER_RANK[l.min]<=rank?'':'locked'}">
+      <div class="n">RUNG ${l.n}${TIER_RANK[l.min]<=rank?'':' · not reached at this tier'}</div>
+      <div><strong>${esc(l.q)}</strong></div><div class="muted">${esc(l.r)}</div></div>`).join('')}
+  </div>
+
+  <div class="note">This is not medical advice and it does not diagnose anything (SC-2). Medication rules have not yet been reviewed by a registered pharmacist, so this remains a demonstrator (SC-4).</div>`;
+}
+
+/* =====================================================================
+   VERIFICATION (§13)
+   ===================================================================== */
+function renderTests(){
+  const T=[]; const add=(name,pass,detail)=>T.push({name,pass,detail});
+
+  const off = dwellingOffset({dwelling_type:'flat', floor:'top', aspect:'west', has_aircon:false});
+  const ind = estimateIndoor({overnight_min:17, peak_air:29}, off, true);
+  const doris = scoreRisk(
+    {overnight_min:17, peak_air:29, peak_apparent:29, spell_day:3, indoor_night:ind.indoor_night_est, indoor_day:ind.indoor_day_est},
+    {age_band:'85+', lives_alone:true, mobility_limited:false, conditions:['dementia'], classes:['diuretic','ACE / ARB']});
+  add('§8.6 dwelling offset = 2.8', off===2.8, `computed ${off}`);
+  add('§8.6 indoor_night = 24.6°C', ind.indoor_night_est===24.6, `computed ${ind.indoor_night_est}`);
+  add('§8.6 exposure = 3', doris.exposure_score===3, `computed ${doris.exposure_score} (${doris.reasons.filter(r=>r.kind==='exposure').map(r=>r.code).join(', ')})`);
+  add('§8.6 vulnerability = 10', doris.vulnerability_score===10, `computed ${doris.vulnerability_score}`);
+  add('§8.6 risk = 6.0 → HIGH', doris.risk_score===6 && doris.tier==='High', `computed ${doris.risk_score} → ${doris.tier}`);
+
+  const frail = scoreRisk({overnight_min:11,peak_air:19,peak_apparent:19,spell_day:0,indoor_night:19,indoor_day:21},
+    {age_band:'85+',lives_alone:true,mobility_limited:true,conditions:['dementia','cardiovascular','renal'],classes:['lithium','diuretic','antipsychotic']});
+  add(`FR-18 zero exposure → Low despite vulnerability ${frail.vulnerability_score}`, frail.exposure_score===0 && frail.tier==='Low',
+      `exposure ${frail.exposure_score}, tier ${frail.tier}`);
+
+  const cond = {overnight_min:18,peak_air:27,peak_apparent:28,spell_day:3,indoor_night:24.5,indoor_day:26.0};
+  const tiers = [
+    scoreRisk(cond,{age_band:'85+',lives_alone:true,mobility_limited:true,conditions:['dementia','renal'],classes:['diuretic','lithium']}).tier,
+    scoreRisk(cond,{age_band:'75-84',lives_alone:false,mobility_limited:false,conditions:[],classes:['beta blocker']}).tier,
+    scoreRisk(cond,{age_band:'under-65',lives_alone:false,mobility_limited:false,conditions:[],classes:[]}).tier];
+  add('Discrimination — ≥2 distinct tiers under identical conditions', new Set(tiers).size>=2, tiers.join(' / '));
+
+  let cries=0;
+  for(let i=0;i<92;i++){
+    const dm=18+(i%9), nm=9+(i%6);
+    const o=dwellingOffset({dwelling_type:'semi',floor:'ground',aspect:'north',has_aircon:false});
+    const ii=estimateIndoor({overnight_min:nm,peak_air:dm},o,true);
+    const r=scoreRisk({overnight_min:nm,peak_air:dm,peak_apparent:dm,spell_day:i%3,indoor_night:ii.indoor_night_est,indoor_day:ii.indoor_day_est},
+      {age_band:'under-65',lives_alone:false,mobility_limited:false,conditions:[],classes:[]});
+    if(r.tier!=='Low') cries++;
+  }
+  add('No-cry-wolf — low-vulnerability persona Low on all 92 benign days', cries===0, `${cries} non-Low days`);
+
+  const codes=[...EXPOSURE_RULES.map(r=>r.code), ...VULN_RULES.map(r=>r.code), 'MED_STORAGE_HEAT'];
+  const orphans=codes.filter(c=>!ACTIONS[c]||!ACTIONS[c].length);
+  add('AC-3 every reason code maps to an action', orphans.length===0, orphans.length?'orphans: '+orphans.join(', '):`${codes.length} codes, all mapped`);
+
+  const banned=/\b(stop|stopping|reduce|reducing|skip|skipping|halt|halve|pause|double)\b/i;
+  const medCodes=codes.filter(c=>c.startsWith('MED_')); const bad=[];
+  medCodes.forEach(c=>ACTIONS[c].forEach(a=>{ if(banned.test(a.t)) bad.push(c); }));
+  add('SC-1 no medication action advises altering a prescription', bad.length===0, bad.length?bad.join(', '):`${medCodes.length} medication codes scanned, zero matches`);
+
+  const beforeRows = Store.read('assessment').length;
+  const r1=JSON.stringify(scoreRisk(cond,{age_band:'85+',lives_alone:true,mobility_limited:false,conditions:['dementia'],classes:['diuretic']}));
+  const r2=JSON.stringify(scoreRisk(cond,{age_band:'85+',lives_alone:true,mobility_limited:false,conditions:['dementia'],classes:['diuretic']}));
+  add('AC-1 L3 is pure — deterministic and writes nothing', r1===r2 && beforeRows===Store.read('assessment').length, 'identical output, assessment table unchanged');
+
+  let overlap=false;
+  for(let t=20;t<=30;t+=0.1){
+    const hits=EXPOSURE_RULES.filter(r=>r.code.startsWith('BEDROOM')&&r.test({overnight_min:0,peak_air:0,peak_apparent:0,spell_day:0,indoor_night:t,indoor_day:20}));
+    if(hits.length>1) overlap=true;
+  }
+  add('§8.1 bedroom codes mutually exclusive by construction', !overlap, overlap?'overlap found':'no overlap across 20–30°C');
+
+  const validPc = ['MK40 1SU','nw1 4ry','B152TT'].every(validPostcode) && !['','MK4','hello'].some(validPostcode);
+  add('Questionnaire rejects malformed postcodes', validPc, 'valid accepted, malformed refused');
+
+  const base   = {dwelling_type:'flat', floor:'top', aspect:'west'};
+  const oFan   = dwellingOffset({...base, has_fan:true,  has_aircon:false});
+  const oNone  = dwellingOffset({...base, has_fan:false, has_aircon:false});
+  const oAir   = dwellingOffset({...base, has_fan:false, has_aircon:true});
+  add('A fan does not change the modelled room temperature; air conditioning does',
+      oFan===oNone && oAir===Math.round((oNone-1.5)*10)/10,
+      `no equipment ${oNone}°C · fan ${oFan}°C · air conditioning ${oAir}°C`);
+
+  const sunOrder = ['north','east','west','south'].map(a=>dwellingOffset({dwelling_type:'flat',floor:'top',aspect:a,has_aircon:false}));
+  add('More sun on the bedroom raises the modelled temperature monotonically',
+      sunOrder.every((v,i)=>i===0||v>sunOrder[i-1]),
+      `shaded ${sunOrder[0]} → morning ${sunOrder[1]} → afternoon ${sunOrder[2]} → all day ${sunOrder[3]}`);
+
+  const passed=T.filter(t=>t.pass).length;
+  document.getElementById('panel-tests').innerHTML = `
+  <div class="card">
+    <h2 style="margin-top:0">Verification (§13)</h2>
+    <p class="hint">Run live in the browser against the same scoring core the questionnaire uses (AC-5).</p>
+    <p style="font-size:30px;font-weight:700;margin:6px 0" class="${passed===T.length?'pass':'fail'}">${passed}/${T.length}</p>
+    <table><tbody>
+      ${T.map(t=>`<tr><td style="width:26px" class="${t.pass?'pass':'fail'}">${t.pass?'✓':'✗'}</td>
+        <td><strong>${esc(t.name)}</strong><div class="muted">${esc(t.detail)}</div></td></tr>`).join('')}
+    </tbody></table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Deviations from the specification, and why</h3>
+    <table><tbody>
+      <tr><td><strong>Cold codes gated on outdoor peak below 18°C</strong><div class="muted">§8.1 as written has no gate. The FR-11 indoor formula returns a value <em>below</em> the outdoor maximum in mild weather, so <code>INDOOR_BELOW_18</code> fires on an ordinary 21°C July day. Unguarded, 47 of 92 benign days came back non-Low — a direct failure of the spec's own no-cry-wolf criterion in §13.</div></td></tr>
+      <tr><td><strong>Heating floor added to FR-11</strong><div class="muted">FR-11 has no heating term, so it models an unheated building. In a cold snap it returned living rooms at 3°C for everyone, and every profile scored <code>INDOOR_BELOW_12</code> regardless of circumstance. A floor of 19.5°C where heating is affordable and 14.0°C where it is not makes fuel poverty, rather than latitude, the variable that separates people.</div></td></tr>
+      <tr><td><strong>Vulnerability codes returned in <code>reasons_json</code></strong><div class="muted">§8.1 names only exposure codes as reason codes. FR-17 asks for reason codes with explanations and AC-3 requires every code to map to an action, so vulnerability codes are included and each has been given actions — otherwise "why does this affect <em>me</em>" is unanswerable.</div></td></tr>
+      <tr><td><strong><code>MED_STORAGE_HEAT</code> added</strong><div class="muted">FR-15 requires a heat-sensitive storage flag but §8.1 and §8.2 define no code for it. Added at weight 0, since it is a property of the medicine cupboard rather than of the person.</div></td></tr>
+    </tbody></table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Not covered by these checks</h3>
+    <p class="muted">Historical replay via the Open-Meteo Archive API (EI-2), offline fallback (NFR-04) beyond the local store, pharmacist review of the medication rules (SC-4), and the DPIA (SC-6). The indoor temperature model remains the dominant error term at ±3–5°C, and no weighting in §8.2 has been empirically fitted.</p>
+  </div>`;
+}
+
+/* ---------- BOOT ---------- */
+if (currentPerson()) go('risk'); else renderForm();
 </script>
 </body>
 </html>

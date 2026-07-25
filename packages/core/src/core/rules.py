@@ -54,6 +54,10 @@ VULNERABILITY_RULES: tuple[VulnerabilityRule, ...] = (
     VulnerabilityRule(ReasonCode.MED_SSRI, has_med_class(MedClass.SSRI), 1),
 )
 
+HEATING_DAY_MAX = 18.0
+"""Above this outdoor peak, a cold-code trigger is a modelling artefact rather than
+a cold home. See COLD_GUARD below."""
+
 # SUSTAINED_SPELL's "peak >= 24" is read as peak_apparent. That is the reading which
 # reproduces the section 8.6 worked example, where 29 degrees apparent triggers it.
 EXPOSURE_RULES: tuple[ExposureRule, ...] = (
@@ -66,7 +70,34 @@ EXPOSURE_RULES: tuple[ExposureRule, ...] = (
         lambda e: e.spell_day >= 3 and e.peak_apparent >= 24,
         2,
     ),
-    ExposureRule(ReasonCode.INDOOR_BELOW_18, lambda e: 16 <= e.indoor_day_est < 18, 2),
-    ExposureRule(ReasonCode.INDOOR_BELOW_16, lambda e: 12 <= e.indoor_day_est < 16, 3),
-    ExposureRule(ReasonCode.INDOOR_BELOW_12, lambda e: e.indoor_day_est < 12, 4),
+    # COLD_GUARD — a documented deviation from spec 8.1.
+    #
+    # The FR-11 indoor formula returns a value well below the outdoor maximum in
+    # mild weather: a night of 12 and a day of 19 gives a modelled indoor day of
+    # 16.55 in an ordinary bungalow. Read literally, section 8.1 therefore fires
+    # INDOOR_BELOW_18 on a pleasant British summer afternoon, which fails the
+    # specification's own no-cry-wolf criterion in section 13.
+    #
+    # Cold codes are therefore evaluated only when outdoor peak air is below 18 —
+    # a day on which heating is plausible at all. The alternative fixes are worse:
+    # changing the FR-11 coefficients would break the section 8.6 worked example,
+    # and lowering the cold thresholds would under-warn in genuine cold.
+    #
+    # Found by the JS prototype in web/companion, which had reached this
+    # conclusion independently. See docs/deviations.md.
+    ExposureRule(
+        ReasonCode.INDOOR_BELOW_18,
+        lambda e: e.peak_air < HEATING_DAY_MAX and 16 <= e.indoor_day_est < 18,
+        2,
+    ),
+    ExposureRule(
+        ReasonCode.INDOOR_BELOW_16,
+        lambda e: e.peak_air < HEATING_DAY_MAX and 12 <= e.indoor_day_est < 16,
+        3,
+    ),
+    ExposureRule(
+        ReasonCode.INDOOR_BELOW_12,
+        lambda e: e.peak_air < HEATING_DAY_MAX and e.indoor_day_est < 12,
+        4,
+    ),
 )

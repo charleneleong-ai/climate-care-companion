@@ -6,7 +6,9 @@ three tracks work in parallel without coordinating.
 """
 
 from contracts.enums import (
+    AdviceSource,
     AgeBand,
+    Audience,
     AlertLevel,
     Aspect,
     Condition,
@@ -19,19 +21,24 @@ from contracts.enums import (
     Tier,
 )
 from contracts.models import (
+    AdviceItem,
     Assessment,
     DateRange,
     ExposureFeatures,
     Med,
     Person,
     Place,
+    PreventionPlan,
     Reason,
     SelfReport,
     VulnerabilityProfile,
 )
 
 __all__ = [
+    "AdviceItem",
+    "AdviceSource",
     "AgeBand",
+    "Audience",
     "AlertLevel",
     "Aspect",
     "Assessment",
@@ -45,6 +52,7 @@ __all__ = [
     "OrgType",
     "Person",
     "Place",
+    "PreventionPlan",
     "Reason",
     "ReasonCode",
     "RedFlag",

@@ -1,11 +1,13 @@
 """Every stub must fail loudly and name its owning track.
 
+ChecklistBuilder is gone from this list: it became PreventionPlanBuilder and is
+implemented, so its coverage lives in tests/actions.
+
 These stay red until claimed. A contributor picking up a track turns exactly the
 tests listed against it in CONTRIBUTING.md.
 """
 
 import pytest
-from actions.checklist import ChecklistBuilder
 from actions.notify import NotificationPolicy
 from contracts import OrgType
 from org.models import Cohort, CohortMember, Org
@@ -16,7 +18,6 @@ from predictors.heatwave import EnsembleHeatwave
 from predictors.indoor import LearnedIndoor
 
 STUBS = [
-    (ChecklistBuilder().build, "Track A"),
     (NotificationPolicy().should_notify, "Track A"),
     (CouncilView().render, "Track B"),
     (HospitalView().render, "Track B"),
