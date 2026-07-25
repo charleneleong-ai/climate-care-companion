@@ -1,4 +1,4 @@
-# Climatise — Climate Companion
+# Climatise — Climate Care Companion
 
 Determines whether current or forecast weather constitutes a health risk **to a
 specific individual**, and tells their caregiver what to do about it.
