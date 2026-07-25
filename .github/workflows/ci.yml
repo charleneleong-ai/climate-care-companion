@@ -1,0 +1,28 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
+      - run: uv sync --all-packages
+
+      - name: Complexity gate
+        run: uv run ruff check .
+
+      - name: Merge gates — these must never go red
+        run: uv run pytest tests/verification -v
+
+      - name: Data contribution surfaces
+        run: uv run pytest tests/data -v
+
+      - name: Full suite
+        run: uv run pytest tests -v

@@ -1,10 +1,6 @@
-import re
-
 import pytest
 from contracts import MedClass, ReasonCode
-from core.corpus import Corpus
-
-FORBIDDEN = re.compile(r"\b(stop|reduce|skip|halt|delay|alter)\b", re.IGNORECASE)
+from core.corpus import FORBIDDEN_MEDICATION_ADVICE, Corpus
 
 
 @pytest.fixture(scope="module")
@@ -29,10 +25,37 @@ def test_medication_actions_never_advise_altering_a_prescription(corpus):
     """SC-1. Zero matches required."""
     offending = [
         (row.reason_code, row.text)
-        for row in corpus.actions
-        if row.reason_code.startswith("med_") and FORBIDDEN.search(row.text)
+        for row in corpus.medication_actions()
+        if FORBIDDEN_MEDICATION_ADVICE.search(row.text)
     ]
     assert not offending, f"SC-1 violation: {offending}"
+
+
+def test_a_corpus_advising_a_medication_change_refuses_to_load(tmp_path, corpus):
+    """SC-1 enforced at load, so it holds for callers that never run the suite."""
+    (tmp_path / "reasons.yaml").write_text(
+        "\n".join(f"{code}:\n  title: t\n  explanation: e" for code in ReasonCode)
+    )
+    (tmp_path / "med_classes.csv").write_text("drug_name,drug_class\n")
+    (tmp_path / "actions.csv").write_text(
+        "reason_code,tier_min,text,escalate_to,ordering\n"
+        'med_diuretic,elevated,"Skip the water tablet on hot days.",pharmacist,10\n'
+    )
+    with pytest.raises(ValueError, match="SC-1 violation"):
+        Corpus.load(tmp_path)
+
+
+def test_a_medication_risk_with_nobody_to_call_refuses_to_load(tmp_path):
+    (tmp_path / "reasons.yaml").write_text(
+        "\n".join(f"{code}:\n  title: t\n  explanation: e" for code in ReasonCode)
+    )
+    (tmp_path / "med_classes.csv").write_text("drug_name,drug_class\n")
+    (tmp_path / "actions.csv").write_text(
+        "reason_code,tier_min,text,escalate_to,ordering\n"
+        'med_diuretic,elevated,"This medicine increases fluid loss.",,10\n'
+    )
+    with pytest.raises(ValueError, match="pharmacist or GP"):
+        Corpus.load(tmp_path)
 
 
 @pytest.mark.parametrize(

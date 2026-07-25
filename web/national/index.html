@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Climatise — national view, summer 2025</title>
+<style>
+:root{
+  --bg:#12181E;
+  --panel:#1A222B;
+  --panel-2:#212C36;
+  --line:#2C3944;
+  --line-soft:#232E38;
+  --ink:#E4EAEF;
+  --ink-2:#93A2B0;
+  --ink-3:#61727F;
+  --none:#2B3A3C;
+  --none-ink:#5E7B78;
+  --yellow:#E8C33B;
+  --amber:#E2882B;
+  --red:#CF4436;
+  --signal:#48C7C2;
+  --sig-dim:#1E4E4D;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px 60px}
+
+/* ---------- masthead ---------- */
+header{
+  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  padding:26px 0 18px;border-bottom:1px solid var(--line);
+}
+.mark{
+  font-family:var(--mono);font-size:19px;letter-spacing:.14em;
+  text-transform:uppercase;font-weight:500;
+}
+.mark span{color:var(--signal)}
+.masthead-sub{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.masthead-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+/* ---------- alert-gap rule ---------- */
+#gapRule{
+  height:3px;background:var(--red);width:100%;
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .45s cubic-bezier(.2,.7,.3,1);
+}
+#gapRule.on{transform:scaleX(1)}
+
+/* ---------- layout ---------- */
+.console{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:28px;padding-top:24px}
+@media(max-width:900px){.console{grid-template-columns:1fr}}
+
+/* ---------- map ---------- */
+.mapwrap{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.mapwrap.gap{background:#1A1416;border-color:#3A2226}
+svg.uk{display:block;width:100%;height:auto;max-height:620px}
+.region{
+  stroke:var(--bg);stroke-width:1.6;cursor:pointer;
+  transition:fill .35s ease,opacity .3s ease;
+}
+.region:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.region.outside{fill:#1D242B;cursor:default;stroke-dasharray:2 3;stroke:#2E3A44}
+.rlabel{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+  fill:#0E1418;pointer-events:none;font-weight:600;
+}
+.rlabel.pale{fill:#4A5A66}
+.hotspot{cursor:pointer}
+.hs-core{stroke:#12181E;stroke-width:1.4}
+.hs-ring{fill:none;stroke-width:1.2;opacity:.85}
+@media(prefers-reduced-motion:no-preference){
+  .hs-ring{animation:ping 2.4s cubic-bezier(.2,.6,.4,1) infinite}
+}
+@keyframes ping{
+  0%{r:6;opacity:.9}
+  100%{r:19;opacity:0}
+}
+.maplegend{
+  display:flex;flex-wrap:wrap;gap:6px 18px;padding:12px 4px 2px;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink-2);
+}
+.maplegend i{width:11px;height:11px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:-1px}
+
+/* ---------- side panel ---------- */
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h2{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 12px;font-weight:500;
+}
+.datehead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bigdate{font-family:var(--mono);font-size:23px;letter-spacing:-.01em}
+.eptag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 9px;border-radius:3px;background:var(--panel-2);color:var(--ink-2);border:1px solid var(--line);
+}
+.eptag.live{background:var(--sig-dim);color:var(--signal);border-color:#2C6664}
+
+/* gap banner */
+#gapBanner{
+  display:none;border:1px solid #4A2429;background:#231518;border-radius:8px;
+  padding:14px 16px;margin-top:14px;
+}
+#gapBanner.on{display:block}
+#gapBanner .gb-kicker{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--red);margin-bottom:7px;
+}
+#gapBanner p{margin:0;font-size:13.5px;color:#D9C4C4;line-height:1.6}
+#gapBanner strong{color:#F0DADA;font-weight:600}
+
+/* stats */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft);border-radius:6px;overflow:hidden}
+.stat{background:var(--panel);padding:11px 13px}
+.stat .n{font-family:var(--mono);font-size:20px;line-height:1.25}
+.stat .l{font-size:11px;color:var(--ink-3);line-height:1.35;margin-top:2px}
+.stat .n.warn{color:var(--amber)}
+.stat .n.bad{color:var(--red)}
+.stat .n.sig{color:var(--signal)}
+
+.rows{display:flex;flex-direction:column;gap:9px}
+.row{display:flex;justify-content:space-between;gap:12px;font-size:13px;align-items:baseline}
+.row .k{color:var(--ink-2);min-width:0}
+.row .v{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.row .v.mut{color:var(--ink-3)}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;background:var(--signal)}
+
+.detail-empty{color:var(--ink-3);font-size:13px;font-style:normal}
+.hs-title{font-family:var(--mono);font-size:14px;margin-bottom:3px}
+.hs-type{
+  display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;padding:2px 7px;border-radius:3px;margin-bottom:9px;
+}
+.hs-body{font-size:13px;color:var(--ink-2);line-height:1.6;margin:0}
+
+/* ---------- timeline ---------- */
+.timeline{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px 12px}
+.tl-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+button{
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
+  border-radius:5px;padding:7px 14px;cursor:pointer;transition:border-color .15s,background .15s;
+}
+button:hover{border-color:var(--signal);background:#26333E}
+button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+button.primary{background:var(--sig-dim);border-color:#2C6664;color:var(--signal)}
+.tl-readout{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.06em;margin-left:auto}
+
+.track{position:relative;height:46px;margin:0 2px}
+.epband{
+  position:absolute;top:0;height:26px;border-radius:3px;
+  background:var(--panel-2);border:1px solid var(--line);
+}
+.epband.on{border-color:var(--signal);background:var(--sig-dim)}
+.epband.gapband{border-color:#5A2A30;background:#2A1A1E}
+.epband.gapband.on{border-color:var(--red);background:#3A2126}
+.epband b{
+  position:absolute;left:5px;top:5px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.08em;color:var(--ink-2);font-weight:500;
+}
+.epband.on b{color:var(--signal)}
+.epband.gapband.on b{color:#F09A92}
+.months{position:absolute;bottom:0;left:0;right:0;height:16px}
+.months span{
+  position:absolute;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.08em;
+}
+input[type=range]{
+  width:100%;margin:6px 0 0;-webkit-appearance:none;appearance:none;background:transparent;
+}
+input[type=range]:focus-visible{outline:2px solid var(--signal);outline-offset:4px;border-radius:4px}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line);border-radius:2px}
+input[type=range]::-moz-range-track{height:2px;background:var(--line);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--signal);margin-top:-6px;cursor:pointer;border:2px solid var(--bg);
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:var(--signal);
+  cursor:pointer;border:2px solid var(--bg);
+}
+
+/* ---------- mode switch ---------- */
+.modes{display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.modes button{border:none;border-radius:0;background:transparent;padding:6px 13px;font-size:11px}
+.modes button.on{background:var(--sig-dim);color:var(--signal)}
+
+footer{
+  margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-3);line-height:1.7;
+}
+footer a{color:var(--ink-2)}
+</style>
+<script type="module" src="../shared/tier.js"></script>
+</head>
+<body>
+<div id="gapRule"></div>
+<div class="wrap">
+
+<header>
+  <div class="mark">Clima<span>tise</span></div>
+  <div class="masthead-sub">National view · England · summer 2025 replay</div>
+  <div class="masthead-right">
+    <div class="modes">
+      <button id="mAlert" class="on" onclick="setMode('alert')">Alert issued</button>
+      <button id="mOutcome" onclick="setMode('outcome')">What happened</button>
+    </div>
+  </div>
+</header>
+
+<div class="console">
+
+  <!-- ============ MAP ============ -->
+  <div>
+    <div class="mapwrap" id="mapwrap">
+      <svg class="uk" viewBox="0 0 400 560" role="img" aria-labelledby="mapTitle mapDesc">
+        <title id="mapTitle">Map of England, Scotland, Wales and Northern Ireland</title>
+        <desc id="mapDesc">English regions shaded by heat-health alert level on the selected date, with markers on areas that recorded statistically significant heat-associated deaths in summer 2025.</desc>
+
+        <g id="regions">
+          <path class="region outside" d="M158,18 L198,8 L232,36 L242,84 L222,112 L238,142 L212,172 L174,177 L148,152 L128,112 L140,64 Z"/>
+          <path class="region outside" d="M38,146 L82,141 L92,176 L72,200 L36,190 Z"/>
+          <path class="region outside" d="M138,295 L182,303 L194,358 L170,395 L138,387 L120,340 Z"/>
+
+          <path class="region" data-r="NE" tabindex="0" role="button" aria-label="North East" d="M214,180 L248,175 L260,220 L238,250 L210,235 Z"/>
+          <path class="region" data-r="NW" tabindex="0" role="button" aria-label="North West" d="M174,181 L212,182 L208,236 L198,270 L166,263 L156,215 Z"/>
+          <path class="region" data-r="YH" tabindex="0" role="button" aria-label="Yorkshire and The Humber" d="M238,251 L261,222 L298,245 L293,285 L248,295 L230,273 Z"/>
+          <path class="region" data-r="EM" tabindex="0" role="button" aria-label="East Midlands" d="M248,296 L293,286 L320,315 L308,357 L260,355 L243,325 Z"/>
+          <path class="region" data-r="WM" tabindex="0" role="button" aria-label="West Midlands" d="M198,271 L230,274 L243,326 L230,363 L194,357 L183,315 Z"/>
+          <path class="region" data-r="EE" tabindex="0" role="button" aria-label="East of England" d="M308,358 L320,316 L368,335 L380,390 L343,420 L310,400 Z"/>
+          <path class="region" data-r="SE" tabindex="0" role="button" aria-label="South East" d="M260,357 L306,357 L309,401 L338,423 L328,463 L270,457 L253,410 Z"/>
+          <path class="region" data-r="SW" tabindex="0" role="button" aria-label="South West" d="M170,396 L194,359 L252,411 L268,458 L228,495 L178,515 L138,485 L143,435 Z"/>
+          <path class="region" data-r="LDN" tabindex="0" role="button" aria-label="London" d="M296,403 L328,400 L332,427 L298,431 Z"/>
+        </g>
+
+        <g id="labels">
+          <text class="rlabel pale" x="163" y="98">SCOTLAND</text>
+          <text class="rlabel pale" x="42" y="176">N. IRELAND</text>
+          <text class="rlabel pale" x="137" y="348">WALES</text>
+          <text class="rlabel" x="216" y="214" data-l="NE">NE</text>
+          <text class="rlabel" x="174" y="224" data-l="NW">NW</text>
+          <text class="rlabel" x="250" y="270" data-l="YH">Y&amp;H</text>
+          <text class="rlabel" x="266" y="326" data-l="EM">E MIDS</text>
+          <text class="rlabel" x="199" y="318" data-l="WM">W MIDS</text>
+          <text class="rlabel" x="326" y="372" data-l="EE">EAST</text>
+          <text class="rlabel" x="278" y="424" data-l="SE">SE</text>
+          <text class="rlabel" x="186" y="446" data-l="SW">SW</text>
+          <text class="rlabel" x="341" y="419" data-l="LDN">LDN</text>
+        </g>
+
+        <g id="hotspots"></g>
+      </svg>
+
+      <div class="maplegend">
+        <span><i style="background:var(--none)"></i>No alert</span>
+        <span><i style="background:var(--yellow)"></i>Yellow</span>
+        <span><i style="background:var(--amber)"></i>Amber</span>
+        <span><i style="background:var(--red)"></i>Red</span>
+        <span><i style="background:#1D242B;border:1px dashed #2E3A44"></i>Outside England alerting</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SIDE ============ -->
+  <div class="side">
+
+    <div class="card">
+      <div class="datehead">
+        <div class="bigdate" id="theDate">1 June 2025</div>
+        <div class="eptag" id="epTag">No heat episode</div>
+      </div>
+      <div id="gapBanner">
+        <div class="gb-kicker">Alert gap</div>
+        <p>Three days of heat above the episode threshold, and <strong>no heat-health alert was issued for any region</strong>. An estimated <strong>146 deaths</strong> followed, with significant mortality in <strong>care homes</strong> and the <strong>85 and over</strong> age group.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>This episode</h2>
+      <div class="grid2" id="epStats"></div>
+      <div class="rows" id="epRows" style="margin-top:14px"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="detailHead">Hotspot detail</h2>
+      <div id="detail"><p class="detail-empty">Select a marker on the map to see what was recorded there.</p></div>
+    </div>
+
+    <div class="card">
+      <h2>Season total, England</h2>
+      <div class="grid2">
+        <div class="stat"><div class="n">1,504</div><div class="l">Heat-associated deaths observed</div></div>
+        <div class="stat"><div class="n warn">3,039</div><div class="l">Deaths the model predicted</div></div>
+        <div class="stat"><div class="n">5</div><div class="l">Heat episodes, 27 days total</div></div>
+        <div class="stat"><div class="n">16.1&deg;C</div><div class="l">Mean temp, warmest UK summer on record</div></div>
+      </div>
+      <div class="rows" style="margin-top:14px">
+        <div class="row"><span class="k">Care homes</span><span class="v">677 deaths &nbsp;<span class="mut">+9%</span></span></div>
+        <div class="row"><span class="k">Hospitals</span><span class="v">485 deaths &nbsp;<span class="mut">E5 only</span></span></div>
+        <div class="row"><span class="k">Own home</span><span class="v mut">326 deaths &nbsp;n.s.</span></div>
+        <div class="row"><span class="k">Aged 85 and over</span><span class="v">793 deaths &nbsp;<span class="mut">364/m</span></span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ TIMELINE ============ -->
+<div class="timeline">
+  <div class="tl-top">
+    <button class="primary" id="playBtn" onclick="togglePlay()">&#9654; Play season</button>
+    <button onclick="jumpTo(46)">Jump to the alert gap</button>
+    <button onclick="jumpTo(72)">Jump to peak, 12 Aug</button>
+    <div class="tl-readout" id="readout">day 1 of 92</div>
+  </div>
+  <div class="track" id="track">
+    <div class="months" id="months"></div>
+  </div>
+  <input type="range" id="scrub" min="0" max="91" value="0" step="1"
+         aria-label="Day of summer 2025" oninput="setDay(+this.value)">
+</div>
+
+<footer>
+  Alert levels, episode dates and mortality figures are from the UK Health Security Agency
+  <em>Heat mortality monitoring report, England: 2025</em> (published 2 April 2026) and the UKHSA
+  Weather-Health Alerting system. Crown copyright, Open Government Licence v3.0.
+  Region shapes are simplified for legibility and are not survey-accurate.
+  Heat-Health Alerts cover England only &mdash; Scotland, Wales and Northern Ireland have no equivalent scheme.
+</footer>
+
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const REGIONS = ["NE","NW","YH","EM","WM","EE","SE","SW","LDN"];
+const COLOUR = {none:"#2B3A3C", yellow:"#E8C33B", amber:"#E2882B", red:"#CF4436"};
+const DARK_LABEL = {none:true};
+
+const EPISODES = [
+  {id:"E1", from:18, to:21, label:"Episode 1", dates:"19–22 June", cet:22.0,
+   deaths:253, ci:"35 to 470", perDay:63, sig:"Significant in the 85 and over group, and in London.",
+   alerts:"Amber in all nine English regions."},
+  {id:"E2", from:26, to:31, label:"Episode 2", dates:"27 June – 2 July", cet:22.4,
+   deaths:203, ci:"−66 to 473", perDay:34, sig:"Significant in the 85 and over group, in London, and in males.",
+   alerts:"Amber across seven regions, yellow in the North West from 30 June."},
+  {id:"E3", from:38, to:44, label:"Episode 3", dates:"9–15 July", cet:22.2,
+   deaths:203, ci:"−90 to 495", perDay:29, sig:"Significant mortality in care homes.",
+   alerts:"Amber in six regions from 11 July, yellow in the three northern regions."},
+  {id:"E4", from:46, to:48, label:"Episode 4", dates:"17–19 July", cet:21.0,
+   deaths:146, ci:"−35 to 328", perDay:49, gap:true,
+   sig:"Significant in the 85 and over group (122 deaths) and in care homes (89 deaths).",
+   alerts:"No heat-health alert issued in any region."},
+  {id:"E5", from:70, to:76, label:"Episode 5", dates:"10–16 August", cet:23.7,
+   deaths:697, ci:"400 to 993", perDay:100,
+   sig:"Significant in both older age bands, in London, the South East and the East of England, and in hospitals and care homes.",
+   alerts:"One-day amber on 12 August across five regions, yellow otherwise."}
+];
+
+const HOTSPOTS = [
+  {id:"ldn", name:"London LRF", x:314, y:417, kind:"repeat", eps:["E1","E2","E5"],
+   text:"317 heat-associated deaths across the season. Significant in three of the five episodes and a significant area in 2024 as well — a repeat hotspot, not a one-off."},
+  {id:"beds", name:"Bedfordshire LRF", x:316, y:381, kind:"rate", eps:["E5"],
+   text:"The highest heat-associated mortality rate in England: 94 deaths per million population. A smaller area than London, so the absolute count is lower but the per-head burden is the worst recorded."},
+  {id:"essex", name:"Essex LRF", x:348, y:399, kind:"rate", eps:["E5"],
+   text:"Statistically significant heat-associated deaths across the season. Sits in the East of England, which had the highest regional rate at 49 deaths per million."},
+  {id:"wmids", name:"West Midlands LRF", x:213, y:333, kind:"repeat", eps:["E5"],
+   text:"Statistically significant heat-associated deaths in both 2024 and 2025. One of only two areas to repeat across consecutive summers."},
+  {id:"east", name:"East of England", x:341, y:356, kind:"volume", eps:["E5"],
+   text:"323 heat-associated deaths, the highest regional total of the summer, and the highest regional rate at 49 per million."},
+  {id:"se", name:"South East", x:286, y:445, kind:"volume", eps:["E5"],
+   text:"Significant heat-associated mortality during Episode 5, the deadliest episode of the season with 697 deaths in seven days."}
+];
+
+const KINDS = {
+  repeat:{c:"#CF4436", label:"Repeat hotspot"},
+  rate:{c:"#E2882B", label:"Highest rate per head"},
+  volume:{c:"#E8C33B", label:"Highest total count"}
+};
+
+/* Outcome layer — categorical, straight from the report. No modelling, no invented numbers. */
+const OUTCOME = {
+  LDN:{c:"#CF4436", t:"317 deaths · significant"},
+  EE: {c:"#CF4436", t:"323 deaths · highest rate, 49/m"},
+  EM: {c:"#E2882B", t:"Significant heat-associated deaths"},
+  WM: {c:"#E2882B", t:"Significant · repeat area from 2024"},
+  SE: {c:"#E8C33B", t:"Significant during Episode 5"},
+  SW: {c:"#3E4A50", t:"Not statistically significant"},
+  NE: {c:"#2B3A3C", t:"No significant mortality detected"},
+  NW: {c:"#2B3A3C", t:"No significant mortality detected"},
+  YH: {c:"#2B3A3C", t:"No significant mortality detected"}
+};
+
+/* ---------------- alert schedule, from the UKHSA report ---------------- */
+function alertFor(r, d){
+  if(d>=18 && d<=22) return "amber";                                  // E1 + 23 June
+  if(d>=26 && d<=31){                                                 // E2
+    if(["YH","EM","WM","EE","LDN","SE","SW"].includes(r)) return "amber";
+    if(r==="NW" && d>=29) return "yellow";
+    return "none";
+  }
+  if(d>=38 && d<=44){                                                 // E3
+    if(["EM","WM","EE","LDN","SE","SW"].includes(r)) return d>=40 ? "amber":"yellow";
+    if(["NW","NE","YH"].includes(r)) return "yellow";
+    return "none";
+  }
+  if(d>=46 && d<=48) return "none";                                   // E4 — the gap
+  if(d>=70 && d<=76){                                                 // E5
+    const core = ["EM","WM","EE","LDN","SE"];
+    if(d===72){
+      if(core.includes(r)) return "amber";
+      if(["NW","NE","YH","SW"].includes(r)) return "yellow";
+      return "none";
+    }
+    return core.includes(r) ? "yellow" : "none";
+  }
+  return "none";
+}
+
+/* ---------------- date helpers ---------------- */
+const MONTHS = [["June",0,29],["July",30,60],["August",61,91]];
+function dateFor(d){
+  const base = new Date(2025,5,1);
+  base.setDate(base.getDate()+d);
+  return base.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+}
+function episodeFor(d){ return EPISODES.find(e=>d>=e.from && d<=e.to) || null; }
+
+/* ---------------- state ---------------- */
+let day = 0, mode = "alert", playing = false, timer = null, selected = null;
+
+/* ---------------- build timeline bands ---------------- */
+(function buildTrack(){
+  const track = document.getElementById("track");
+  EPISODES.forEach(e=>{
+    const el = document.createElement("div");
+    el.className = "epband" + (e.gap ? " gapband" : "");
+    el.id = "band-"+e.id;
+    el.style.left  = (e.from/92*100)+"%";
+    el.style.width = ((e.to-e.from+1)/92*100)+"%";
+    el.title = e.label+", "+e.dates;
+    el.innerHTML = "<b>"+e.id+"</b>";
+    el.onclick = ()=>jumpTo(e.from);
+    track.appendChild(el);
+  });
+  const m = document.getElementById("months");
+  MONTHS.forEach(([name,s])=>{
+    const sp = document.createElement("span");
+    sp.textContent = name;
+    sp.style.left = (s/92*100)+"%";
+    m.appendChild(sp);
+  });
+})();
+
+/* ---------------- render ---------------- */
+function render(){
+  const ep = episodeFor(day);
+  const inGap = !!(ep && ep.gap);
+
+  document.getElementById("theDate").textContent = dateFor(day);
+  document.getElementById("readout").textContent = "day "+(day+1)+" of 92";
+  document.getElementById("scrub").value = day;
+
+  const tag = document.getElementById("epTag");
+  tag.textContent = ep ? ep.label+" · "+ep.dates : "No heat episode";
+  tag.className = "eptag" + (ep ? " live" : "");
+
+  document.getElementById("gapRule").classList.toggle("on", inGap && mode==="alert");
+  document.getElementById("gapBanner").classList.toggle("on", inGap);
+  document.getElementById("mapwrap").classList.toggle("gap", inGap && mode==="alert");
+
+  EPISODES.forEach(e=>{
+    document.getElementById("band-"+e.id).classList.toggle("on", ep && e.id===ep.id);
+  });
+
+  // regions
+  REGIONS.forEach(r=>{
+    const path = document.querySelector('[data-r="'+r+'"]');
+    const lab  = document.querySelector('[data-l="'+r+'"]');
+    let fill, dark;
+    if(mode==="outcome"){
+      fill = OUTCOME[r].c;
+      dark = (r==="NE"||r==="NW"||r==="YH"||r==="SW");
+      path.setAttribute("aria-label", r+": "+OUTCOME[r].t);
+    }else{
+      const lvl = alertFor(r,day);
+      fill = COLOUR[lvl];
+      dark = DARK_LABEL[lvl] || false;
+      path.setAttribute("aria-label", r+": "+lvl+" alert");
+    }
+    path.style.fill = fill;
+    lab.classList.toggle("pale", dark);
+  });
+
+  renderHotspots(ep);
+  renderEpisode(ep);
+}
+
+function renderHotspots(ep){
+  const g = document.getElementById("hotspots");
+  g.innerHTML = "";
+  const show = HOTSPOTS.filter(h => mode==="outcome" ? true : (ep && h.eps.includes(ep.id)));
+  show.forEach(h=>{
+    const k = KINDS[h.kind];
+    const grp = document.createElementNS("http://www.w3.org/2000/svg","g");
+    grp.setAttribute("class","hotspot");
+    grp.setAttribute("tabindex","0");
+    grp.setAttribute("role","button");
+    grp.setAttribute("aria-label",h.name);
+    grp.innerHTML =
+      '<circle class="hs-ring" cx="'+h.x+'" cy="'+h.y+'" r="6" stroke="'+k.c+'"/>'+
+      '<circle class="hs-core" cx="'+h.x+'" cy="'+h.y+'" r="5" fill="'+k.c+'"/>';
+    grp.onclick = ()=>selectHotspot(h.id);
+    grp.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectHotspot(h.id);} };
+    g.appendChild(grp);
+  });
+}
+
+function selectHotspot(id){
+  selected = id;
+  const h = HOTSPOTS.find(x=>x.id===id);
+  const k = KINDS[h.kind];
+  document.getElementById("detailHead").textContent = "Hotspot detail";
+  document.getElementById("detail").innerHTML =
+    '<div class="hs-title">'+h.name+'</div>'+
+    '<span class="hs-type" style="background:'+k.c+'22;color:'+k.c+'">'+k.label+'</span>'+
+    '<p class="hs-body">'+h.text+'</p>';
+}
+
+function renderEpisode(ep){
+  const s = document.getElementById("epStats");
+  const r = document.getElementById("epRows");
+  if(!ep){
+    s.innerHTML = '<div class="stat" style="grid-column:1/-1">'+
+      '<div class="n" style="color:var(--ink-3)">—</div>'+
+      '<div class="l">No heat episode on this date. Mean Central England Temperature stayed below 20&deg;C.</div></div>';
+    r.innerHTML = "";
+    return;
+  }
+  const dcls = ep.gap ? "bad" : (ep.deaths>500 ? "bad" : "warn");
+  s.innerHTML =
+    '<div class="stat"><div class="n '+dcls+'">'+ep.deaths+'</div><div class="l">Heat-associated deaths<br>95% CI '+ep.ci+'</div></div>'+
+    '<div class="stat"><div class="n">'+ep.perDay+'</div><div class="l">Deaths per episode day</div></div>'+
+    '<div class="stat"><div class="n">'+ep.cet.toFixed(1)+'&deg;C</div><div class="l">Peak mean CET</div></div>'+
+    '<div class="stat"><div class="n '+(ep.gap?"bad":"sig")+'">'+(ep.to-ep.from+1)+'</div><div class="l">Days in episode</div></div>';
+  r.innerHTML =
+    '<div class="row"><span class="k">Alerts issued</span></div>'+
+    '<div style="font-size:13px;color:'+(ep.gap?"#E39A93":"var(--ink-2)")+';margin:-4px 0 6px">'+ep.alerts+'</div>'+
+    '<div class="row"><span class="k">Where it landed</span></div>'+
+    '<div style="font-size:13px;color:var(--ink-2);margin-top:-4px">'+ep.sig+'</div>';
+}
+
+/* ---------------- controls ---------------- */
+function setDay(d){ day = Math.max(0,Math.min(91,d)); render(); }
+function jumpTo(d){ stop(); setDay(d); }
+function setMode(m){
+  mode = m;
+  document.getElementById("mAlert").classList.toggle("on", m==="alert");
+  document.getElementById("mOutcome").classList.toggle("on", m==="outcome");
+  render();
+}
+function togglePlay(){ playing ? stop() : start(); }
+function start(){
+  playing = true;
+  document.getElementById("playBtn").innerHTML = "&#9646;&#9646; Pause";
+  timer = setInterval(()=>{
+    day = day>=91 ? 0 : day+1;
+    render();
+  }, 170);
+}
+function stop(){
+  playing = false;
+  clearInterval(timer);
+  document.getElementById("playBtn").innerHTML = "&#9654; Play season";
+}
+
+document.querySelectorAll('[data-r]').forEach(p=>{
+  p.addEventListener("click",()=>{
+    const r = p.dataset.r;
+    document.getElementById("detailHead").textContent = "Region detail";
+    document.getElementById("detail").innerHTML =
+      '<div class="hs-title">'+(p.getAttribute("aria-label")||r)+'</div>'+
+      '<p class="hs-body">Season outcome: '+OUTCOME[r].t+'.<br>'+
+      'Alert on this date: '+alertFor(r,day)+'.</p>';
+  });
+  p.addEventListener("keydown",e=>{ if(e.key==="Enter"){ p.click(); } });
+});
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"){ stop(); setDay(day+1); }
+  if(e.key==="ArrowLeft"){ stop(); setDay(day-1); }
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+# Seeded locality. Resource positions are approximate and for demonstration only.
+name: Bedford
+region: East of England
+admin_district: Bedford
+wards:
+  - Castle
+  - De Parys
+  - Harpur
+  - Kingsbrook
+  - Queens Park
+  - Cauldwell
+resources:
+  - id: bed-cool-01
+    type: cool_space
+    name: Bedford Central Library
+    lat: 52.1364
+    lon: -0.4669
+    opening_hours: "Mon-Sat 09:00-17:00"
+    area_code: E07000032
+  - id: bed-cool-02
+    type: cool_space
+    name: Queens Park Community Centre
+    lat: 52.1401
+    lon: -0.4831
+    opening_hours: "Mon-Fri 10:00-16:00"
+    area_code: E07000032
+  - id: bed-pharm-01
+    type: pharmacy
+    name: High Street Pharmacy
+    lat: 52.1358
+    lon: -0.4681
+    opening_hours: "Mon-Fri 09:00-18:00, Sat 09:00-13:00"
+    area_code: E07000032
+  - id: bed-pharm-02
+    type: pharmacy
+    name: Kingsbrook Pharmacy
+    lat: 52.1289
+    lon: -0.4402
+    opening_hours: "Mon-Fri 08:30-18:30"
+    area_code: E07000032
+  - id: bed-warm-01
+    type: warm_bank
+    name: St Paul's Church Hall
+    lat: 52.1372
+    lon: -0.4694
+    opening_hours: "Nov-Mar, Tue and Thu 11:00-15:00"
+    area_code: E07000032
+  - id: bed-welfare-01
+    type: council_welfare
+    name: Bedford Borough Adult Social Care
+    lat: 52.1355
+    lon: -0.4667
+    opening_hours: "Mon-Fri 09:00-17:00"
+    area_code: E07000032

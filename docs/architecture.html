@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Climate Companion — architecture reference</title>
+<style>
+:root{
+  --ground:#F6F8F9; --panel:#FFFFFF; --panel-2:#EEF2F4;
+  --ink:#152029; --ink-2:#546775; --ink-3:#8695A2;
+  --line:#DCE3E8; --line-2:#C6D0D7;
+  --signal:#0B7B77; --signal-bg:#E4F2F1; --signal-line:#9CCFCC;
+  --warn:#A85D18; --warn-bg:#FBF0E3;
+  --stop:#B03A2C; --stop-bg:#FBECEA;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --ground:#0F1519; --panel:#161E24; --panel-2:#1D272E;
+    --ink:#E2E9ED; --ink-2:#93A4B0; --ink-3:#6B7B88;
+    --line:#26323A; --line-2:#35434D;
+    --signal:#4FC3BE; --signal-bg:#12302F; --signal-line:#2A5C59;
+    --warn:#D99A4E; --warn-bg:#2C2318;
+    --stop:#E0776A; --stop-bg:#2E1A18;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:940px;margin:0 auto;padding:0 22px 80px}
+.eyebrow{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+h1{font-size:27px;font-weight:500;letter-spacing:-.015em;margin:6px 0 10px;line-height:1.2}
+h2{font-size:19px;font-weight:500;margin:0 0 4px;letter-spacing:-.01em}
+p{margin:0 0 12px}
+.lede{font-size:16px;color:var(--ink-2);max-width:62ch;margin-bottom:0}
+
+header{padding:38px 0 26px;border-bottom:1px solid var(--line-2)}
+
+section{padding:34px 0;border-bottom:1px solid var(--line)}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.secnum{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+.sechead p{margin:0;font-size:13.5px;color:var(--ink-2);flex-basis:100%;max-width:64ch}
+
+/* controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+button{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;
+  background:var(--panel);color:var(--ink-2);border:1px solid var(--line-2);
+  border-radius:5px;padding:7px 13px;cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s;
+}
+button:hover{border-color:var(--signal);color:var(--ink)}
+button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+button.on{background:var(--signal-bg);border-color:var(--signal-line);color:var(--signal)}
+
+/* layer rows */
+.layer{
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  margin-bottom:8px;overflow:hidden;transition:border-color .15s;
+}
+.layer:hover{border-color:var(--line-2)}
+.layer.open{border-color:var(--signal-line)}
+.layer.dim{opacity:.4}
+.lhead{
+  display:grid;grid-template-columns:52px 1fr auto;gap:16px;align-items:center;
+  padding:14px 16px;cursor:pointer;
+}
+.lhead:focus-visible{outline:2px solid var(--signal);outline-offset:-2px}
+.lcode{
+  font-family:var(--mono);font-size:15px;color:var(--signal);
+  letter-spacing:.02em;
+}
+.lname{font-size:15.5px;font-weight:500}
+.lsum{font-size:13px;color:var(--ink-2);margin-top:1px}
+.badge{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  padding:4px 9px;border-radius:3px;white-space:nowrap;
+}
+.b-ship{background:var(--signal-bg);color:var(--signal)}
+.b-stub{background:var(--warn-bg);color:var(--warn)}
+.b-later{background:var(--panel-2);color:var(--ink-3)}
+
+.lbody{display:none;padding:0 16px 18px 84px;border-top:1px solid var(--line)}
+.layer.open .lbody{display:block}
+.lbody dl{display:grid;grid-template-columns:132px 1fr;gap:9px 18px;margin:16px 0 0;font-size:13.5px}
+.lbody dt{color:var(--ink-3);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding-top:3px}
+.lbody dd{margin:0;color:var(--ink-2)}
+.lbody dd code{
+  font-family:var(--mono);font-size:12px;background:var(--panel-2);
+  padding:2px 6px;border-radius:3px;color:var(--ink);
+}
+@media(max-width:640px){
+  .lbody{padding-left:16px}
+  .lbody dl{grid-template-columns:1fr;gap:2px 0}
+  .lbody dt{margin-top:10px}
+}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:0}
+th{
+  text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:500;
+  padding:0 12px 9px 0;border-bottom:1px solid var(--line-2);
+}
+td{padding:11px 12px 11px 0;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+td:first-child{color:var(--ink)}
+td.num{font-family:var(--mono);white-space:nowrap}
+.tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.yes{color:var(--signal)}
+.no{color:var(--stop);font-weight:500}
+
+/* ladder */
+.rung{
+  display:grid;grid-template-columns:34px 1fr 1fr;gap:16px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;
+}
+.rung:last-child{border-bottom:none}
+.rung .r{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.rung .q{color:var(--ink)}
+.rung .a{color:var(--ink-2);font-size:13px}
+.rung.edge{background:var(--stop-bg);margin:0 -12px;padding-left:12px;padding-right:12px;border-radius:4px}
+@media(max-width:640px){.rung{grid-template-columns:28px 1fr}.rung .a{grid-column:2}}
+
+/* rules */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.rule{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--signal);border-radius:0 8px 8px 0;padding:14px 16px}
+.rule h3{font-family:var(--mono);font-size:12.5px;margin:0 0 6px;font-weight:500;letter-spacing:.01em}
+.rule p{font-size:13px;color:var(--ink-2);margin:0}
+
+/* build order */
+.day{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:10px}
+.day h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 12px;font-weight:500}
+.slot{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:8px 0;font-size:13.5px;border-top:1px solid var(--line)}
+.slot:first-of-type{border-top:none}
+.slot .t{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);padding-top:2px}
+.slot .w{color:var(--ink-2)}
+.slot .w b{color:var(--ink);font-weight:500}
+@media(max-width:640px){.slot{grid-template-columns:1fr;gap:2px}}
+
+.callout{
+  background:var(--signal-bg);border:1px solid var(--signal-line);border-radius:8px;
+  padding:15px 18px;margin-top:18px;font-size:14px;color:var(--ink);
+}
+.callout b{font-weight:500}
+
+footer{padding-top:22px;font-size:12px;color:var(--ink-3);line-height:1.7}
+
+@media print{
+  body{background:#fff}
+  .controls{display:none}
+  .lbody{display:block !important}
+  section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Climatise · Climate Companion</div>
+  <h1>Architecture reference</h1>
+  <p class="lede">Seven layers from a postcode to a caregiver knowing what to do tonight. Layers 0 to 4 are the whole product; 5 and 6 make it sellable.</p>
+</header>
+
+<!-- ============ THE STACK ============ -->
+<section>
+  <div class="sechead">
+    <span class="secnum">01</span>
+    <h2>The stack</h2>
+    <p>Each layer consumes the one below it and adds exactly one thing. Select a layer for its sources, owner and tables.</p>
+  </div>
+
+  <div class="controls">
+    <button id="f-all" class="on" onclick="setFilter('all')">All layers</button>
+    <button id="f-48" onclick="setFilter('48')">48-hour scope</button>
+    <button onclick="expandAll(true)">Expand all</button>
+    <button onclick="expandAll(false)">Collapse</button>
+  </div>
+
+  <div id="stack"></div>
+</section>
+
+<!-- ============ RULES ============ -->
+<section>
+  <div class="sechead">
+    <span class="secnum">02</span>
+    <h2>Three rules holding it together</h2>
+  </div>
+  <div class="rules">
+    <div class="rule">
+      <h3>L3 has no I/O</h3>
+      <p>A pure function. Testable, demoable with the network down, and replayable against last July's real weather.</p>
+    </div>
+    <div class="rule">
+      <h3>Everything ends in an action</h3>
+      <p>A risk tier with no next step is a weather app. Every reason code maps to something the caregiver can do.</p>
+    </div>
+    <div class="rule">
+      <h3>L6 is a query, not a system</h3>
+      <p>Council and hospital views are aggregations over the same assessment table. Hours of work, not weeks.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ESCALATION ============ -->
+<section>
+  <div class="sechead">
+    <span class="secnum">03</span>
+    <h2>Escalation ladder</h2>
+    <p>Each rung asks whether the situation can be resolved here. Yes, stop. No, climb.</p>
+  </div>
+  <div class="tablewrap" id="ladder"></div>
+</section>
+
+<!-- ============ CASCADE ============ -->
+<section>
+  <div class="sechead">
+    <span class="secnum">04</span>
+    <h2>Who the alert reaches</h2>
+    <p>The official cascade runs UKHSA to NHS England to integrated care boards to providers, with a parallel branch to local authorities and local resilience forums. Every link joins one organisation to another.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Tier</th><th>Scale</th><th>Duty</th><th>Gets the alert</th></tr></thead>
+      <tbody id="cascade"></tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <b>Where it stops.</b> Last summer 677 heat deaths were in care homes and 485 in hospitals — both inside the cascade. 326 were in people's own homes, which is outside it, and that figure was not statistically significant, meaning under-detected rather than absent. ONS holds no official count of unpaid carers because they are unregistered, so the cascade cannot reach them even in principle.
+  </div>
+</section>
+
+<!-- ============ BUILD ORDER ============ -->
+<section>
+  <div class="sechead">
+    <span class="secnum">05</span>
+    <h2>Build order</h2>
+    <p>Core first, against hardcoded exposure and seeded personas. Get a real tier with a real reasons list printing to the terminal before touching a network call.</p>
+  </div>
+  <div id="build"></div>
+</section>
+
+<footer>
+  Alert levels, episode dates and mortality figures from UKHSA <em>Heat mortality monitoring report, England: 2025</em> and <em>Cold mortality monitoring report, winter 2024 to 2025</em>. Carer figures from ONS Census 2021 and Carers UK. Crown copyright, Open Government Licence v3.0.
+</footer>
+
+</div>
+
+<script>
+const LAYERS=[
+{c:"L0",n:"Person and place",s:"Identity, geography, dwelling characteristics",ship:"ship",
+ holds:"Name, age band, whether they live alone, mobility. Address geocoded to lat/lon, plus dwelling type, floor, aspect and whether there is any cooling.",
+ out:"A geocoded person record",
+ src:"Caregiver input, postcodes.io for postcode to lat/lon plus admin district and LSOA",
+ who:"The individual",
+ rung:"—",
+ tbl:"person, place"},
+
+{c:"L1",n:"Exposure",s:"Forecast resolved to that address over time",ship:"ship",
+ holds:"Hourly forecast normalised into the features that actually predict harm, not the ones the forecast hands you.",
+ out:"Overnight minimum, peak apparent temperature, hours above 26&deg;C, indoor night estimate, day number of the spell",
+ src:"Open-Meteo for forecast and archive, UKHSA dashboard for regional alerts, optional indoor sensor",
+ who:"The individual",
+ rung:"0 to 1",
+ tbl:"exposure"},
+
+{c:"L2",n:"Vulnerability",s:"What makes this person fragile",ship:"ship",
+ holds:"Age band, conditions, medication classes, mobility, isolation. Medication is the differentiator — diuretics, anticholinergics, beta blockers, antipsychotics, lithium — plus storage flags for insulin and GTN.",
+ out:"A vulnerability score and a set of flags",
+ src:"Caregiver input against a medication class lookup of roughly thirty rows",
+ who:"The individual",
+ rung:"2 to 3",
+ tbl:"med"},
+
+{c:"L3",n:"Risk fusion",s:"Pure function over L1 and L2",ship:"ship",
+ holds:"Nothing. No database, no API, no clock. Additive reasons with a threshold on count and weight.",
+ out:"A tier plus a <code>reasons[]</code> array — the spine everything downstream reads from",
+ src:"None. Computed.",
+ who:"Unpaid carer",
+ rung:"3",
+ tbl:"assessment"},
+
+{c:"L4",n:"Action and escalation",s:"Turning reasons into things to do",ship:"ship",
+ holds:"A mapping from each reason code to a checklist item and an escalation target, plus the tier-change logic that decides whether to notify.",
+ out:"Caregiver checklist, escalation target, notification",
+ src:"UKHSA Adverse Weather and Health Plan action cards, seeded to CSV",
+ who:"Unpaid and paid carers",
+ rung:"4",
+ tbl:"action"},
+
+{c:"L5",n:"Resource and capacity",s:"Where to go when home isn't enough",ship:"stub",
+ holds:"Cool spaces, warm banks, pharmacies, council welfare services, bed availability.",
+ out:"Nearest available help, ranked",
+ src:"Hand-seeded CSV for the demo. Council open data and NHS ODS later.",
+ who:"Pharmacy, GP, council",
+ rung:"5 to 6",
+ tbl:"resource"},
+
+{c:"L6",n:"Stakeholder views",s:"Aggregations, not new systems",ship:"later",
+ holds:"Nothing new. The council map is a group-by over L3. The hospital view is a sum. The care home board is a filter.",
+ out:"Council map, care home board, hospital surge forecast",
+ src:"The same assessment table, grouped by area",
+ who:"Local authority, LRF, ICB, care home, hospital",
+ rung:"7",
+ tbl:"none new"}
+];
+
+const BADGE={ship:["b-ship","48h core"],stub:["b-stub","Seeded stub"],later:["b-later","One screen"]};
+
+const LADDER=[
+["0","Is the region under alert?","Context banner"],
+["1","What is the forecast at this address, including overnight minimum?","Exposure timeline"],
+["2","Does this person's profile make it dangerous?","Personal tier"],
+["3","Do their medicines amplify it, or need moving?","Amplified tier, med flags"],
+["4","Can the caregiver fix it at home?","Checklist"],
+["5","If not, who nearby can help?","Pharmacy, cool space, warm bank"],
+["6","If not, who has a statutory duty?","Council welfare check, GP, 111"],
+["7","If not, is this acute?","999, hospital capacity"]
+];
+
+const CASCADE=[
+["UKHSA and Met Office","Issues alerts for England only","Owns the Adverse Weather and Health Plan","Origin"],
+["NHS England","7 regional teams","Operational cascade","yes"],
+["Integrated care boards","42 in England","Commissioning, provider cascade","yes"],
+["Local authorities","Upper tier and unitary","Care Act 2014, public health, housing standards","yes"],
+["Local resilience forums","~38, based on police areas","Civil Contingencies Act 2004","yes"],
+["Hospitals and NHS providers","Acute, ambulance, community, mental health","NHS duty of care","yes"],
+["GPs and pharmacy","Primary care networks, community pharmacy","Clinical, medicines advice","yes"],
+["Care homes","~15,000 in England, overwhelmingly independent sector","CQC-regulated","yes"],
+["Home care agencies","~10,000+ CQC-registered","CQC-regulated as agencies, not individuals","Patchy"],
+["Unpaid carers","5.8m UK (Census 2021). Carers Week 2026 estimates 11.6m","None. Unregistered.","no"],
+["The individual","3.9m over-65s live alone in the UK","—","no"]
+];
+
+const BUILD=[
+["Day one",[
+ ["Morning","Person, place and forecast wired. Exposure timeline including overnight minimums. Three seeded personas.","L0, L1"],
+ ["Afternoon","<b>Scoring and risk fusion.</b> The reasons array. Give this the most time — it is the product.","L3"],
+ ["Evening","Medication table and caregiver checklist. The app now does something.","L2, L4"]
+]],
+["Day two",[
+ ["Morning","UKHSA alert feed, cool-space stub, one council aggregate screen.","L5, L6"],
+ ["Midday","<b>Code freeze.</b> Non-negotiable.","—"],
+ ["Afternoon","Four demo rehearsals. Demo-safe snapshot fallback tested with the wifi off.","—"]
+]],
+["After the hackathon",[
+ ["Next","Real ONS boundaries, address-level dwelling data, indoor sensor to replace the modelled estimate.","L0, L1"],
+ ["Then","Cold-side parity. Cold-Health Alerts run November to March, and cold kills more people here than heat.","L1, L3"],
+ ["Before use","Clinical validation of the medication rules with a pharmacist.","L2"]
+]]
+];
+
+let filter="all";
+
+function renderStack(){
+  document.getElementById("stack").innerHTML = LAYERS.map((l,i)=>{
+    const [bc,bt]=BADGE[l.ship];
+    const dim = (filter==="48" && l.ship!=="ship") ? " dim" : "";
+    return '<div class="layer'+dim+'" id="ly'+i+'">'+
+      '<div class="lhead" tabindex="0" role="button" aria-expanded="false" onclick="toggle('+i+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggle('+i+')}">'+
+        '<span class="lcode">'+l.c+'</span>'+
+        '<span><span class="lname">'+l.n+'</span><div class="lsum">'+l.s+'</div></span>'+
+        '<span class="badge '+bc+'">'+bt+'</span>'+
+      '</div>'+
+      '<div class="lbody"><dl>'+
+        '<dt>Holds</dt><dd>'+l.holds+'</dd>'+
+        '<dt>Produces</dt><dd>'+l.out+'</dd>'+
+        '<dt>Data source</dt><dd>'+l.src+'</dd>'+
+        '<dt>Stakeholder</dt><dd>'+l.who+'</dd>'+
+        '<dt>Escalation rung</dt><dd>'+l.rung+'</dd>'+
+        '<dt>Tables</dt><dd><code>'+l.tbl+'</code></dd>'+
+      '</dl></div></div>';
+  }).join("");
+}
+function toggle(i){
+  const el=document.getElementById("ly"+i);
+  const open=el.classList.toggle("open");
+  el.querySelector(".lhead").setAttribute("aria-expanded",open);
+}
+function expandAll(v){
+  LAYERS.forEach((_,i)=>{
+    const el=document.getElementById("ly"+i);
+    el.classList.toggle("open",v);
+    el.querySelector(".lhead").setAttribute("aria-expanded",v);
+  });
+}
+function setFilter(f){
+  filter=f;
+  document.getElementById("f-all").classList.toggle("on",f==="all");
+  document.getElementById("f-48").classList.toggle("on",f==="48");
+  renderStack();
+}
+
+document.getElementById("ladder").innerHTML = LADDER.map(([r,q,a],i)=>
+  '<div class="rung'+(i>=5?" edge":"")+'"><span class="r">'+r+'</span><span class="q">'+q+'</span><span class="a">'+a+'</span></div>'
+).join("");
+
+document.getElementById("cascade").innerHTML = CASCADE.map(([t,s,d,g])=>{
+  const cell = g==="yes" ? '<span class="yes">Yes</span>'
+             : g==="no"  ? '<span class="no">No</span>' : g;
+  return '<tr><td>'+t+'</td><td>'+s+'</td><td>'+d+'</td><td class="num">'+cell+'</td></tr>';
+}).join("");
+
+document.getElementById("build").innerHTML = BUILD.map(([d,rows])=>
+  '<div class="day"><h3>'+d+'</h3>'+rows.map(([t,w,l])=>
+    '<div class="slot"><span class="t">'+t+'</span><span class="w">'+w+' <span style="color:var(--ink-3);font-family:var(--mono);font-size:11px">'+l+'</span></span></div>'
+  ).join("")+'</div>'
+).join("");
+
+renderStack();
+</script>
+</body>
+</html>
