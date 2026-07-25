@@ -51,6 +51,10 @@ class InteractionRule:
     max_indoor_day: float | None
     requires_conditions: frozenset[Condition]
     requires_med_classes: frozenset[MedClass]
+    requires_flags: frozenset[str]
+    """Boolean attributes on Person — mobility_limited, lives_alone. Without
+    these a rule with no condition and no medication requirement fires for
+    everyone, which is how the mobility rule came to apply to all comers."""
     requires_self_report: tuple[str, bool] | None
     supersedes: frozenset[ReasonCode]
     """Reason codes this rule replaces. The combination advice is more specific
@@ -93,6 +97,8 @@ class InteractionRule:
         held = {med.drug_class for med in person.medications}
         if not self.requires_med_classes <= held:
             return False
+        if not all(getattr(person, flag, False) for flag in self.requires_flags):
+            return False
         return self.self_report_matches(report)
 
     def self_report_matches(self, report: SelfReport | None) -> bool:
@@ -132,6 +138,9 @@ class InteractionTable:
                     requires_med_classes=frozenset(
                         MedClass(m)
                         for m in InteractionTable.split(row["requires_med_classes"])
+                    ),
+                    requires_flags=frozenset(
+                        InteractionTable.split(row["requires_flags"])
                     ),
                     requires_self_report=InteractionTable.parse_self_report(
                         row["requires_self_report"]

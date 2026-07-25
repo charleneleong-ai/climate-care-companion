@@ -59,6 +59,9 @@ async function assessProfiles(profiles: Profile[], atTemperature?: number) {
         headroomToNextBand: assessment.headroomToNextBand,
         worseningToday: assessment.worseningToday,
         drivers: assessment.drivers,
+        /** Combination rules that fired. Codes only — the full text is on the
+         *  advice, and repeating it here would let the two drift. */
+        interactions: assessment.interactions.map((r) => r.code),
       },
       advice: getAdvice(assessment),
     }

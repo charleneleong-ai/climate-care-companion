@@ -36,6 +36,14 @@ export interface AdviceAction {
   becauseOf?: string
 }
 
+/** What to look out for, as distinct from what to do. For some combinations this
+ *  matters more than the action: an anticholinergic suppresses sweating, so the
+ *  usual first sign of overheating is absent rather than late. */
+export interface WatchPoint {
+  id: string
+  text: string
+}
+
 export interface Advice {
   /** One-line summary. Shown as the headline and spoken first by the assistant. */
   headline: string
@@ -46,6 +54,28 @@ export interface Advice {
   urgentWarning?: string
   /** Where the guidance comes from, for the footer. */
   sources?: string[]
+  /** Signs to watch for. Caregiver-facing. */
+  watchPoints?: WatchPoint[]
+  /** Who to contact, deduplicated across all advice. */
+  escalateTo?: string[]
+}
+
+/**
+ * Actions from the combination rules.
+ *
+ * These lead, because they are the ones a caregiver could not have worked out
+ * from a leaflet — and in the renal-plus-cardiovascular case the generic advice
+ * to drink plenty in hot weather is actively dangerous, so the rule has to be
+ * able to overrule it rather than sit alongside it.
+ */
+function interactionActions(assessment: RiskAssessment): AdviceAction[] {
+  return assessment.interactions.map((rule) => ({
+    id: rule.code,
+    text: rule.advice_caregiver,
+    when: rule.escalate_to ? 'today' : 'now',
+    priority: rule.escalate_to === 'gp' ? 'critical' : 'important',
+    becauseOf: rule.code,
+  }))
 }
 
 /** Baseline copy per band. Replace with the real content. */
@@ -284,7 +314,14 @@ function urgentWarningFor(assessment: RiskAssessment): string | undefined {
 export function getAdvice(assessment: RiskAssessment): Advice {
   const copy = BAND_COPY[assessment.band]
 
-  const actions = [...baselineActions(assessment.band), ...driverActions(assessment)]
+  // Superseded single-factor advice is dropped rather than shown alongside the
+  // combination that replaces it.
+  const superseded = new Set(assessment.interactions.flatMap((r) => r.supersedes))
+  const actions = [
+    ...interactionActions(assessment),
+    ...baselineActions(assessment.band).filter((a) => !superseded.has(a.id)),
+    ...driverActions(assessment).filter((a) => !superseded.has(a.becauseOf ?? a.id)),
+  ]
 
   // Critical first, then by when. Keeps the spoken version useful if the
   // listener stops paying attention after the first sentence.
@@ -308,5 +345,15 @@ export function getAdvice(assessment: RiskAssessment): Advice {
     actions,
     urgentWarning: urgentWarningFor(assessment),
     sources: ['UKHSA Adverse Weather and Health Plan', 'NHS heat and cold guidance'],
+    watchPoints: assessment.interactions
+      .filter((r) => r.watch_for)
+      .map((r) => ({ id: r.code, text: r.watch_for as string })),
+    escalateTo: [
+      ...new Set(
+        assessment.interactions
+          .map((r) => r.escalate_to)
+          .filter((e): e is string => Boolean(e)),
+      ),
+    ].sort(),
   }
 }

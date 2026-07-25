@@ -33,11 +33,21 @@ export const FACTOR_GROUPS: {
         hint: 'Heart disease, high blood pressure, previous stroke',
       },
       { id: 'diabetes', label: 'Diabetes' },
+      {
+        id: 'renal',
+        label: 'Kidney condition',
+        hint: 'Reduced kidney function narrows the safe margin for fluids',
+      },
+      {
+        id: 'dementia',
+        label: 'Dementia or memory problems',
+        hint: 'May not notice or report feeling too hot or too cold',
+      },
       { id: 'mobility', label: 'Reduced mobility' },
       {
         id: 'medication',
         label: 'Medication affecting temperature',
-        hint: 'Diuretics, beta-blockers, antidepressants, antipsychotics',
+        hint: 'Tick this, then say which — it changes the advice a lot',
       },
     ],
   },
@@ -82,6 +92,14 @@ export interface Profile {
   postcodeOutward?: string
   /** Vulnerability and context factors. Ids from ALL_FACTOR_IDS. */
   factors: string[]
+  /**
+   * Pharmacological classes, from MED_CLASS_OPTIONS in clinical.ts.
+   *
+   * Separate from `factors` because "on medication" is a yes/no and this is not:
+   * lithium and a beta blocker are both a tick in the same box and a very
+   * different risk. Optional so profiles saved before this existed still load.
+   */
+  medClasses?: string[]
   /** Free text the assistant can use — "I look after my mum next door". */
   notes?: string
   createdAt: string
@@ -98,7 +116,9 @@ export function isValidProfile(p: unknown): p is Profile {
     c.name.trim().length > 0 &&
     typeof c.regionCode === 'string' &&
     Array.isArray(c.factors) &&
-    c.factors.every((f) => typeof f === 'string')
+    c.factors.every((f) => typeof f === 'string') &&
+    (c.medClasses === undefined ||
+      (Array.isArray(c.medClasses) && c.medClasses.every((m) => typeof m === 'string')))
   )
 }
 

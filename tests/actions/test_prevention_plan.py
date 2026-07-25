@@ -299,3 +299,31 @@ def test_escalation_targets_are_collected_and_deduplicated(builder):
     plan = builder.build(p, exposure, assess(p, exposure))
     assert "gp" in plan.escalation_targets()
     assert len(plan.escalation_targets()) == len(set(plan.escalation_targets()))
+
+
+# ------------------------------------------------- gating, not firing for all
+
+def test_a_rule_with_no_condition_or_medication_still_needs_its_flag(builder):
+    """mobility_cannot_self_rescue declares no condition and no medicine, so
+    without a flag requirement it fired for everyone above 22 degrees — including
+    people with no mobility limitation at all."""
+    mobile = person(mobility_limited=False)
+    limited = person(mobility_limited=True)
+    exposure = hot()
+
+    assert "mobility_cannot_self_rescue" not in codes(
+        builder.build(mobile, exposure, assess(mobile, exposure))
+    )
+    assert "mobility_cannot_self_rescue" in codes(
+        builder.build(limited, exposure, assess(limited, exposure))
+    )
+
+
+def test_self_report_advice_never_fires_without_an_answer(builder):
+    """Telling someone "you said your bedroom feels too hot" when they said
+    nothing of the kind attributes a statement to them that they never made."""
+    p = person()
+    exposure = hot()
+    plan = builder.build(p, exposure, assess(p, exposure), report=None)
+    assert "bedroom_hot_reported" not in codes(plan)
+    assert "not_drinking_reported" not in codes(plan)

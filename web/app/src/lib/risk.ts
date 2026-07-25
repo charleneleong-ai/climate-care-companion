@@ -17,6 +17,11 @@
  * ────────────────────────────────────────────────────────────────────────────
  */
 
+import {
+  type InteractionRule,
+  matchingInteractions,
+  medicationBurden,
+} from './clinical'
 import type { Profile } from './profile'
 import type { RegionWeather } from './weather'
 
@@ -69,6 +74,26 @@ export interface RiskAssessment {
   /** Echoed through so advice and UI never disagree about the inputs. */
   weather: RegionWeather
   profileId: string
+  /**
+   * Combination rules that fire for this person in this weather.
+   *
+   * Computed here rather than in advice.ts because this is where the profile is
+   * in scope, and because they are part of the assessment: "heat plus a water
+   * tablet plus reduced kidney function" is a finding, not a phrasing choice.
+   */
+  interactions: InteractionRule[]
+}
+
+/** Bands map onto the Python tiers so the shared interaction rules can gate on
+ *  severity without this file needing to know what a tier is. */
+const TIER_FOR_BAND: Record<RiskBand, InteractionRule['min_tier']> = {
+  comfortable: 'Low',
+  'cold-moderate': 'Elevated',
+  'heat-moderate': 'Elevated',
+  'cold-high': 'High',
+  'heat-high': 'High',
+  'cold-severe': 'Severe',
+  'heat-severe': 'Severe',
 }
 
 /**
@@ -105,6 +130,8 @@ const FACTOR_SHIFTS: Record<
   pregnant: { cold: 1, heat: 2.5, label: 'Pregnancy', weight: 0.8 },
   respiratory: { cold: 3.5, heat: 1.5, label: 'Respiratory condition', weight: 0.9 },
   cardiovascular: { cold: 3, heat: 3, label: 'Heart or circulatory condition', weight: 0.95 },
+  renal: { cold: 1, heat: 3, label: 'Kidney condition', weight: 0.9 },
+  dementia: { cold: 2.5, heat: 3, label: 'Dementia or memory problems', weight: 0.95 },
   diabetes: { cold: 1.5, heat: 2, label: 'Diabetes', weight: 0.6 },
   mobility: { cold: 2, heat: 2, label: 'Reduced mobility', weight: 0.7 },
   medication: { cold: 1, heat: 2, label: 'Medication affecting temperature regulation', weight: 0.6 },
@@ -165,13 +192,39 @@ function soften(raw: number, max: number): number {
 }
 
 /** Build this person's adjusted thresholds. Exported so the UI can show them. */
+/**
+ * Medication as a graded shift rather than a flat one.
+ *
+ * The `medication` checkbox contributes { cold: 1, heat: 2 } whatever the person
+ * is actually taking. Spec §8.2 weights the classes 1 to 3, with lithium heaviest
+ * because dehydration concentrates it. Where the classes are known they replace
+ * the flat figure; where they are not, the checkbox stands as before, so profiles
+ * saved before the class picker existed still score.
+ *
+ * The heat side takes the burden directly and the cold side 40% of it — the
+ * mechanisms in §8.3 (fluid loss, impaired sweating, blunted thirst, blunted
+ * cutaneous blood flow) are overwhelmingly heat-side.
+ */
+const COLD_SHARE_OF_MEDICATION_RISK = 0.4
+
+function medicationShift(profile: Profile): { cold: number; heat: number } | null {
+  const burden = medicationBurden(profile.medClasses ?? [])
+  if (burden <= 0) return null
+  return { cold: burden * COLD_SHARE_OF_MEDICATION_RISK, heat: burden }
+}
+
 export function personalThresholds(profile: Profile): PersonalThresholds {
   const applicable = profile.factors
     .map((f) => FACTOR_SHIFTS[f])
     .filter((s): s is (typeof FACTOR_SHIFTS)[string] => Boolean(s))
 
-  const coldRaw = compound(applicable.map((s) => s.cold))
-  const heatRaw = compound(applicable.map((s) => s.heat))
+  const graded = medicationShift(profile)
+  const shifts = graded
+    ? [...applicable.filter((s) => s.label !== FACTOR_SHIFTS.medication.label), graded]
+    : applicable
+
+  const coldRaw = compound(shifts.map((s) => s.cold))
+  const heatRaw = compound(shifts.map((s) => s.heat))
 
   // Because soften() is bounded by its max, the gap between a danger shift and
   // its matching comfort shift is always under (MAX_DANGER - MAX_COMFORT) = 2,
@@ -377,6 +430,23 @@ export function assessRisk(profile: Profile, weather: RegionWeather): RiskAssess
     worseningToday,
     weather,
     profileId: profile.id,
+    interactions: matchingInteractions({
+      conditions: profile.factors,
+      medClasses: profile.medClasses ?? [],
+      // The onboarding factors double as the person-level flags.
+      flags: profile.factors,
+      // No check-in has happened in this app yet, so the self-report rules
+      // cannot fire. Passing nothing is deliberate: absent is not "no".
+      selfReport: undefined,
+      // The rules were written against dry-bulb peak and a modelled indoor
+      // figure. This app has neither, so today's max stands in for peak air and
+      // the apparent temperature for the indoor estimate. Both are honest
+      // approximations; replacing them needs the FR-11 dwelling model, which is
+      // noted as an open item in docs/reconciliation.md.
+      peakAir: weather.todayMax,
+      indoorDayEstimate: effectiveTemperature,
+      tier: TIER_FOR_BAND[band],
+    }),
   }
 }
 
