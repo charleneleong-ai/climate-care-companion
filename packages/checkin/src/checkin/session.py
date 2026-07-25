@@ -131,3 +131,33 @@ class CheckinSession:
         stopped replying matters just as much as one in a completed run.
         """
         return self.questionnaire.to_self_report(self.answers)
+
+
+class SessionStore:
+    """Keeps in-flight conversations, keyed by the number that will reply.
+
+    In memory for the scaffold. A real deployment needs persistence — a check-in
+    spans hours and must survive a restart, or a person who replies after a deploy
+    gets silence. Track A owns that swap; the interface is deliberately small so it
+    is a drop-in.
+    """
+
+    def __init__(self) -> None:
+        self.by_number: dict[str, CheckinSession] = {}
+
+    @staticmethod
+    def normalise(number: str) -> str:
+        return number.removeprefix("whatsapp:").strip()
+
+    def open(self, number: str, session: CheckinSession) -> None:
+        self.by_number[self.normalise(number)] = session
+
+    def get(self, number: str) -> CheckinSession | None:
+        return self.by_number.get(self.normalise(number))
+
+    def close(self, number: str) -> None:
+        self.by_number.pop(self.normalise(number), None)
+
+    def overdue(self, now: datetime) -> list[CheckinSession]:
+        """Sessions past their no-reply timeout. The escalation sweep reads this."""
+        return [s for s in self.by_number.values() if s.is_overdue(now)]

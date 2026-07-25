@@ -15,6 +15,7 @@ dependencies = [
     "climatise-allocation",
     "climatise-org",
     "climatise-api",
+    "climatise-voice",
 ]
 
 [tool.uv.workspace]
@@ -32,6 +33,7 @@ climatise-actions = { workspace = true }
 climatise-allocation = { workspace = true }
 climatise-org = { workspace = true }
 climatise-api = { workspace = true }
+climatise-voice = { workspace = true }
 
 [dependency-groups]
 dev = [
