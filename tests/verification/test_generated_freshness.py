@@ -9,6 +9,7 @@ fails the build rather than being quietly fixed underneath the author.
 """
 
 from core.corpus import Corpus
+from actions.export import CLINICAL_PATH, ClinicalExporter
 from core.export import CORPUS_PATH, RULES_PATH, RuleExporter
 
 REGENERATE = "stale — run: uv run python -m core.export"
@@ -49,3 +50,23 @@ def test_every_exported_rule_carries_its_explanation():
     for rule in document["exposure_rules"] + document["vulnerability_rules"]:
         assert rule["title"].strip(), f"{rule['code']} exported with no title"
         assert rule["why"].strip(), f"{rule['code']} exported with no explanation"
+
+
+def test_the_generated_clinical_content_matches_the_interaction_table():
+    """Exported from actions rather than core: actions depends on core, so core
+    cannot depend on actions without a circular package dependency."""
+    assert CLINICAL_PATH.exists(), REGENERATE
+    exporter = ClinicalExporter.load()
+    assert CLINICAL_PATH.read_text() == exporter.render(), (
+        f"{CLINICAL_PATH.name} is stale — run: uv run python -m actions.export"
+    )
+
+
+def test_every_interaction_exports_its_gating():
+    """A rule exported without requires_flags or requires_self_report fires for
+    everyone in the front end. Both have caused that already."""
+    for rule in ClinicalExporter.load().document()["interactions"]:
+        assert "requires_flags" in rule, f"{rule['code']} exported without flag gating"
+        assert "requires_self_report" in rule, (
+            f"{rule['code']} exported without self-report gating"
+        )
