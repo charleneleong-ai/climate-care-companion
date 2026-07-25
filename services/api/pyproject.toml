@@ -3,7 +3,7 @@ name = "climatise-api"
 version = "0.1.0"
 description = "Read path."
 requires-python = ">=3.13"
-dependencies = ["climatise-contracts", "climatise-core", "climatise-persons", "fastapi>=0.115"]
+dependencies = ["climatise-contracts", "climatise-core", "climatise-persons", "climatise-actions", "climatise-exposure", "fastapi>=0.115"]
 
 [build-system]
 requires = ["hatchling"]
@@ -16,3 +16,5 @@ packages = ["src/api"]
 climatise-contracts = { workspace = true }
 climatise-core = { workspace = true }
 climatise-persons = { workspace = true }
+climatise-actions = { workspace = true }
+climatise-exposure = { workspace = true }

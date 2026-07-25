@@ -3,11 +3,28 @@ from typing import Any
 
 import httpx
 
-from contracts import AlertLevel, ExposureFeatures, ExposureSource, Place, ReasonCode
+from contracts import (
+    AgeBand,
+    Aspect,
+    AlertLevel,
+    Audience,
+    Condition,
+    DwellingType,
+    ExposureFeatures,
+    ExposureSource,
+    Med,
+    MedClass,
+    Person,
+    Place,
+    ReasonCode,
+)
 from core.corpus import Corpus
 from core.scoring import RiskScorer
 from core.vulnerability import VulnerabilityScorer
+from actions.checklist import PreventionPlanBuilder
+from actions.interactions import InteractionTable
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 from exposure.openmeteo import OpenMeteoClient
 from persons.loader import PersonaLoader
 
@@ -21,6 +38,7 @@ CORPUS = Corpus.load()
 SCORER = RiskScorer(CORPUS)
 VULNERABILITY = VulnerabilityScorer()
 PERSONAS = PersonaLoader()
+PLANNER = PreventionPlanBuilder(CORPUS, InteractionTable.load())
 
 WEATHER = OpenMeteoClient(httpx.Client())
 """Live. NFR-03 gives it three seconds, NFR-04 falls back to the last snapshot,
@@ -113,4 +131,117 @@ def get_assessment(person_id: str) -> dict[str, Any]:
             "source": exposure.source,
         },
         "not_medical_advice": True,  # SC-2
+    }
+
+
+class PersonRequest(BaseModel):
+    """A person in the core's vocabulary, not the front end's.
+
+    The front end translates on the way out, using the one table in codes.ts
+    that already holds every disagreement between the two spellings. Accepting
+    the app's vocabulary here would put that mapping in two places, which is the
+    drift this convergence exists to end.
+    """
+
+    id: str = "adhoc"
+    name: str = "Someone"
+    age_band: AgeBand
+    lives_alone: bool = False
+    mobility_limited: bool = False
+    conditions: list[Condition] = Field(default_factory=list)
+    med_classes: list[MedClass] = Field(default_factory=list)
+
+    def to_person(self) -> Person:
+        return Person(
+            id=self.id,
+            name=self.name,
+            age_band=self.age_band,
+            lives_alone=self.lives_alone,
+            mobility_limited=self.mobility_limited,
+            conditions=tuple(self.conditions),
+            medications=tuple(Med(m.value, m) for m in self.med_classes),
+        )
+
+
+class PlaceRequest(BaseModel):
+    lat: float = FALLBACK_LAT
+    lon: float = FALLBACK_LON
+    dwelling_type: DwellingType = DwellingType.HOUSE
+    floor: int = 0
+    has_cooling: bool = False
+
+    def to_place(self, person_id: str, offset: float) -> Place:
+        return Place(
+            person_id=person_id, postcode="", lat=self.lat, lon=self.lon,
+            admin_district="", region="", dwelling_type=self.dwelling_type,
+            floor=self.floor, aspect=Aspect.SOUTH, has_cooling=self.has_cooling,
+            heating_affordable=True, dwelling_offset=offset,
+        )
+
+
+class AssessRequest(BaseModel):
+    person: PersonRequest
+    place: PlaceRequest = Field(default_factory=PlaceRequest)
+    dwelling_offset: float = 1.2
+    """Until the front end collects dwelling detail, a middling home. The offset
+    is the input FR-11 actually needs, so it is accepted directly rather than
+    guessed from a coldHome/overheatingHome checkbox."""
+    audience: Audience = Audience.CAREGIVER
+
+
+@app.post("/assess")
+def assess(request: AssessRequest) -> dict[str, Any]:
+    """Assess anyone, not only a seeded persona.
+
+    This is the endpoint the front end calls now that it no longer scores. It
+    returns the assessment and the prevention plan together, because a tier
+    without a next step is a weather app.
+    """
+    person = request.person.to_person()
+    place = request.place.to_place(person.id, request.dwelling_offset)
+
+    try:
+        exposure = exposure_for(place, date.today())
+    except LookupError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="No forecast available and nothing cached to fall back on.",
+        ) from exc
+
+    assessment = SCORER.assess(exposure, VULNERABILITY.profile(person))
+    plan = PLANNER.build(person, exposure, assessment, request.audience)
+
+    return {
+        "person_id": person.id,
+        "tier": assessment.tier.name,
+        "risk_score": assessment.risk_score,
+        "exposure_score": assessment.exposure_score,
+        "vulnerability_score": assessment.vulnerability_score,
+        "reasons": [
+            {"code": r.code, "title": r.title, "explanation": r.explanation,
+             "weight": r.weight}
+            for r in assessment.reasons
+        ],
+        "exposure": {
+            "indoor_night_est_modelled": round(exposure.indoor_night_est, 2),
+            "indoor_day_est_modelled": round(exposure.indoor_day_est, 2),
+            "overnight_min": exposure.overnight_min,
+            "peak_apparent": exposure.peak_apparent,
+            "peak_air": exposure.peak_air,
+            "spell_day": exposure.spell_day,
+            "dwelling_offset": place.dwelling_offset,
+            "alert_level": exposure.alert_level,
+            "source": exposure.source,
+        },
+        "plan": {
+            "audience": plan.audience,
+            "items": [
+                {"code": i.code, "text": i.text, "watch_for": i.watch_for,
+                 "escalate_to": i.escalate_to, "source": i.source}
+                for i in plan.items
+            ],
+            "watch_points": list(plan.watch_points),
+            "escalate_to": list(plan.escalation_targets()),
+        },
+        "not_medical_advice": True,
     }

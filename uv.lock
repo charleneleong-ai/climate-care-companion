@@ -167,16 +167,20 @@ name = "climatise-api"
 version = "0.1.0"
 source = { editable = "services/api" }
 dependencies = [
+    { name = "climatise-actions" },
     { name = "climatise-contracts" },
     { name = "climatise-core" },
+    { name = "climatise-exposure" },
     { name = "climatise-persons" },
     { name = "fastapi" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "climatise-actions", editable = "packages/actions" },
     { name = "climatise-contracts", editable = "packages/contracts" },
     { name = "climatise-core", editable = "packages/core" },
+    { name = "climatise-exposure", editable = "packages/exposure" },
     { name = "climatise-persons", editable = "packages/persons" },
     { name = "fastapi", specifier = ">=0.115" },
 ]
