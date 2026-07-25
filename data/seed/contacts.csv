@@ -1,0 +1,19 @@
+# Who to reach, and as which audience. Fictional numbers in the +447700900xxx
+# range Ofcom reserves for drama — SC-6, no real person is ever texted by the
+# demonstrator. A person with no caregiver row simply gets no caregiver message;
+# that is a real state, not a data error.
+person_id,audience,msisdn,name
+doris,caregiver,+447700900001,Susan
+doris,cared_for,+447700900002,Doris
+harold,caregiver,+447700900003,Anita
+harold,cared_for,+447700900004,Harold
+margaret,cared_for,+447700900005,Margaret
+elsie,caregiver,+447700900006,Joan
+elsie,cared_for,+447700900007,Elsie
+reg,caregiver,+447700900008,Michael
+reg,cared_for,+447700900009,Reg
+iris,caregiver,+447700900010,Priya
+iris,cared_for,+447700900011,Iris
+winifred,caregiver,+447700900012,Oakfield Care Home
+winifred,cared_for,+447700900013,Winifred
+ben,cared_for,+447700900014,Ben

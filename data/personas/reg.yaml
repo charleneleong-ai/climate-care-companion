@@ -1,0 +1,26 @@
+# The fluid tightrope. Fictional — SC-6.
+# Expected vulnerability 11: age 75-84 (2) + lives alone (2) + cardiovascular (2)
+#   + renal (2) + diuretic (2) + ace_arb (1).
+# The clinically dangerous case where the standard "drink plenty in the heat"
+# message is wrong: too little fluid strains the kidneys, too much strains the
+# heart. His furosemide increases loss while ramipril blunts thirst, so he can dry
+# out without feeling it. This is where a generic public alert can actively harm
+# and a per-person plan (renal_and_cardiovascular + diuretic combos) is the value.
+id: reg
+name: Reg
+age_band: b75_84
+lives_alone: true
+mobility_limited: false
+conditions: [cardiovascular, renal]
+medications:
+  - drug_name: furosemide
+    drug_class: diuretic
+  - drug_name: ramipril
+    drug_class: ace_arb
+place:
+  postcode: MK41 7CD
+  dwelling_type: flat
+  floor: 3
+  aspect: west
+  has_cooling: false
+  heating_affordable: true

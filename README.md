@@ -132,6 +132,33 @@ Polarity is data, not inferred: *"Have you passed water today?"* flags on **no**
 *"Do you feel muddled?"* flags on **yes**. `UNROUSABLE` deliberately has no question
 — someone unrousable cannot answer one, so it is carried by the no-answer path.
 
+## The seeded cohort
+
+Eight fictional personas in `data/personas/*.yaml` span Low to Severe and exercise
+both the patient side (companion, questionnaire, assessment) and the clinical side
+(allocation ranking, caregiver notification via `data/seed/contacts.csv`). All are
+fictional (SC-6); caregiver numbers use the Ofcom drama range. Adding one is a new
+YAML file and no Python edit, so the count-and-glob guard in
+`tests/data/test_contribution_surfaces.py` stays green.
+
+Each carries a distinct fatal pathway, and five return **HIGH on 19 July 2025 with
+no regional alert in force** - the exact people the national cascade misses.
+
+| Persona | Tier (19 Jul 2025, no alert) | Vuln | Fatal pathway it demonstrates |
+|---|---|---|---|
+| Elsie, 87 | HIGH | 10 | Lithium toxicity; dehydration concentrates a narrow-window drug, and she lives alone and cannot self-report the early tremor |
+| Reg, 79 | HIGH | 11 | The fluid tightrope; renal + cardiovascular where "drink plenty" can harm, and diuretic + ACE blunts thirst |
+| Iris, 87 | HIGH | 8 | Absent sweating; an anticholinergic removes the first warning sign, and mobility limits self-rescue |
+| Winifred, 89 | HIGH | 8 | Care-home overheating; an antipsychotic impairs thermoregulation in the setting where risk roughly doubles at 25 C |
+| Ben, 61 | ELEVATED | 2 | Insulin storage; it degrades above 25 C, a life-or-death failure a low vulnerability score alone would skip |
+| Doris, 88 | HIGH | 10 | The headline case; dementia plus diuretic + ACE, alone in a hot top-floor flat |
+| Harold, 76 | ELEVATED | 5 | Mid-tier control; cardiovascular on a beta blocker, but a live-in wife lowers his allocation priority |
+| Margaret, 68 | ELEVATED | 2 | The no-cry-wolf control; lives alone only, and must never over-alarm |
+
+Ben is the deliberate lesson: a vulnerability number alone ranks him safe, yet the
+`heat_sensitive_storage` interaction fires at tier Low regardless of age, so the plan
+still reaches him. The intervention is not only an elderly tool.
+
 ## Attribution
 
 Weather data from [Open-Meteo](https://open-meteo.com) under CC BY 4.0. Alert levels,

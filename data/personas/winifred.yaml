@@ -1,0 +1,24 @@
+# The care-home resident. Fictional — SC-6.
+# Expected vulnerability 8: age 85+ (3) + dementia (2) + mobility limited (1)
+#   + antipsychotic (2).
+# Not lives_alone — she is in a care home, which is exactly why she still needs
+# the plan rather than less: LSHTM found care-home death risk roughly doubled at
+# 25C vs 16C, because homes built to retain winter heat overheat in summer. Her
+# quetiapine impairs the brain's temperature control, so staff must check the room
+# rather than ask how she feels. This is the clinician/setting side of the value.
+id: winifred
+name: Winifred
+age_band: b85_plus
+lives_alone: false
+mobility_limited: true
+conditions: [dementia]
+medications:
+  - drug_name: quetiapine
+    drug_class: antipsychotic
+place:
+  postcode: MK43 9GH
+  dwelling_type: care_home
+  floor: 0
+  aspect: south
+  has_cooling: false
+  heating_affordable: true
