@@ -402,3 +402,87 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── companion screen ──────────────────────────────────────────────────────
+   NFR-06 (16px body, 44px targets) and NFR-07 (a tier is never colour alone)
+   are enforced here rather than left to each component to remember. */
+
+.section-label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.62;
+  margin: 0 0 0.55rem 0.15rem;
+}
+
+.row {
+  padding: 0.85rem 0.95rem;
+  border-top: 1px solid var(--border, #e3e0d8);
+}
+.row:first-child { border-top: none; }
+
+/* The shape channel. Colour is the third signal, never the only one. */
+.glyph {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  background: currentColor;
+}
+.glyph-circle   { border-radius: 50%; }
+.glyph-square   { border-radius: 3px; }
+.glyph-triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.glyph-diamond  { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+.tone-low      { color: #7fb069; }
+.tone-elevated { color: #f3c05a; }
+.tone-high     { color: #e07a3f; }
+.tone-severe   { color: #c1362f; }
+/* The tier word itself stays ink so it never relies on the tone for legibility. */
+.tone-low > div > span:last-child,
+.tone-elevated > div > span:last-child,
+.tone-high > div > span:last-child,
+.tone-severe > div > span:last-child { color: var(--ink, #1a1a17); }
+
+.switch {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--border, #e3e0d8);
+  border-radius: 12px;
+  background: var(--panel-2, #f2efe9);
+}
+.switch button {
+  flex: 1;
+  min-height: 44px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.66;
+  cursor: pointer;
+}
+.switch button[aria-pressed='true'] {
+  background: var(--panel, #fff);
+  opacity: 1;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+}
+.switch button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.tag {
+  display: inline-block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+.tag-interaction { color: #0b7b77; }
+.tag-self_report { color: #a8641c; }
+.tag-reason_code { display: none; }

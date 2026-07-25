@@ -8,7 +8,13 @@
  */
 
 const VERSION = 'climatise-v1'
-const SHELL = ['/', '/onboarding', '/manifest.webmanifest', '/data/uk-regions.geojson']
+const SHELL = [
+  '/',
+  '/companion',
+  '/onboarding',
+  '/manifest.webmanifest',
+  '/data/uk-regions.geojson',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
