@@ -27,6 +27,7 @@ from contracts import (
     ExposureFeatures,
     Person,
     PreventionPlan,
+    ReasonCode,
     SelfReport,
     Tier,
 )
@@ -62,9 +63,12 @@ class PreventionPlanBuilder:
         lead_time_hours: int = 0,
         expected_peak: float | None = None,
     ) -> PreventionPlan:
-        items = self.interaction_items(person, exposure, assessment, audience, report)
-        covered = {item.code for item in items}
-        items.extend(self.reason_items(assessment, audience, covered))
+        matched = self.interactions.matching(
+            exposure, person, assessment.tier, report
+        )
+        items = self.advice_items(matched, audience)
+        superseded = {code for rule in matched for code in rule.supersedes}
+        items.extend(self.reason_items(assessment, audience, superseded))
 
         return PreventionPlan(
             person_id=person.id,
@@ -76,16 +80,9 @@ class PreventionPlanBuilder:
             alert_level=exposure.alert_level,
         )
 
-    def interaction_items(
-        self,
-        person: Person,
-        exposure: ExposureFeatures,
-        assessment: Assessment,
-        audience: Audience,
-        report: SelfReport | None,
-    ) -> list[AdviceItem]:
+    def advice_items(self, matched, audience: Audience) -> list[AdviceItem]:
         items: list[AdviceItem] = []
-        for rule in self.interactions.matching(exposure, person, assessment.tier, report):
+        for rule in matched:
             text = rule.text_for(audience)
             if not text:
                 # Deliberately not addressed to this audience. Telling someone with
@@ -108,7 +105,7 @@ class PreventionPlanBuilder:
         return items
 
     def reason_items(
-        self, assessment: Assessment, audience: Audience, already_covered: set[str]
+        self, assessment: Assessment, audience: Audience, superseded: set[ReasonCode]
     ) -> list[AdviceItem]:
         """Single-factor advice, for anything the interactions did not already cover.
 
@@ -126,7 +123,7 @@ class PreventionPlanBuilder:
                 for row in self.corpus.actions
                 if row.reason_code in codes
                 and assessment.tier >= self.TIER_BY_NAME[row.tier_min]
-                and row.reason_code not in already_covered
+                and row.reason_code not in superseded
             ),
             key=lambda row: row.ordering,
         )

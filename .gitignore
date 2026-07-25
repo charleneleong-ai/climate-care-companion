@@ -19,3 +19,6 @@ data/cache/
 
 # local Claude Code settings
 .claude/settings.local.json
+
+# runtime logs
+logs/

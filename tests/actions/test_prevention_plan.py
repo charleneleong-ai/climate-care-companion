@@ -254,11 +254,44 @@ def test_interactions_come_before_single_factor_advice(builder):
     assert all(s is not AdviceSource.INTERACTION for s in sources[first_reason:])
 
 
-def test_a_reason_code_already_covered_by_an_interaction_is_not_repeated(builder):
+def test_an_interaction_supersedes_the_generic_advice_it_is_built_from(builder):
+    """The combination advice is more specific than the single-factor advice, so
+    emitting both would bury the better instruction under the generic one."""
+    p = person(conditions=(Condition.RENAL,),
+               medications=(Med("furosemide", MedClass.DIURETIC),))
+    exposure = hot()
+    plan = builder.build(p, exposure, assess(p, exposure))
+
+    assert "diuretic_and_renal" in codes(plan)
+    assert ReasonCode.MED_DIURETIC not in codes(plan), "generic diuretic advice survived"
+    assert ReasonCode.RENAL not in codes(plan), "generic renal advice survived"
+
+
+def test_generic_advice_survives_when_no_interaction_covers_it(builder):
+    """Superseding is targeted, not blanket suppression. A diuretic on its own has
+    no combination rule, so the single-factor advice must still reach the caregiver."""
     p = person(medications=(Med("furosemide", MedClass.DIURETIC),))
     exposure = hot()
     plan = builder.build(p, exposure, assess(p, exposure))
-    assert len(codes(plan)) == len(plan.items)
+    assert ReasonCode.MED_DIURETIC in codes(plan)
+    assert ReasonCode.LIVES_ALONE in codes(plan)
+
+
+def test_one_reason_code_may_yield_several_items_across_tiers(builder):
+    """actions.csv carries a row per tier, so a High-tier plan gets both the
+    Elevated and the High instruction for the same factor. Not duplication — the
+    High row is additional advice, not a restatement."""
+    doris = person(conditions=(Condition.DEMENTIA,),
+                   medications=(Med("furosemide", MedClass.DIURETIC),
+                                Med("ramipril", MedClass.ACE_ARB)))
+    exposure = hot()
+    assessment = assess(doris, exposure)
+    assert assessment.tier is Tier.HIGH, "fixture must reach High for this to mean anything"
+
+    plan = builder.build(doris, exposure, assessment)
+    alone = [i for i in plan.items if i.code == ReasonCode.LIVES_ALONE]
+    assert len(alone) > 1
+    assert len({i.text for i in alone}) == len(alone)
 
 
 def test_escalation_targets_are_collected_and_deduplicated(builder):

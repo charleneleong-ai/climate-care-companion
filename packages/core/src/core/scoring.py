@@ -58,7 +58,7 @@ class RiskScorer:
     def assess(
         self, exposure: ExposureFeatures, vulnerability: VulnerabilityProfile
     ) -> Assessment:
-        triggered = [rule for rule in self.exposure_rules if rule.predicate(exposure)]
+        triggered = [rule for rule in self.exposure_rules if rule.applies(exposure)]
         exposure_score = sum(rule.weight for rule in triggered)
 
         # FR-18: zero exposure is Low regardless of frailty. Vulnerability modifies

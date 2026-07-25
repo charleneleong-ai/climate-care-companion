@@ -20,6 +20,7 @@ from pathlib import Path
 
 from contracts import (
     Audience,
+    ReasonCode,
     Condition,
     ExposureFeatures,
     MedClass,
@@ -51,6 +52,10 @@ class InteractionRule:
     requires_conditions: frozenset[Condition]
     requires_med_classes: frozenset[MedClass]
     requires_self_report: tuple[str, bool] | None
+    supersedes: frozenset[ReasonCode]
+    """Reason codes this rule replaces. The combination advice is more specific
+    than the single-factor advice it is built from, so emitting both would bury
+    the better instruction under the generic one."""
     min_tier: Tier
     advice_caregiver: str
     advice_person: str | None
@@ -130,6 +135,10 @@ class InteractionTable:
                     ),
                     requires_self_report=InteractionTable.parse_self_report(
                         row["requires_self_report"]
+                    ),
+                    supersedes=frozenset(
+                        ReasonCode(c)
+                        for c in InteractionTable.split(row["supersedes"])
                     ),
                     min_tier=TIER_BY_NAME[row["min_tier"]],
                     advice_caregiver=row["advice_caregiver"],
