@@ -16,7 +16,7 @@ Python's answers attached, for the JavaScript to check itself against.
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -203,7 +203,85 @@ class RuleExporter:
                     },
                 }
             )
-        return {"_banner": BANNER, "cases": cases}
+        return {
+            "_banner": BANNER,
+            "cases": cases,
+            "sweeps": self.sweeps(),
+        }
+
+    SWEEP_OFFSET = 1.2
+    """A middle-of-the-road dwelling. The sweep is about where the two models
+    cross a boundary, not about any particular home."""
+
+    def tier_at(self, case: "ParityCase", profile: Any, temperature: int) -> str:
+        from exposure.indoor import IndoorModel
+
+        model = IndoorModel()
+        night = temperature - 8.0
+        exposure = replace(
+            case.exposure,
+            overnight_min=night,
+            peak_apparent=float(temperature),
+            peak_air=float(temperature),
+            indoor_night_est=model.night(night, temperature, self.SWEEP_OFFSET),
+            indoor_day_est=model.day(night, temperature, self.SWEEP_OFFSET),
+            spell_day=0,
+        )
+        return self.scorer.assess(exposure, profile).tier.name.title()
+
+    def comfortable_window(self, case: "ParityCase", profile: Any) -> dict[str, Any]:
+        """The outdoor range in which this person is Low tier, and the boundaries
+        either side.
+
+        This is what is directly comparable between the two models. A tier and a
+        band are different labels for different quantities; a boundary
+        temperature is the same quantity in both, measurable in degrees.
+
+        Note what the window exposes: FR-11 carries no heating term, so the core
+        models every home as unheated and puts the cold boundary far higher than
+        anyone would call cold. See docs/deviations.md.
+        """
+        tiers = {t: self.tier_at(case, profile, t) for t in range(-10, 46)}
+        low = sorted(t for t, tier in tiers.items() if tier == "Low")
+        if not low:
+            return {"comfortable_from": None, "comfortable_to": None, "boundaries": {}}
+
+        boundaries: dict[str, int] = {}
+        for temperature in range(low[-1] + 1, 46):
+            boundaries.setdefault(tiers[temperature], temperature)
+        cold_boundaries: dict[str, int] = {}
+        for temperature in range(low[0] - 1, -11, -1):
+            cold_boundaries.setdefault(tiers[temperature], temperature)
+
+        return {
+            "comfortable_from": low[0],
+            "comfortable_to": low[-1],
+            "heat_boundaries": {k: v for k, v in boundaries.items() if k != "Low"},
+            "cold_boundaries": {k: v for k, v in cold_boundaries.items() if k != "Low"},
+        }
+
+    def sweeps(self) -> list[dict[str, Any]]:
+        """Where each person's comfortable window sits, and what lies either side."""
+        out: list[dict[str, Any]] = []
+        for case in self.cases():
+            profile = self.vulnerability.profile(case.person)
+            out.append(
+                {
+                    "name": case.name,
+                    "person": {
+                        "age_band": case.person.age_band.value,
+                        "lives_alone": case.person.lives_alone,
+                        "mobility_limited": case.person.mobility_limited,
+                        "conditions": [c.value for c in case.person.conditions],
+                        "med_classes": sorted(
+                            {m.drug_class.value for m in case.person.medications}
+                        ),
+                    },
+                    "vulnerability_score": profile.score,
+                    **self.comfortable_window(case, profile),
+                }
+            )
+        return out
 
     @staticmethod
     def render(document: dict[str, Any]) -> str:

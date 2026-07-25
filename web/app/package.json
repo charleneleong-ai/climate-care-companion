@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "parity": "tsx scripts/parity.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

@@ -213,5 +213,162 @@
         ]
       }
     }
+  ],
+  "sweeps": [
+    {
+      "name": "spec_8_6_worked_example",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": true,
+        "mobility_limited": false,
+        "conditions": [
+          "dementia"
+        ],
+        "med_classes": [
+          "ace_arb",
+          "diuretic"
+        ]
+      },
+      "vulnerability_score": 10,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "High": 17
+      }
+    },
+    {
+      "name": "zero_exposure_frail_person_stays_low",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": true,
+        "mobility_limited": false,
+        "conditions": [
+          "dementia"
+        ],
+        "med_classes": [
+          "ace_arb",
+          "diuretic"
+        ]
+      },
+      "vulnerability_score": 10,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "High": 17
+      }
+    },
+    {
+      "name": "cold_guard_suppresses_on_a_mild_day",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": false,
+        "mobility_limited": false,
+        "conditions": [],
+        "med_classes": []
+      },
+      "vulnerability_score": 3,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "Elevated": 17,
+        "High": 13
+      }
+    },
+    {
+      "name": "cold_codes_fire_in_genuine_cold",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": false,
+        "mobility_limited": false,
+        "conditions": [],
+        "med_classes": []
+      },
+      "vulnerability_score": 3,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "Elevated": 17,
+        "High": 13
+      }
+    },
+    {
+      "name": "bedroom_band_lower_edge",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": false,
+        "mobility_limited": false,
+        "conditions": [],
+        "med_classes": []
+      },
+      "vulnerability_score": 3,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "Elevated": 17,
+        "High": 13
+      }
+    },
+    {
+      "name": "bedroom_band_upper_edge_is_unsafe",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": false,
+        "mobility_limited": false,
+        "conditions": [],
+        "med_classes": []
+      },
+      "vulnerability_score": 3,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "Elevated": 17,
+        "High": 13
+      }
+    },
+    {
+      "name": "sustained_spell_needs_both_bounds",
+      "person": {
+        "age_band": "b85_plus",
+        "lives_alone": false,
+        "mobility_limited": false,
+        "conditions": [],
+        "med_classes": []
+      },
+      "vulnerability_score": 3,
+      "comfortable_from": 18,
+      "comfortable_to": 27,
+      "heat_boundaries": {
+        "High": 28,
+        "Severe": 30
+      },
+      "cold_boundaries": {
+        "Elevated": 17,
+        "High": 13
+      }
+    }
   ]
 }

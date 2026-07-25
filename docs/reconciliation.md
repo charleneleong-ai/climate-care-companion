@@ -115,10 +115,56 @@ is the single largest clinical gap between the two models.
 **No indoor modelling in the front end.** `overheatingHome` and `coldHome` are
 coarse proxies for `dwelling_offset`. The offset lookup is exportable.
 
-**The two models have never been run against the same inputs.** The parity corpus
-pins Python's answers for seven boundary cases; nothing yet checks what the
-TypeScript returns for them. That comparison is the honest test of whether these
-can be reconciled at all, or whether one has to give way.
+## The parity run, and what it settled
+
+`web/app/scripts/parity.ts` now runs the corpus against the TypeScript.
+
+**Measured windows** — the outdoor range each model calls comfortable:
+
+| vulnerability | Python | TypeScript |
+|---|---|---|
+| 10 (Doris: 85+, alone, dementia, diuretic, ACE) | 18–27 °C | 15–19 °C |
+| 3 (85+ only) | 18–27 °C | 14–20 °C |
+
+**Python's window does not move.** A person scoring 10 and a person scoring 3
+become at-risk at exactly the same temperature. That is not a bug: §8.4 says
+vulnerability modifies the effect of exposure rather than being a harm itself,
+and FR-18 makes zero exposure Low regardless of frailty. Exposure alone decides
+*whether* there is risk; vulnerability decides *how much*.
+
+**TypeScript's window moves per person**, which is what §1.3 describes — "a
+personal threshold, not an absolute one".
+
+Both are in the brief and they contradict each other. **No amount of shared data
+reconciles that.** It is a decision, and it is the decision this document exists
+to force.
+
+### One unsafe divergence
+
+`bedroom_band_upper_edge_is_unsafe`: Python **Elevated**, TypeScript **Low**.
+
+Indoor modelled at 26 °C overnight with an outdoor peak of 18 °C. The TypeScript
+cannot see it, because it has no indoor model — the person is in a dangerously
+hot bedroom on a mild day and the app calls them comfortable. Under-warning is
+the failure SC-7 names as dominant, so the harness exits non-zero on it.
+
+### What the run also exposed about Python
+
+Sweeping the temperature range showed the core has **no comfortable band below
+18 °C outdoor for anyone**. FR-11 carries no heating term, so 15 °C outside
+models to 13.6 °C indoors and fires `INDOOR_BELOW_16` for the whole population.
+That is the unheated-dwelling assumption in `docs/deviations.md`, and it is
+larger than it looked: it is not an edge case, it is most of the British year.
+
+### Two harness bugs on the way, both mine
+
+The first sweep reported a 40 °C divergence and tiers reached at −10 °C. It swept
+upward from −10 and recorded the first temperature reaching each tier — but a
+tier is reached both by getting colder and by getting hotter, so it compared a
+cold crossing against a heat one. The second attempt started from a
+"comfortable" 15 °C, which is not comfortable in the Python model for the reason
+above. A metric that produces an alarming number is worth doubting before the
+system is.
 
 **Unresolved: which model wins.** Threshold-shifting and score-multiplying cannot
 both be the answer. My recommendation is that the *thresholds* approach is the
