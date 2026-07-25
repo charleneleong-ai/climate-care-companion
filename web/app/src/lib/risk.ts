@@ -22,6 +22,7 @@ import {
   matchingInteractions,
   medicationBurden,
 } from './clinical'
+import { conditionsFor, flagsFor, TIER_FOR_BAND } from './codes'
 import type { Profile } from './profile'
 import type { RegionWeather } from './weather'
 
@@ -82,18 +83,6 @@ export interface RiskAssessment {
    * tablet plus reduced kidney function" is a finding, not a phrasing choice.
    */
   interactions: InteractionRule[]
-}
-
-/** Bands map onto the Python tiers so the shared interaction rules can gate on
- *  severity without this file needing to know what a tier is. */
-const TIER_FOR_BAND: Record<RiskBand, InteractionRule['min_tier']> = {
-  comfortable: 'Low',
-  'cold-moderate': 'Elevated',
-  'heat-moderate': 'Elevated',
-  'cold-high': 'High',
-  'heat-high': 'High',
-  'cold-severe': 'Severe',
-  'heat-severe': 'Severe',
 }
 
 /**
@@ -401,7 +390,11 @@ function driversFor(
  * The main entry point. Pure function — no I/O, no clock, no randomness, so
  * it is trivially testable and safe to run on the server or the client.
  */
-export function assessRisk(profile: Profile, weather: RegionWeather): RiskAssessment {
+export function assessRisk(
+  profile: Profile,
+  weather: RegionWeather,
+  selfReport?: Record<string, boolean | null>,
+): RiskAssessment {
   const thresholds = personalThresholds(profile)
 
   // Apparent temperature, not dry-bulb: wind chill and humidity are exactly
@@ -431,13 +424,14 @@ export function assessRisk(profile: Profile, weather: RegionWeather): RiskAssess
     weather,
     profileId: profile.id,
     interactions: matchingInteractions({
-      conditions: profile.factors,
+      // Translated, not passed through. The app and the core spell these
+      // differently — see codes.ts, which is where that disagreement lives.
+      conditions: conditionsFor(profile.factors),
       medClasses: profile.medClasses ?? [],
-      // The onboarding factors double as the person-level flags.
-      flags: profile.factors,
-      // No check-in has happened in this app yet, so the self-report rules
-      // cannot fire. Passing nothing is deliberate: absent is not "no".
-      selfReport: undefined,
+      flags: flagsFor(profile.factors),
+      // What the person said on a check-in, when there has been one. Absent is
+      // deliberately not the same as "no" — see matchingInteractions.
+      selfReport,
       // The rules were written against dry-bulb peak and a modelled indoor
       // figure. This app has neither, so today's max stands in for peak air and
       // the apparent temperature for the indoor estimate. Both are honest

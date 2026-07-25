@@ -70,3 +70,14 @@ def test_every_interaction_exports_its_gating():
         assert "requires_self_report" in rule, (
             f"{rule['code']} exported without self-report gating"
         )
+
+
+def test_the_generated_questions_match_the_bank():
+    """The front end selects from the same validated bank, or the closed-set
+    property that makes an unsupervised questionnaire safe does not hold."""
+    from checkin.export import QUESTIONS_PATH, QuestionExporter
+
+    assert QUESTIONS_PATH.exists(), REGENERATE
+    assert QUESTIONS_PATH.read_text() == QuestionExporter.load().render(), (
+        f"{QUESTIONS_PATH.name} is stale — run: uv run python -m checkin.export"
+    )
