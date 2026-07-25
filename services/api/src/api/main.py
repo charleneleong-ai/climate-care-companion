@@ -106,7 +106,7 @@ def get_assessment(person_id: str) -> dict[str, Any]:
     return {
         "person_id": person.id,
         "name": person.name,
-        "tier": assessment.tier.name,
+        "tier": assessment.tier.name.title(),
         "risk_score": assessment.risk_score,
         "exposure_score": assessment.exposure_score,
         "vulnerability_score": assessment.vulnerability_score,
@@ -213,7 +213,7 @@ def assess(request: AssessRequest) -> dict[str, Any]:
 
     return {
         "person_id": person.id,
-        "tier": assessment.tier.name,
+        "tier": assessment.tier.name.title(),
         "risk_score": assessment.risk_score,
         "exposure_score": assessment.exposure_score,
         "vulnerability_score": assessment.vulnerability_score,

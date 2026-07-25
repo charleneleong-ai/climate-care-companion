@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 
-import { getAdvice } from '@/lib/advice'
 import { DEMO_PROFILES, isValidProfile, type Profile } from '@/lib/profile'
 import { regionByCode } from '@/lib/regions'
-import { assessRisk, bandLabel } from '@/lib/risk'
+import { assessViaCore } from '@/lib/assess-client'
+import { bandForTier, bandLabel, directionForCodes } from '@/lib/risk'
 import { describeWeatherCode, fetchAllRegions } from '@/lib/weather'
 
 /**
@@ -19,53 +19,70 @@ import { describeWeatherCode, fetchAllRegions } from '@/lib/weather'
  */
 
 async function assessProfiles(profiles: Profile[], atTemperature?: number) {
-  const snapshot = await fetchAllRegions()
+  const snapshot = await fetchAllRegions().catch(() => null)
 
-  return profiles.map((profile) => {
-    let weather = snapshot.regions.find((r) => r.regionCode === profile.regionCode)
-    if (!weather) {
-      return { profile: profile.name, error: `No weather for region ${profile.regionCode}` }
-    }
+  return Promise.all(
+    profiles.map(async (profile) => {
+      const weather = snapshot?.regions.find((r) => r.regionCode === profile.regionCode)
 
-    // What-if override: substitute a feels-like temperature to answer "what
-    // will this person be told when it reaches 30°C?" Real conditions are
-    // still used for humidity, wind and today's range.
-    if (atTemperature !== undefined) {
-      weather = { ...weather, apparentTemperature: atTemperature }
-    }
+      let core
+      try {
+        core = await assessViaCore(profile)
+      } catch (error) {
+        // The core being unreachable is a fact to report, not an exception to
+        // swallow. A caregiver told "no assessment available" can act on that;
+        // one shown a fabricated tier cannot.
+        return {
+          profile: profile.name,
+          error: `Risk core unavailable: ${(error as Error).message}`,
+        }
+      }
 
-    const assessment = assessRisk(profile, weather)
+      const direction = directionForCodes(core.reasons.map((r) => r.code))
+      const band = bandForTier(core.tier, direction)
 
-    return {
-      profile: {
-        id: profile.id,
-        name: profile.name,
-        region: regionByCode(profile.regionCode)?.name,
-        factors: profile.factors,
-      },
-      conditions: {
-        temperature: weather.temperature,
-        apparentTemperature: weather.apparentTemperature,
-        conditions: describeWeatherCode(weather.weatherCode),
-        todayMin: weather.todayMin,
-        todayMax: weather.todayMax,
-      },
-      assessment: {
-        band: assessment.band,
-        bandLabel: bandLabel(assessment.band),
-        direction: assessment.direction,
-        severity: assessment.severity,
-        thresholds: assessment.thresholds,
-        headroomToNextBand: assessment.headroomToNextBand,
-        worseningToday: assessment.worseningToday,
-        drivers: assessment.drivers,
-        /** Combination rules that fired. Codes only — the full text is on the
-         *  advice, and repeating it here would let the two drift. */
-        interactions: assessment.interactions.map((r) => r.code),
-      },
-      advice: getAdvice(assessment),
-    }
-  })
+      return {
+        profile: {
+          id: profile.id,
+          name: profile.name,
+          region: regionByCode(profile.regionCode)?.name,
+          factors: profile.factors,
+          medClasses: profile.medClasses ?? [],
+        },
+        conditions: weather
+          ? {
+              temperature: weather.temperature,
+              apparentTemperature: weather.apparentTemperature,
+              conditions: describeWeatherCode(weather.weatherCode),
+              todayMin: weather.todayMin,
+              todayMax: weather.todayMax,
+              /** Display only. The core fetches its own hourly forecast, because
+               *  FR-07's overnight minimum needs the 22:00–07:00 window and a
+               *  daily minimum cannot answer it. */
+              note: atTemperature !== undefined ? 'what-if not supported by the core' : undefined,
+            }
+          : null,
+        assessment: {
+          tier: core.tier,
+          band,
+          bandLabel: bandLabel(band),
+          direction,
+          riskScore: core.risk_score,
+          exposureScore: core.exposure_score,
+          vulnerabilityScore: core.vulnerability_score,
+          // SC-5: the label is in the key, so no caller can drop it.
+          indoorNightEstimateModelled: core.exposure.indoor_night_est_modelled,
+          indoorDayEstimateModelled: core.exposure.indoor_day_est_modelled,
+          /** live | cache. A stale figure must never read as a fresh one. */
+          source: core.exposure.source,
+          reasons: core.reasons,
+        },
+        /** Advice comes from the core too. It holds the interaction rules and
+         *  the SC-1 gate; generating it here would be a second opinion. */
+        plan: core.plan,
+      }
+    }),
+  )
 }
 
 /** Parse the optional `at` what-if temperature, rejecting nonsense values. */

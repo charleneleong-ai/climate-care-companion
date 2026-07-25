@@ -115,6 +115,7 @@ const FACTOR_SHIFTS: Record<
 > = {
   over65: { cold: 2.5, heat: 2.5, label: 'Aged over 65', weight: 0.8 },
   over75: { cold: 4, heat: 4, label: 'Aged over 75', weight: 1.0 },
+  over85: { cold: 5, heat: 5, label: 'Aged over 85', weight: 1.0 },
   youngChild: { cold: 2, heat: 3, label: 'Young child in the household', weight: 0.9 },
   pregnant: { cold: 1, heat: 2.5, label: 'Pregnancy', weight: 0.8 },
   respiratory: { cold: 3.5, heat: 1.5, label: 'Respiratory condition', weight: 0.9 },
@@ -489,4 +490,52 @@ export const BAND_COLOURS: Record<RiskBand, string> = {
   'heat-moderate': '#f3c05a',
   'heat-high': '#e07a3f',
   'heat-severe': '#c1362f',
+}
+
+
+// ─── Presentation over the core's tier ──────────────────────────────────────
+//
+// Added while the second scoring engine above is being removed. These translate
+// what packages/core returns into the band vocabulary the UI already renders.
+// Nothing here scores; it renames.
+
+export type Tier = 'Low' | 'Elevated' | 'High' | 'Severe'
+
+const COLD_CODES = new Set(['indoor_below_18', 'indoor_below_16', 'indoor_below_12'])
+
+/**
+ * Direction from the core's reason codes, not from the thermometer.
+ *
+ * The core says *why* it raised a tier, so direction is a fact about the
+ * assessment rather than an inference from the weather. Someone can be at risk
+ * on a mild day because their bedroom never cools — which is exactly the case
+ * the engine above cannot see, having no indoor model.
+ */
+export function directionForCodes(codes: string[]): RiskDirection {
+  if (codes.length === 0) return 'none'
+  return codes.some((code) => COLD_CODES.has(code)) ? 'cold' : 'heat'
+}
+
+/**
+ * Tier plus direction is exactly the seven bands.
+ *
+ * Nothing invented, nothing lost: Low is comfortable, and each remaining tier
+ * splits into a hot and a cold form. The band is presentation over the core's
+ * tier, never a second opinion about it.
+ */
+export function bandForTier(tier: Tier, direction: RiskDirection): RiskBand {
+  if (tier === 'Low' || direction === 'none') return 'comfortable'
+  const suffix = tier === 'Elevated' ? 'moderate' : tier === 'High' ? 'high' : 'severe'
+  return `${direction}-${suffix}` as RiskBand
+}
+
+/**
+ * The core's risk score on a 0-100 scale.
+ *
+ * Its tier thresholds are 2, 5 and 9 and the score is unbounded above. Twenty
+ * is the practical ceiling: past that a person is far into Severe and the
+ * distinction stops meaning anything to a caregiver.
+ */
+export function severityForRiskScore(riskScore: number): number {
+  return Math.min(100, Math.round((riskScore / 20) * 100))
 }

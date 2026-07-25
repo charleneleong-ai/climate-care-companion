@@ -24,7 +24,7 @@ def test_people_lists_every_seeded_persona(client):
 def test_assessment_returns_tier_and_reasons_not_a_bare_score(client):
     """AC-2: the reasons array is the system of record for explanation."""
     body = client.get("/people/doris/assessment").json()
-    assert body["tier"] in {"LOW", "ELEVATED", "HIGH", "SEVERE"}
+    assert body["tier"] in {"Low", "Elevated", "High", "Severe"}
     assert body["reasons"], "an assessment with no reasons is not explainable"
     assert all({"code", "title", "explanation"} <= set(r) for r in body["reasons"])
 
@@ -70,3 +70,19 @@ def test_the_read_path_survives_the_weather_service_being_down(client, monkeypat
 
 def test_unknown_person_returns_404_not_500(client):
     assert client.get("/people/nobody/assessment").status_code == 404
+
+
+def test_tier_casing_matches_the_interaction_rules(client):
+    """One casing across the whole system.
+
+    /assess returned LOW while the interaction rules and the parity corpus used
+    Elevated, so the front end's tier-to-band mapping fell through and labelled
+    a Low assessment "Severe heat risk" — confidently, which is the dangerous
+    kind of wrong.
+    """
+    from actions.export import ClinicalExporter
+
+    tiers = {r["min_tier"] for r in ClinicalExporter.load().document()["interactions"]}
+    served = client.get("/people/doris/assessment").json()["tier"]
+    assert served[0].isupper() and served[1:].islower(), f"{served} is not title case"
+    assert all(t[0].isupper() and t[1:].islower() for t in tiers)

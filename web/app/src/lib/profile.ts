@@ -14,6 +14,11 @@ export const FACTOR_GROUPS: {
     factors: [
       { id: 'over65', label: 'I am over 65' },
       { id: 'over75', label: 'I am over 75' },
+      {
+        id: 'over85',
+        label: 'I am over 85',
+        hint: 'This group had the highest heat-related death rate in England last summer',
+      },
       { id: 'pregnant', label: 'I am pregnant' },
       { id: 'youngChild', label: 'There is a child under 5 in my home' },
       { id: 'livesAlone', label: 'I live alone' },
@@ -138,7 +143,7 @@ export const DEMO_PROFILES: Profile[] = [
     name: 'Doris',
     regionCode: 'TLC', // North East — usually the cold end of the country
     postcodeOutward: 'NE6',
-    factors: ['over75', 'livesAlone', 'cardiovascular', 'coldHome', 'mobility'],
+    factors: ['over85', 'livesAlone', 'cardiovascular', 'coldHome', 'mobility'],
     notes:
       'Retired, lives alone in a Victorian terrace. Worries about the heating bill and tends to sit in one room.',
     createdAt: '2026-07-25T09:00:00.000Z',
@@ -181,6 +186,7 @@ export const DEMO_PROFILES: Profile[] = [
     regionCode: 'TLK', // South West
     postcodeOutward: 'TR1',
     factors: ['over65', 'medication', 'diabetes', 'livesAlone'],
+    medClasses: ['diuretic', 'beta_blocker'],
     notes:
       'Takes a diuretic and a beta-blocker, so she dehydrates quickly and does not feel heat building up.',
     createdAt: '2026-07-25T09:04:00.000Z',
