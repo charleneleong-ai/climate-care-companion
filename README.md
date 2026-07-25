@@ -134,14 +134,14 @@ Polarity is data, not inferred: *"Have you passed water today?"* flags on **no**
 
 ## The seeded cohort
 
-Eight fictional personas in `data/personas/*.yaml` span Low to Severe and exercise
+Ten fictional personas in `data/personas/*.yaml` span Low to Severe and exercise
 both the patient side (companion, questionnaire, assessment) and the clinical side
 (allocation ranking, caregiver notification via `data/seed/contacts.csv`). All are
 fictional (SC-6); caregiver numbers use the Ofcom drama range. Adding one is a new
 YAML file and no Python edit, so the count-and-glob guard in
 `tests/data/test_contribution_surfaces.py` stays green.
 
-Each carries a distinct fatal pathway, and five return **HIGH on 19 July 2025 with
+Each carries a distinct fatal pathway, and seven return **HIGH on 19 July 2025 with
 no regional alert in force** - the exact people the national cascade misses.
 
 | Persona | Tier (19 Jul 2025, no alert) | Vuln | Fatal pathway it demonstrates |
@@ -150,6 +150,8 @@ no regional alert in force** - the exact people the national cascade misses.
 | Reg, 79 | HIGH | 11 | The fluid tightrope; renal + cardiovascular where "drink plenty" can harm, and diuretic + ACE blunts thirst |
 | Iris, 87 | HIGH | 8 | Absent sweating; an anticholinergic removes the first warning sign, and mobility limits self-rescue |
 | Winifred, 89 | HIGH | 8 | Care-home overheating; an antipsychotic impairs thermoregulation in the setting where risk roughly doubles at 25 C |
+| Victor, 79 | HIGH | 12 | Advice contradiction; renal + cardiovascular on diuretic + ACE + beta blocker, where the generic "drink plenty" can kill |
+| Sylvia, 78 | HIGH | 8 | Advice contradiction; antipsychotic + anticholinergic switch off both the feeling of heat and sweating, so "your body will warn you" is false |
 | Ben, 61 | ELEVATED | 2 | Insulin storage; it degrades above 25 C, a life-or-death failure a low vulnerability score alone would skip |
 | Doris, 88 | HIGH | 10 | The headline case; dementia plus diuretic + ACE, alone in a hot top-floor flat |
 | Harold, 76 | ELEVATED | 5 | Mid-tier control; cardiovascular on a beta blocker, but a live-in wife lowers his allocation priority |
@@ -158,6 +160,29 @@ no regional alert in force** - the exact people the national cascade misses.
 Ben is the deliberate lesson: a vulnerability number alone ranks him safe, yet the
 `heat_sensitive_storage` interaction fires at tier Low regardless of age, so the plan
 still reaches him. The intervention is not only an elderly tool.
+
+### Where personal advice contradicts the public message
+
+Victor and Sylvia exist to show the highest-stakes case: when generic heat guidance
+is not merely insufficient but wrong for a specific person. On 19 July 2025 both are
+HIGH, and their prevention plans invert the intuition rather than repeat it.
+
+- **Victor** - the public message is "drink plenty of fluids." His `renal_and_cardiovascular`
+  interaction fires instead, and its watch-for reads: *"Swollen ankles or breathlessness
+  lying flat, which point the opposite way to thirst and dark urine."* Too little fluid
+  strains the kidneys, too much overloads the heart; the safe amount is his GP's number,
+  not a public figure. `beta_blocker_exertion` adds that he will not feel the racing heart
+  that normally signals overexertion.
+- **Sylvia** - the intuition is "you will feel hot and sweat, so you will know to cool
+  down." Her `antipsychotic_thermoregulation` and `anticholinergic_absent_sweating`
+  interactions fire together, and the second is explicit: *"Sweating is the usual first
+  warning of overheating, and this medicine removes it - so its absence is not
+  reassurance."* Check the room with a thermometer; do not go by how she feels.
+
+Both still honour SC-1: no interaction ever suggests changing a prescription, and every
+medication interaction routes to a pharmacist or GP. The `matching()` call that selects
+these runs against the same rule table exported to the offline companion, so the
+contradiction shows identically in Python and in the browser.
 
 ## Attribution
 

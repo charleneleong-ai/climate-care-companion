@@ -1,0 +1,30 @@
+# The public-advice contradiction. Fictional — SC-6.
+# Expected vulnerability 12: age 75-84 (2) + lives alone (2) + cardiovascular (2)
+#   + renal (2) + diuretic (2) + ace_arb (1) + beta_blocker (1).
+# Generic heat guidance: "drink plenty of fluids." For Victor this is backwards.
+# Too little fluid strains the kidneys; too much strains the heart. His furosemide
+# increases loss, his ramipril blunts thirst, and his bisoprolol reduces the signal
+# that he is working hard. So he will dehydrate and not know it OR over-drink and
+# overload his heart. The interaction renal_and_cardiovascular fires and tells him
+# the exact amount his GP will settle today, not a public figure. A generic alert
+# that triggers "drink more" could kill him.
+id: victor
+name: Victor
+age_band: b75_84
+lives_alone: true
+mobility_limited: false
+conditions: [cardiovascular, renal]
+medications:
+  - drug_name: furosemide
+    drug_class: diuretic
+  - drug_name: ramipril
+    drug_class: ace_arb
+  - drug_name: bisoprolol
+    drug_class: beta_blocker
+place:
+  postcode: MK40 3CD
+  dwelling_type: flat
+  floor: 2
+  aspect: south
+  has_cooling: false
+  heating_affordable: true
