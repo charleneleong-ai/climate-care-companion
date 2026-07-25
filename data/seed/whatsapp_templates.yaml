@@ -1,0 +1,43 @@
+# WhatsApp message templates.
+#
+# Meta must approve each of these in Business Manager before it can be sent. The
+# wording is kept here so it is version-controlled, reviewable, and covered by the
+# SC-1 gate — approval by Meta checks policy compliance, not clinical safety.
+#
+# The body must match the approved template exactly or the send is rejected.
+# {{1}} etc are WhatsApp's positional variables.
+
+checkin_opener:
+  name: climatise_checkin_opener
+  language: en_GB
+  body: >
+    Hello {{1}}. It is going to be hot where you are tonight. Can we ask you a few
+    quick questions to check you are comfortable? Reply to this message to start.
+  variables: [first_name]
+  notes: >
+    Business-initiated, so it must be a template. Deliberately asks permission
+    rather than launching into questions — the 24-hour window opens on their reply,
+    and consent to be asked is not the same as consent to be assessed.
+
+checkin_opener_simple:
+  name: climatise_checkin_opener_simple
+  language: en_GB
+  body: >
+    Hello {{1}}. It will be hot tonight. Can we ask you a few questions? Reply to
+    this message.
+  variables: [first_name]
+  notes: >
+    Simplified register, selected when the assessment carries a dementia reason
+    code. One clause per sentence.
+
+caregiver_no_answer:
+  name: climatise_caregiver_no_answer
+  language: en_GB
+  body: >
+    We tried to check on {{1}} at {{2}} and did not get a reply. Conditions tonight
+    are {{3}} risk for them. Please check on them if you can.
+  variables: [cared_for_name, time, tier]
+  notes: >
+    Sent to the caregiver, not the cared-for person. A missed check-in during a
+    risk window is the condition the system exists to catch, so it escalates
+    rather than retrying silently.
