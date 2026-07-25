@@ -1,0 +1,38 @@
+drug_name,drug_class
+furosemide,diuretic
+bendroflumethiazide,diuretic
+indapamide,diuretic
+spironolactone,diuretic
+bumetanide,diuretic
+oxybutynin,anticholinergic
+amitriptyline,anticholinergic
+solifenacin,anticholinergic
+tolterodine,anticholinergic
+procyclidine,anticholinergic
+bisoprolol,beta_blocker
+atenolol,beta_blocker
+propranolol,beta_blocker
+carvedilol,beta_blocker
+metoprolol,beta_blocker
+ramipril,ace_arb
+lisinopril,ace_arb
+perindopril,ace_arb
+losartan,ace_arb
+candesartan,ace_arb
+irbesartan,ace_arb
+olanzapine,antipsychotic
+quetiapine,antipsychotic
+haloperidol,antipsychotic
+risperidone,antipsychotic
+aripiprazole,antipsychotic
+sertraline,ssri
+citalopram,ssri
+escitalopram,ssri
+fluoxetine,ssri
+paroxetine,ssri
+lithium carbonate,lithium
+lithium citrate,lithium
+insulin,heat_sensitive
+insulin glargine,heat_sensitive
+gtn spray,heat_sensitive
+glyceryl trinitrate,heat_sensitive

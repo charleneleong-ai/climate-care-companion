@@ -1,0 +1,17 @@
+# Low-vulnerability persona. Fictional — SC-6.
+# Expected: vulnerability 2 (lives alone only). This is the no-cry-wolf control:
+# she must return Low on every day of a benign 92-day season.
+id: margaret
+name: Margaret
+age_band: b65_74
+lives_alone: true
+mobility_limited: false
+conditions: []
+medications: []
+place:
+  postcode: MK42 0BC
+  dwelling_type: bungalow
+  floor: 0
+  aspect: east
+  has_cooling: true
+  heating_affordable: true

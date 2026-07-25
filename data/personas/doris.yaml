@@ -1,0 +1,20 @@
+# The spec section 8.6 worked example. Fictional — SC-6.
+# Expected: vulnerability 10, and HIGH on 19 July 2025 in Bedford with no alert.
+id: doris
+name: Doris
+age_band: b85_plus
+lives_alone: true
+mobility_limited: false
+conditions: [dementia]
+medications:
+  - drug_name: furosemide
+    drug_class: diuretic
+  - drug_name: ramipril
+    drug_class: ace_arb
+place:
+  postcode: MK40 1AA
+  dwelling_type: flat
+  floor: 3
+  aspect: south
+  has_cooling: false
+  heating_affordable: true

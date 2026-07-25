@@ -1,0 +1,20 @@
+# Mid-vulnerability persona. Fictional — SC-6.
+# Expected: vulnerability 5 (age 2 + cardiovascular 2 + beta blocker 1).
+# Lives with his wife, which is what separates him from Doris under allocation:
+# someone is already watching him.
+id: harold
+name: Harold
+age_band: b75_84
+lives_alone: false
+mobility_limited: false
+conditions: [cardiovascular]
+medications:
+  - drug_name: bisoprolol
+    drug_class: beta_blocker
+place:
+  postcode: MK41 9AB
+  dwelling_type: house
+  floor: 0
+  aspect: north
+  has_cooling: false
+  heating_affordable: true

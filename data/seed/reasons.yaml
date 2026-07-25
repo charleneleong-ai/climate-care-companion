@@ -1,0 +1,154 @@
+# Reason text. One entry per member of contracts.ReasonCode — the Corpus refuses
+# to load if any code is missing, so this file and the enum cannot drift apart.
+#
+# Titles are read aloud on voice check-ins. Keep them short and plain.
+
+# ---------------------------------------------------------------- exposure 8.1
+
+night_no_recovery:
+  title: "No overnight cooling"
+  explanation: >
+    The outdoor temperature stays at or above 20 degrees overnight, so there is no
+    window in which the home can cool down. The body recovers from daytime heat at
+    night; without that recovery, each hot day compounds the one before it.
+
+bedroom_unsafe:
+  title: "Bedroom too hot to sleep safely"
+  explanation: >
+    The modelled overnight bedroom temperature is 26 degrees or above. Sleep is
+    badly disrupted at this level and the strain on the heart continues through
+    the night. This figure is modelled, not measured.
+
+bedroom_warm:
+  title: "Bedroom warmer than is restful"
+  explanation: >
+    The modelled overnight bedroom temperature is between 24 and 26 degrees. Sleep
+    is disrupted above 24 degrees and the body does not fully recover from the
+    day's heat. This figure is modelled, not measured.
+
+peak_heat:
+  title: "Peak feels-like temperature is high"
+  explanation: >
+    The apparent temperature reaches 30 degrees or above. Apparent temperature
+    accounts for humidity, which is what determines whether sweating still cools
+    the body.
+
+sustained_spell:
+  title: "Third day or more of sustained heat"
+  explanation: >
+    Heat has been at or above the episode threshold for three consecutive days or
+    more. Risk accumulates across a spell rather than resetting each morning, and
+    the later days of an episode are the dangerous ones.
+
+indoor_below_18:
+  title: "Home below the healthy minimum"
+  explanation: >
+    The modelled daytime indoor temperature is between 16 and 18 degrees. Below 18
+    degrees, blood pressure rises and respiratory infections become more likely.
+    This figure is modelled, not measured.
+
+indoor_below_16:
+  title: "Home cold enough to affect the heart and lungs"
+  explanation: >
+    The modelled daytime indoor temperature is between 12 and 16 degrees. Sustained
+    exposure at this level raises the risk of heart attack and stroke. This figure
+    is modelled, not measured.
+
+indoor_below_12:
+  title: "Home dangerously cold"
+  explanation: >
+    The modelled daytime indoor temperature is below 12 degrees. This is a serious
+    risk to an older person, particularly overnight. This figure is modelled, not
+    measured.
+
+# ----------------------------------------------------------- vulnerability 8.2
+
+age_85_plus:
+  title: "Aged 85 or over"
+  explanation: >
+    Thermoregulation weakens with age, and thirst is felt less strongly. In summer
+    2025 this group had the highest heat-associated death rate in England at 364
+    per million.
+
+age_75_84:
+  title: "Aged 75 to 84"
+  explanation: >
+    Thermoregulation is measurably less effective in this age band, and the ability
+    to compensate for heat or cold declines.
+
+lives_alone:
+  title: "Lives alone"
+  explanation: >
+    Nobody else is present to notice deterioration, encourage fluids, or call for
+    help. Isolation converts a manageable problem into an unwitnessed one.
+
+dementia:
+  title: "Dementia"
+  explanation: >
+    Dementia can prevent someone recognising that they are too hot or too cold, or
+    acting on it — removing layers, opening a window, or asking for a drink.
+
+cardiovascular:
+  title: "Cardiovascular condition"
+  explanation: >
+    Heat raises heart rate and lowers blood pressure; cold raises blood pressure
+    and thickens the blood. Both place additional load on a compromised heart.
+
+renal:
+  title: "Kidney condition"
+  explanation: >
+    Impaired kidney function narrows the margin for fluid and electrolyte balance,
+    which heat and sweating disturb directly.
+
+respiratory:
+  title: "Respiratory condition"
+  explanation: >
+    Hot, humid or very cold air can each trigger breathing difficulty, and poor air
+    quality often accompanies heat episodes.
+
+mobility_limited:
+  title: "Limited mobility"
+  explanation: >
+    Reduced ability to move to a cooler or warmer room, adjust clothing, reach a
+    drink, or leave the home for a cool space.
+
+med_lithium:
+  title: "Lithium and dehydration"
+  explanation: >
+    Dehydration raises lithium levels in the blood, and the safe range is narrow.
+    Hot weather makes this more likely.
+
+med_diuretic:
+  title: "Diuretic increases fluid and salt loss"
+  explanation: >
+    This medicine increases fluid and electrolyte loss, which compounds dehydration
+    in hot weather.
+
+med_anticholinergic:
+  title: "Medicine that reduces sweating"
+  explanation: >
+    This medicine can impair sweating, which is the body's main route for shedding
+    heat.
+
+med_antipsychotic:
+  title: "Medicine affecting temperature control"
+  explanation: >
+    This medicine can interfere with the brain's regulation of body temperature.
+
+med_ace_arb:
+  title: "Blood pressure medicine and fluid balance"
+  explanation: >
+    This class can blunt the sensation of thirst and adds strain on the kidneys
+    when fluid is short.
+
+med_beta_blocker:
+  title: "Beta blocker and skin blood flow"
+  explanation: >
+    This medicine reduces blood flow to the skin, which is one of the ways the body
+    sheds heat.
+
+med_ssri:
+  title: "Antidepressant and sodium levels"
+  explanation: >
+    This class carries a risk of low blood sodium, which heat and heavy sweating
+    can worsen.

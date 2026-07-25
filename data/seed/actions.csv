@@ -1,0 +1,33 @@
+reason_code,tier_min,text,escalate_to,ordering
+med_lithium,elevated,"Dehydration can raise lithium to unsafe levels. Speak to the pharmacist or GP today. Keep taking it exactly as prescribed.",pharmacist,5
+med_diuretic,elevated,"This medicine increases fluid loss. Ask the pharmacist whether fluid intake should change during this heat. Keep taking it exactly as prescribed.",pharmacist,10
+med_anticholinergic,elevated,"This medicine can make sweating harder, so the usual warning signs of overheating may be absent. Watch for confusion or hot dry skin and ask the pharmacist for advice. Keep taking it exactly as prescribed.",pharmacist,15
+med_antipsychotic,elevated,"This medicine can affect temperature control. Check on them more often during this heat and ask the pharmacist for advice. Keep taking it exactly as prescribed.",pharmacist,20
+med_ace_arb,elevated,"This medicine can blunt thirst, so they may not feel like drinking even when they need to. Offer fluids regularly and ask the pharmacist for advice. Keep taking it exactly as prescribed.",pharmacist,25
+med_beta_blocker,elevated,"This medicine lowers blood flow to the skin, making heat harder to shed. Keep the room cool and ask the pharmacist for advice. Keep taking it exactly as prescribed.",pharmacist,30
+med_ssri,elevated,"This medicine carries a risk of low blood sodium in hot weather. Watch for confusion or unsteadiness and ask the pharmacist for advice. Keep taking it exactly as prescribed.",pharmacist,35
+bedroom_unsafe,elevated,"Move the bed to the coolest room in the home for the next few nights.",,40
+bedroom_unsafe,high,"If the bedroom cannot be cooled, stay with them overnight or arrange for someone to.",,45
+bedroom_warm,elevated,"Open windows on the shaded side after sunset and close curtains during the day.",,50
+night_no_recovery,elevated,"There will be no natural cooling tonight. Set a fan to draw air across the room rather than straight at the bed.",,55
+night_no_recovery,high,"Check on them once during the night, or ask a neighbour to.",,60
+peak_heat,elevated,"Keep them indoors and out of direct sun between 11am and 4pm.",,65
+peak_heat,elevated,"Offer a cold drink every hour while they are awake, whether or not they say they are thirsty.",,70
+sustained_spell,elevated,"This is the third day of heat. Risk builds across a spell, so keep checking even if they seemed fine yesterday.",,75
+sustained_spell,high,"Arrange a visit today rather than a phone call.",,80
+indoor_below_18,elevated,"Heat the main living room to at least 18 degrees during the day.",,85
+indoor_below_16,elevated,"Warm one room properly rather than the whole home, and keep them in it.",,90
+indoor_below_16,high,"Check whether they are eligible for a Warm Home Discount or a local warm bank.",council,95
+indoor_below_12,high,"This is dangerously cold. Arrange heating today, or move them somewhere warm.",council,100
+indoor_below_12,severe,"Do not leave them in an unheated home overnight.",council,105
+age_85_plus,elevated,"Check in person rather than by phone. Confusion is easier to spot face to face.",,110
+age_75_84,elevated,"Ask directly whether they have been drinking today. Thirst is an unreliable guide at this age.",,115
+lives_alone,elevated,"Agree a time to call and tell them to expect it, so a missed call means something.",,120
+lives_alone,high,"Ask a neighbour to look in this evening as well.",,125
+dementia,elevated,"Leave a full glass where they will see it, and replace it each visit rather than asking whether they drank.",,130
+dementia,high,"Lay out lighter clothing for them. They may not adjust what they are wearing themselves.",,135
+cardiovascular,elevated,"Watch for breathlessness or swelling in the ankles, and contact the GP if either appears.",gp,140
+renal,elevated,"Fluid balance is finer for them than for most people. Ask the GP or pharmacist what the right daily amount is in this weather.",pharmacist,145
+respiratory,elevated,"Keep the room ventilated but shaded, and keep their inhaler within reach.",,150
+mobility_limited,elevated,"Put drinks, a fan control and a phone within arm's reach before you leave.",,155
+mobility_limited,high,"They cannot reach a cool space on their own. Arrange transport or bring the cooling to them.",council,160
