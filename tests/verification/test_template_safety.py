@@ -9,6 +9,7 @@ import re
 
 import pytest
 from checkin.messages import TemplateLibrary
+from checkin.sms import SmsFormatter
 from core.corpus import FORBIDDEN_MEDICATION_ADVICE
 
 VARIABLE = re.compile(r"\{\{(\d+)\}\}")
@@ -74,17 +75,10 @@ def test_an_unapproved_template_name_raises_rather_than_sending_something_else(l
 def test_an_unbound_template_refuses_to_send(library):
     """Silently posting "Hello first_name" to an 88-year-old costs trust in the
     channel permanently, so it fails loudly instead."""
-    from checkin.sms import SmsFormatter
-    from checkin.whatsapp import WhatsAppFormatter
-
     unbound = library.get("checkin_opener")
     assert not unbound.is_bound
-    for render in (
-        lambda: WhatsAppFormatter.template("447700900000", unbound),
-        lambda: SmsFormatter.render(unbound),
-    ):
-        with pytest.raises(ValueError, match="unbound variables"):
-            render()
+    with pytest.raises(ValueError, match="unbound variables"):
+        SmsFormatter.render(unbound)
 
 
 def test_binding_the_wrong_number_of_values_is_rejected(library):

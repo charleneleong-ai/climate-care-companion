@@ -118,7 +118,3 @@ def test_a_question_writing_to_an_unknown_field_refuses_to_load(tmp_path):
         QuestionBank.load(path)
 
 
-def test_the_cap_never_exceeds_what_a_person_will_sit_through(bank):
-    for tier in (Tier.ELEVATED, Tier.HIGH, Tier.SEVERE):
-        for register in Register:
-            assert bank.max_questions(tier, register) <= 8

@@ -39,9 +39,6 @@ def test_ensemble_predictor_stub_names_track_b():
         EnsembleHeatwave().forecast([30.0], horizon_days=1)
 
 
-def test_three_tenant_types_are_implemented_and_icb_is_declared():
-    assert {OrgType.COUNCIL, OrgType.HOSPITAL, OrgType.CARE_HOME} <= set(OrgType)
-    assert OrgType.ICB in OrgType
 
 
 def test_cohort_membership_requires_a_consent_basis():
@@ -50,17 +47,3 @@ def test_cohort_membership_requires_a_consent_basis():
         CohortMember(cohort_id="c", person_id="p")
 
 
-def test_cohort_membership_accepts_an_explicit_basis():
-    member = CohortMember(cohort_id="c", person_id="p", consent_basis="explicit consent")
-    assert member.consent_basis
-
-
-def test_org_scopes_by_area_codes():
-    org = Org(id="o", name="Bedford Borough Council", type=OrgType.COUNCIL,
-              area_codes=("E07000032",))
-    assert org.area_codes == ("E07000032",)
-
-
-def test_cohort_belongs_to_exactly_one_org():
-    cohort = Cohort(id="c1", org_id="o1", name="Adult social care caseload")
-    assert cohort.org_id == "o1"

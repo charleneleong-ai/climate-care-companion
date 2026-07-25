@@ -12,7 +12,7 @@ from checkin.twilio import (
     TwilioFormatter,
     TwilioTransport,
 )
-from checkin.whatsapp import ConversationChannel
+from checkin.channels import ConversationChannel
 
 QUESTION = ButtonMessage(
     body="Is your bedroom too hot?", buttons=question_buttons("q_bedroom_warm")

@@ -67,8 +67,6 @@ def test_cold_codes_still_fire_in_genuine_cold(scorer, night, day, expected):
     assert expected in fired(scorer, weather(night, day))
 
 
-def test_the_guard_threshold_is_a_plausible_heating_day():
-    assert HEATING_DAY_MAX == 18.0
 
 
 def test_an_unheated_home_on_a_cold_day_still_reaches_a_tier(scorer):

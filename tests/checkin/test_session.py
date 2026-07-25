@@ -4,7 +4,7 @@ import pytest
 from checkin.messages import ButtonMessage, TemplateMessage, encode_button_id
 from checkin.questions import QuestionBank
 from checkin.session import CheckinSession, SessionState
-from checkin.whatsapp import DryRunWhatsApp
+from checkin.twilio import DryRunTwilio
 from contracts import Assessment, DateRange, Reason, ReasonCode, RedFlag, Tier
 from datetime import date
 
@@ -159,7 +159,7 @@ def test_a_partial_session_keeps_what_was_gathered(bank):
 
 def test_a_whole_check_in_runs_over_the_dry_run_channel(bank):
     s = session(bank)
-    channel = DryRunWhatsApp()
+    channel = DryRunTwilio()
     now = T0
 
     channel.send("447700900000", s.next_message(now))
@@ -173,6 +173,6 @@ def test_a_whole_check_in_runs_over_the_dry_run_channel(bank):
         s.record_reply(message.buttons[0].id, now)
 
     assert s.state is SessionState.COMPLETE
-    assert channel.sent[0]["type"] == "template"
-    assert all(p["type"] == "interactive" for p in channel.sent[1:])
+    assert channel.sent[0]["Body"] == OPENER.body
+    assert all("Reply 1=Yes" in p["Body"] for p in channel.sent[1:])
     assert len(channel.sent) == len(s.questionnaire.questions) + 1

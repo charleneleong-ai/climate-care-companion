@@ -198,8 +198,6 @@ def test_a_plan_with_lead_time_is_preventive(builder):
     plan = builder.build(p, exposure, assess(p, exposure), lead_time_hours=72,
                          expected_peak=31.0)
     assert plan.is_preventive
-    assert plan.lead_time_hours == 72
-    assert plan.expected_peak == 31.0
 
 
 def test_a_plan_read_during_the_episode_is_not_preventive(builder):

@@ -1,19 +1,11 @@
 import pytest
 from checkin.messages import (
-    ANSWER_BY_TOKEN,
     ButtonMessage,
     TemplateMessage,
     decode_button_id,
     question_buttons,
 )
-from checkin.sms import (
-    ALLOWED_RECIPIENTS_ENV,
-    REPLY_TOKENS,
-    DryRunSms,
-    HttpSms,
-    SmsFormatter,
-)
-from checkin.whatsapp import ConversationChannel
+from checkin.sms import REPLY_TOKENS, SmsFormatter
 
 QUESTION = ButtonMessage(
     body="Is your bedroom too hot?", buttons=question_buttons("q_bedroom_warm")
@@ -50,7 +42,7 @@ def test_an_over_long_message_is_rejected_rather_than_fragmented():
     into nonsense."""
     long_question = ButtonMessage(body="x" * 400, buttons=question_buttons("q_x"))
     with pytest.raises(ValueError, match="segments"):
-        DryRunSms().send("447700900000", long_question)
+        SmsFormatter.check_length(SmsFormatter.render(long_question))
 
 
 # -------------------------------------------------------------- reply parsing
@@ -74,9 +66,6 @@ def test_an_unrecognised_reply_is_not_an_answer(reply):
     assert SmsFormatter.parse_reply(reply, "q_bedroom_warm") is None
 
 
-def test_reply_tokens_only_ever_produce_valid_answers():
-    assert set(REPLY_TOKENS.values()) <= set(ANSWER_BY_TOKEN.values())
-
 
 def test_numeric_replies_match_the_displayed_option_order():
     """1/2/3 in the text must mean the same as 1/2/3 in the parser."""
@@ -86,37 +75,3 @@ def test_numeric_replies_match_the_displayed_option_order():
         assert f"{position}={title}" in rendered
         _, answer = decode_button_id(SmsFormatter.parse_reply(str(position), "q_x"))
         assert answer is expected
-
-
-# --------------------------------------------------------------- SC-6 guards
-
-def test_dry_run_sms_is_a_conversation_channel():
-    assert isinstance(DryRunSms(), ConversationChannel)
-
-
-def test_dry_run_captures_the_text_without_sending():
-    channel = DryRunSms()
-    channel.send("447700900000", QUESTION)
-    assert channel.sent[0]["to"] == "447700900000"
-    assert "Is your bedroom too hot?" in channel.transcript()[0]
-
-
-def test_live_sms_refuses_to_construct_without_credentials(monkeypatch):
-    monkeypatch.delenv("SMS_API_ENDPOINT", raising=False)
-    monkeypatch.delenv("SMS_API_KEY", raising=False)
-    with pytest.raises(ValueError, match="credentials are absent"):
-        HttpSms()
-
-
-def test_live_sms_refuses_a_recipient_not_on_the_allowlist():
-    channel = HttpSms(
-        endpoint="https://example.invalid/send", api_key="k",
-        allowed_recipients=frozenset(),
-    )
-    with pytest.raises(PermissionError, match="not on the allowlist"):
-        channel.send("447700900000", QUESTION)
-
-
-def test_the_sms_allowlist_is_empty_by_default(monkeypatch):
-    monkeypatch.delenv(ALLOWED_RECIPIENTS_ENV, raising=False)
-    assert HttpSms.allowlist_from_env() == frozenset()

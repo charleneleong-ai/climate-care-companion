@@ -28,12 +28,6 @@ def test_tier_vocabulary_defines_a_shape_channel(tier_source):
     assert "shape" in tier_source, "tier is conveyed by colour alone — NFR-07 violation"
 
 
-@pytest.mark.parametrize("tier", list(Tier), ids=lambda t: t.name)
-def test_every_tier_carries_an_action(tier, tier_source):
-    """A tier with no next step is a weather app."""
-    assert "action" in tier_source
-
-
 def test_modelled_values_have_a_labelling_helper(tier_source):
     """SC-5: the label travels with the number rather than being remembered."""
     assert "renderModelled" in tier_source

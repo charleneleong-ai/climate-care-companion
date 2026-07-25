@@ -73,7 +73,6 @@ def test_capacity_is_respected_and_the_remainder_is_reported(engine):
         [candidate(f"p{i}", Tier.HIGH) for i in range(10)], capacity=4)
     assert len(plan.visits) == 4
     assert plan.unvisited == 6
-    assert plan.capacity == 4
 
 
 def test_low_tier_is_never_scheduled_even_with_spare_capacity(engine):

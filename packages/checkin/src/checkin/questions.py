@@ -59,9 +59,6 @@ class Question:
     red_flag: RedFlag | None
     red_flag_when: bool
 
-    @property
-    def is_red_flag_screen(self) -> bool:
-        return self.red_flag is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,7 +66,7 @@ class Questionnaire:
     """One person's questions for one window.
 
     Personalised by selection from a validated bank — never by generation. The same
-    argument as CheckinScript: an unsupervised call to an 88-year-old about their
+    argument as the action corpus: an unsupervised call to an 88-year-old about their
     health must be auditable line by line, and a composed question is not.
     """
 
@@ -106,14 +103,6 @@ class Questionnaire:
             red_flags=tuple(red_flags),
         )
 
-    def conduct(self, voice) -> SelfReport:
-        """Ask every question over a VoiceChannel and return the report.
-
-        Dispatch, scheduling, retry and no-answer escalation remain Track A's —
-        this only walks the questions once a channel is already connected.
-        """
-        answers = {q.code: voice.ask(q.text) for q in self.questions}
-        return self.to_self_report(answers)
 
 
 class QuestionBank:

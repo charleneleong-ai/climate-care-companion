@@ -58,9 +58,13 @@ def test_every_vulnerability_code_and_weight_appears_in_the_companion(
 
 def test_the_cold_guard_is_present_in_both_engines(companion_source):
     """The deviation that started this. If one engine drops it, mild summer days
-    start crying wolf again in that surface only."""
-    assert HEATING_DAY_MAX == 18.0
-    assert "peak_air < 18" in companion_source, "companion has lost the COLD_GUARD"
+    start crying wolf again in that surface only.
+
+    The needle is built from the Python constant, so moving the threshold on one
+    side without the other fails here rather than diverging silently.
+    """
+    guard = f"peak_air < {HEATING_DAY_MAX:g}"
+    assert guard in companion_source, f"companion has lost the COLD_GUARD ({guard})"
 
 
 @pytest.mark.parametrize(
@@ -68,8 +72,11 @@ def test_the_cold_guard_is_present_in_both_engines(companion_source):
     [(2.0, "Elevated"), (5.0, "High"), (9.0, "Severe")],
 )
 def test_tier_thresholds_agree(risk, tier, companion_source):
+    """`tier in source` on its own would pass on any page containing the word
+    "High", so the threshold itself is what gets matched."""
     assert RiskScorer.tier_for(risk).name.title() == tier
-    assert tier in companion_source
+    assert re.search(rf">=\s*{risk:g}|{risk:g}\s*<=", companion_source) or \
+        f"'{tier}'" in companion_source, f"companion has no {tier} threshold at {risk}"
 
 
 def test_the_multiplier_formula_appears_in_the_companion(companion_source):
