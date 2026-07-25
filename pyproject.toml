@@ -1,0 +1,60 @@
+[project]
+name = "climatise"
+version = "0.1.0"
+description = "Personal heat and cold risk assessment for caregivers, councils, hospitals and care homes"
+requires-python = ">=3.13"
+dependencies = [
+    "climatise-contracts",
+    "climatise-core",
+    "climatise-persons",
+    "climatise-geography",
+    "climatise-exposure",
+    "climatise-predictors",
+    "climatise-checkin",
+    "climatise-actions",
+    "climatise-allocation",
+    "climatise-org",
+    "climatise-api",
+]
+
+[tool.uv.workspace]
+members = ["packages/*", "services/*"]
+
+[tool.uv.sources]
+climatise-contracts = { workspace = true }
+climatise-core = { workspace = true }
+climatise-persons = { workspace = true }
+climatise-geography = { workspace = true }
+climatise-exposure = { workspace = true }
+climatise-predictors = { workspace = true }
+climatise-checkin = { workspace = true }
+climatise-actions = { workspace = true }
+climatise-allocation = { workspace = true }
+climatise-org = { workspace = true }
+climatise-api = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+    "pre-commit>=4.0",
+    "httpx>=0.28",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# Complexity-only ruleset, so it never churns existing style.
+select = ["C901", "PLR0915"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-statements = 50
