@@ -1,0 +1,23 @@
+code,reason_code,tier_min,text,text_simple,answer_field,red_flag,red_flag_when,ordering
+q_wellbeing,,elevated,"Are you feeling alright today?","Are you feeling alright?",,,,10
+q_fluids_diuretic,med_diuretic,elevated,"Have you had something to drink in the last hour?","Have you had a drink?",drinking_fluids,,,20
+q_fluids_ace,med_ace_arb,elevated,"Have you had something to drink in the last hour?","Have you had a drink?",drinking_fluids,,,20
+q_fluids_lithium,med_lithium,elevated,"Have you had something to drink in the last hour?","Have you had a drink?",drinking_fluids,,,20
+q_fluids_ssri,med_ssri,elevated,"Have you had something to drink in the last hour?","Have you had a drink?",drinking_fluids,,,20
+q_fluids_renal,renal,elevated,"Have you had something to drink in the last hour?","Have you had a drink?",drinking_fluids,,,20
+q_bedroom_warm,bedroom_warm,elevated,"Is your bedroom uncomfortably warm tonight?","Is your bedroom too hot?",bedroom_feels_hot,,,30
+q_bedroom_unsafe,bedroom_unsafe,elevated,"Is your bedroom uncomfortably warm tonight?","Is your bedroom too hot?",bedroom_feels_hot,,,30
+q_bedroom_night,night_no_recovery,elevated,"Is your bedroom uncomfortably warm tonight?","Is your bedroom too hot?",bedroom_feels_hot,,,30
+q_sleep,night_no_recovery,elevated,"Did you manage to sleep last night?","Did you sleep last night?",,,,40
+q_cold_18,indoor_below_18,elevated,"Is your home warm enough today?","Is your home warm enough?",,,,45
+q_cold_16,indoor_below_16,elevated,"Is your home warm enough today?","Is your home warm enough?",,,,45
+q_cold_12,indoor_below_12,elevated,"Is your home warm enough today?","Is your home warm enough?",,,,45
+q_visitor,lives_alone,elevated,"Has anyone been in to see you today?","Has anyone visited today?",,,,50
+q_reach,mobility_limited,elevated,"Can you reach a drink from where you are sitting?","Can you reach a drink?",,,,55
+q_breathing,respiratory,elevated,"Is your breathing harder than usual today?","Is breathing harder today?",,,,60
+q_ankles,cardiovascular,elevated,"Have your ankles been more swollen than usual?","Are your ankles puffy?",,,,65
+q_tired,sustained_spell,elevated,"Have you felt more tired than usual these last few days?","Are you more tired than usual?",,,,70
+q_sun,peak_heat,elevated,"Have you been out in the sun today?","Were you out in the sun?",,,,75
+q_rf_confusion,,high,"Have you felt confused or muddled today?","Do you feel muddled?",,confusion,yes,80
+q_rf_urine,,high,"Have you passed water today?","Have you been to the toilet today?",,no_urine_output,no,85
+q_rf_skin,,high,"Does your skin feel hot and dry, rather than sweaty?","Is your skin hot and dry?",,hot_dry_skin,yes,90

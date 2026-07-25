@@ -76,6 +76,7 @@ In `tests/verification/`. These must never go red.
 | `test_no_cry_wolf.py` | No persona alarms on any of 92 benign days |
 | `test_safety_corpus.py` | No medication action advises altering a prescription (SC-1) |
 | `test_voice_utterances.py` | Every utterance the voice agent can speak is a corpus row |
+| `test_question_safety.py` | Every question is closed-set, yes/no answerable, and every self-reportable SC-3 red flag has a screen that survives the length cap |
 
 ## Design decisions worth knowing
 
@@ -92,11 +93,44 @@ live-in carer ranks below a High-tier person living alone, because someone is
 already watching the first one.
 
 **The voice agent selects utterances, it never composes them.** That is what keeps
-SC-1 greppable on a surface that speaks unsupervised to a vulnerable person.
+SC-1 greppable on a surface that speaks unsupervised to a vulnerable person. The
+personalised questionnaire works the same way — selection from a validated bank
+along four auditable axes, never generation.
 
 **Indoor temperature is the dominant error term** at ±3–5 °C. A bedroom sensor fixes
 it in v0.3; asking "is your bedroom uncomfortably warm?" on a check-in closes part of
-the gap today.
+the gap today — and it moves tiers:
+
+```
+Doris, 19 July 2025          modelled indoor night 24.6 °C   HIGH   (risk 6.0)
+  → "yes, my bedroom is too hot"
+                             corrected        26.1 °C        SEVERE (risk 10.0)
+```
+
+One honest answer crossed a tier boundary the model alone got wrong.
+
+## The personalised questionnaire
+
+Each person gets a different set of questions, phrased for them. Same weather, same
+day:
+
+| | Doris (88, dementia) | Harold (76, cardiovascular) | Margaret (68) |
+|---|---|---|---|
+| Tier | HIGH | ELEVATED | ELEVATED |
+| Register | simple | standard | standard |
+| Questions | 8 | 4 | 4 |
+| Sample | "Is your bedroom too hot?" | "Is your bedroom uncomfortably warm tonight?" | — |
+| Condition-specific | — | "Have your ankles been more swollen than usual?" | "Has anyone been in to see you today?" |
+| SC-3 red-flag screens | yes | no (below High) | no (below High) |
+
+Personalisation runs along four axes, all auditable, none involving generated text:
+**which** questions (reason codes), **how many** (tier and register), **how phrased**
+(dementia selects a single-clause register), and **what each answer means**
+(`answer_field` plus red-flag polarity).
+
+Polarity is data, not inferred: *"Have you passed water today?"* flags on **no**,
+*"Do you feel muddled?"* flags on **yes**. `UNROUSABLE` deliberately has no question
+— someone unrousable cannot answer one, so it is carried by the no-answer path.
 
 ## Attribution
 
