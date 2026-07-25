@@ -120,3 +120,33 @@ class Aspect(StrEnum):
     EAST = auto()
     SOUTH = auto()
     WEST = auto()
+
+
+class AdviceSource(StrEnum):
+    """Where a piece of advice came from.
+
+    Kept on every item because a caregiver being told to ring a GP is entitled to
+    know whether that came from a combination of their medicines, a single risk
+    factor, or something the person said on a check-in.
+    """
+
+    INTERACTION = auto()
+    """A combination — heat plus a condition plus a medicine. The advice exists only
+    because all of them are true at once."""
+    REASON_CODE = auto()
+    """A single triggered reason code."""
+    SELF_REPORT = auto()
+    """Something the person said during a check-in."""
+
+
+class Audience(StrEnum):
+    """Who a piece of advice is addressed to.
+
+    The same interaction produces different instructions for each. Some produce an
+    instruction for only one: telling someone with dementia to monitor their own
+    confusion is not a safeguard, it is a sentence they cannot act on, so that rule
+    addresses the caregiver alone.
+    """
+
+    CAREGIVER = auto()
+    CARED_FOR = auto()

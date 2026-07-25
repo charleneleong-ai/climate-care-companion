@@ -24,7 +24,7 @@ def test_people_lists_every_seeded_persona(client):
 def test_assessment_returns_tier_and_reasons_not_a_bare_score(client):
     """AC-2: the reasons array is the system of record for explanation."""
     body = client.get("/people/doris/assessment").json()
-    assert body["tier"] in {"LOW", "ELEVATED", "HIGH", "SEVERE"}
+    assert body["tier"] in {"Low", "Elevated", "High", "Severe"}
     assert body["reasons"], "an assessment with no reasons is not explainable"
     assert all({"code", "title", "explanation"} <= set(r) for r in body["reasons"])
 
@@ -42,10 +42,47 @@ def test_response_states_it_is_not_medical_advice(client):
     assert client.get("/people/doris/assessment").json()["not_medical_advice"] is True
 
 
+VALID_SOURCES = {"live", "archive", "cache", "fixture", "self_report"}
+
+
 def test_exposure_provenance_is_reported(client):
-    """A fixture must not be presented as a live forecast."""
-    assert client.get("/people/doris/assessment").json()["exposure"]["source"] == "fixture"
+    """A cached figure must never be presented as a live one. The value matters
+    less than the fact that one is always stated."""
+    source = client.get("/people/doris/assessment").json()["exposure"]["source"]
+    assert source in VALID_SOURCES
+
+
+def test_the_read_path_survives_the_weather_service_being_down(client, monkeypatch):
+    """NFR-04. With a warm cache the answer is stale and says so; with a cold one
+    the failure is honest rather than invented."""
+    from api import main
+
+    class Dead:
+        def get(self, *args, **kwargs):
+            raise TimeoutError("Open-Meteo is unreachable")
+
+    monkeypatch.setattr(main.WEATHER, "http", Dead())
+    response = client.get("/people/doris/assessment")
+    assert response.status_code in {200, 503}
+    if response.status_code == 200:
+        assert response.json()["exposure"]["source"] == "cache"
 
 
 def test_unknown_person_returns_404_not_500(client):
     assert client.get("/people/nobody/assessment").status_code == 404
+
+
+def test_tier_casing_matches_the_interaction_rules(client):
+    """One casing across the whole system.
+
+    /assess returned LOW while the interaction rules and the parity corpus used
+    Elevated, so the front end's tier-to-band mapping fell through and labelled
+    a Low assessment "Severe heat risk" — confidently, which is the dangerous
+    kind of wrong.
+    """
+    from actions.export import ClinicalExporter
+
+    tiers = {r["min_tier"] for r in ClinicalExporter.load().document()["interactions"]}
+    served = client.get("/people/doris/assessment").json()["tier"]
+    assert served[0].isupper() and served[1:].islower(), f"{served} is not title case"
+    assert all(t[0].isupper() and t[1:].islower() for t in tiers)

@@ -2,7 +2,9 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from contracts.enums import (
+    AdviceSource,
     AgeBand,
+    Audience,
     AlertLevel,
     Aspect,
     Condition,
@@ -119,3 +121,67 @@ class SelfReport:
     transcript_ref: str | None = None
     """A pointer, never transcript content. Recording a vulnerable person's voice
     is health and plausibly biometric data — out of scope until the DPIA (SC-6)."""
+
+
+@dataclass(frozen=True, slots=True)
+class AdviceItem:
+    """One piece of advice, already in the voice of its audience.
+
+    `text` and `watch_for` are deliberately separate. What to do and what to look
+    out for are different instructions, and for some combinations the watch-for is
+    the more important of the two — an anticholinergic suppresses sweating, so the
+    usual first warning of overheating is absent rather than late.
+    """
+
+    code: str
+    text: str
+    watch_for: str | None
+    escalate_to: str | None
+    source: AdviceSource
+    audience: Audience
+
+
+@dataclass(frozen=True, slots=True)
+class PreventionPlan:
+    """What to do before the heat arrives, for one person and one audience.
+
+    Prevention rather than response: it is built from a forecast warning with lead
+    time attached, so the instructions are things that can still be done in advance
+    — moving insulin off a windowsill, settling a fluid amount with the GP, cooling
+    a room before the peak. An instruction that only makes sense once someone is
+    already unwell belongs in the escalation ladder, not here.
+    """
+
+    person_id: str
+    tier: Tier
+    audience: Audience
+    items: tuple[AdviceItem, ...]
+    lead_time_hours: int = 0
+    """Hours until the episode threshold is met. Zero means it is already here, and
+    the plan is being read too late to prevent anything."""
+    expected_peak: float | None = None
+    alert_level: AlertLevel = AlertLevel.NOT_CHECKED
+    """The regional warning, if any. Deliberately not a gate — the whole product
+    argument is that personal risk is computed whether or not a region is alerted."""
+
+    @property
+    def is_preventive(self) -> bool:
+        return self.lead_time_hours > 0
+
+    @property
+    def watch_points(self) -> tuple[str, ...]:
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for item in self.items:
+            if item.watch_for and item.watch_for not in seen:
+                seen.add(item.watch_for)
+                ordered.append(item.watch_for)
+        return tuple(ordered)
+
+    @property
+    def interactions(self) -> tuple[AdviceItem, ...]:
+        """Advice that exists only because of a combination."""
+        return tuple(i for i in self.items if i.source is AdviceSource.INTERACTION)
+
+    def escalation_targets(self) -> tuple[str, ...]:
+        return tuple(sorted({i.escalate_to for i in self.items if i.escalate_to}))

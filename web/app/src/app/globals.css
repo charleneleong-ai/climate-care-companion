@@ -1,0 +1,488 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+
+   Direction: civic clarity. This app gives safety advice to people who may be
+   frail, unwell, or worried — so it borrows from public-service design rather
+   than consumer app design. High contrast, large type, generous tap targets,
+   no decoration that costs legibility.
+
+   Concretely, every choice below is constrained by the audience:
+     · Body text never below 17px, headings large and heavy
+     · Tap targets never below 48px
+     · Text contrast at least 7:1 (WCAG AAA) against its background
+     · Colour never the only signal — always paired with text or shape
+     · Motion is subtle and fully removable
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+
+    /* Surfaces — warm paper, not clinical white. Reads calmer on a phone. */
+    --paper: #faf8f3;
+    --paper-sunk: #f2efe7;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+
+    /* Text */
+    --ink: #191814;
+    --ink-soft: #55524b;
+    --ink-faint: #78756c;
+
+    /* Lines */
+    --line: #e3ded2;
+    --line-strong: #c9c3b4;
+
+    /* Accent — deep teal. Cool enough to sit beside the cold/heat scale
+       without competing with it, dark enough for AAA text contrast. */
+    --accent: #1c5f75;
+    --accent-hover: #164e60;
+    --accent-wash: #e7f0f3;
+    --accent-ring: #4a97b0;
+
+    /* Feedback */
+    --danger: #a8322b;
+    --danger-wash: #fbeceb;
+    --success: #3f6b35;
+
+    /* Shadows — very soft; strong shadows read as noise at small sizes. */
+    --shadow-sm: 0 1px 2px rgba(25, 24, 20, 0.06);
+    --shadow-md: 0 2px 8px rgba(25, 24, 20, 0.07), 0 1px 2px rgba(25, 24, 20, 0.04);
+    --shadow-lg: 0 8px 28px rgba(25, 24, 20, 0.1);
+
+    --radius: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+
+    --tap: 48px; /* minimum interactive dimension */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14140f;
+      --paper-sunk: #0e0e0a;
+      --surface: #1e1d19;
+      --surface-raised: #26251f;
+
+      --ink: #f4f2ec;
+      --ink-soft: #b3afa5;
+      --ink-faint: #918d83;
+
+      --line: #322f28;
+      --line-strong: #45413a;
+
+      /* Lifted for contrast against a dark surface. */
+      --accent: #7cc2d8;
+      --accent-hover: #98d2e4;
+      --accent-wash: #16282f;
+      --accent-ring: #7cc2d8;
+
+      --danger: #f0938c;
+      --danger-wash: #2c1614;
+      --success: #9dc490;
+
+      --shadow-sm: none;
+      --shadow-md: none;
+      --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Respect the notch and home indicator when installed. */
+    padding-bottom: env(safe-area-inset-bottom);
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    /* Large headings need tighter tracking or they look loose. */
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* 16px minimum or iOS Safari zooms the page on focus. */
+  input,
+  textarea,
+  select {
+    font-size: max(17px, 1rem);
+  }
+
+  /* One visible focus style everywhere. Keyboard and switch-access users
+     depend on this, and it must survive both themes. */
+  :focus-visible {
+    outline: 3px solid var(--accent-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--accent-wash);
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .muted {
+    color: var(--ink-soft);
+  }
+  .faint {
+    color: var(--ink-faint);
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: var(--tap);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition:
+      transform 120ms ease,
+      background-color 120ms ease,
+      border-color 120ms ease,
+      opacity 120ms ease;
+    /* Stops a long label wrapping to two lines mid-word. */
+    text-wrap: nowrap;
+  }
+
+  .btn:active:not(:disabled) {
+    /* A small squash reads as "pressed" on touch, where there is no hover. */
+    transform: scale(0.98);
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+  }
+
+  @media (hover: hover) {
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+
+  @media (hover: hover) {
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--ink);
+    }
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid transparent;
+    font-weight: 500;
+  }
+
+  @media (hover: hover) {
+    .btn-ghost:hover:not(:disabled) {
+      color: var(--ink);
+      background: var(--paper-sunk);
+    }
+  }
+
+  /* ── Text input ──────────────────────────────────────────────────────── */
+  .field {
+    width: 100%;
+    min-height: var(--tap);
+    padding: 0.8rem 1rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: 2px solid var(--line-strong);
+    border-radius: var(--radius);
+    transition: border-color 120ms ease;
+  }
+
+  .field::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .field:focus {
+    border-color: var(--accent);
+    /* The border already signals focus; avoid doubling it with the ring. */
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+
+  .field-invalid {
+    border-color: var(--danger);
+  }
+
+  /* ── Choice card (the tickable rows in onboarding) ───────────────────── */
+  .choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    width: 100%;
+    min-height: var(--tap);
+    padding: 0.875rem 1rem;
+    text-align: left;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition:
+      border-color 120ms ease,
+      background-color 120ms ease,
+      transform 120ms ease;
+  }
+
+  @media (hover: hover) {
+    .choice:hover {
+      border-color: var(--line-strong);
+    }
+  }
+
+  .choice:active {
+    transform: scale(0.99);
+  }
+
+  .choice[data-selected='true'] {
+    border-color: var(--accent);
+    background: var(--accent-wash);
+  }
+
+  /* Custom check, so the tick is large enough to see and to hit. */
+  .choice-check {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    margin-top: 1px;
+    border: 2px solid var(--line-strong);
+    border-radius: 7px;
+    background: var(--surface);
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+
+  .choice[data-selected='true'] .choice-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .choice-check svg {
+    opacity: 0;
+    transform: scale(0.7);
+    transition:
+      opacity 120ms ease,
+      transform 120ms ease;
+  }
+
+  .choice[data-selected='true'] .choice-check svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* ── Step transition ─────────────────────────────────────────────────── */
+  .step-enter {
+    animation: step-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes step-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .fade-in {
+    animation: fade-in 200ms ease both;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* ── Leaflet overrides ─────────────────────────────────────────────────── */
+
+.leaflet-container {
+  background: transparent;
+  font: inherit;
+  /* Vertical page scrolling should win over map panning on touch. */
+  touch-action: pan-y;
+}
+
+.leaflet-container a {
+  color: inherit;
+}
+
+.leaflet-tooltip {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  font-size: 15px;
+  padding: 6px 10px;
+}
+
+.leaflet-tooltip::before {
+  border-top-color: var(--line-strong);
+}
+
+.climatise-region {
+  transition:
+    fill-opacity 140ms ease-out,
+    stroke-width 140ms ease-out;
+  cursor: pointer;
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── companion screen ──────────────────────────────────────────────────────
+   NFR-06 (16px body, 44px targets) and NFR-07 (a tier is never colour alone)
+   are enforced here rather than left to each component to remember. */
+
+.section-label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.62;
+  margin: 0 0 0.55rem 0.15rem;
+}
+
+.row {
+  padding: 0.85rem 0.95rem;
+  border-top: 1px solid var(--border, #e3e0d8);
+}
+.row:first-child { border-top: none; }
+
+/* The shape channel. Colour is the third signal, never the only one. */
+.glyph {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  background: currentColor;
+}
+.glyph-circle   { border-radius: 50%; }
+.glyph-square   { border-radius: 3px; }
+.glyph-triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.glyph-diamond  { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+.tone-low      { color: #7fb069; }
+.tone-elevated { color: #f3c05a; }
+.tone-high     { color: #e07a3f; }
+.tone-severe   { color: #c1362f; }
+/* The tier word itself stays ink so it never relies on the tone for legibility. */
+.tone-low > div > span:last-child,
+.tone-elevated > div > span:last-child,
+.tone-high > div > span:last-child,
+.tone-severe > div > span:last-child { color: var(--ink, #1a1a17); }
+
+.switch {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--border, #e3e0d8);
+  border-radius: 12px;
+  background: var(--panel-2, #f2efe9);
+}
+.switch button {
+  flex: 1;
+  min-height: 44px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.66;
+  cursor: pointer;
+}
+.switch button[aria-pressed='true'] {
+  background: var(--panel, #fff);
+  opacity: 1;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+}
+.switch button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+.tag {
+  display: inline-block;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+.tag-interaction { color: #0b7b77; }
+.tag-self_report { color: #a8641c; }
+.tag-reason_code { display: none; }

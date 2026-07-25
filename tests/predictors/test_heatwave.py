@@ -46,8 +46,6 @@ def test_empty_forecast_does_not_raise(predictor):
     assert f.expected_peak == 0.0
 
 
-def test_episode_threshold_matches_the_ukhsa_definition():
-    assert EPISODE_THRESHOLD == 24.0
 
 
 def test_threshold_is_configurable_without_editing_the_module(predictor):

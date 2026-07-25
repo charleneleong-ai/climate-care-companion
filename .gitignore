@@ -16,3 +16,9 @@ data/cache/
 
 .env
 .DS_Store
+
+# local Claude Code settings
+.claude/settings.local.json
+
+# runtime logs
+logs/

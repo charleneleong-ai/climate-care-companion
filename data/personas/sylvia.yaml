@@ -1,0 +1,28 @@
+# The "your body will warn you" contradiction. Fictional — SC-6.
+# Expected vulnerability 8: age 75-84 (2) + lives alone (2) + antipsychotic (2)
+#   + anticholinergic (2).
+# Generic heat guidance leans on the body's own alarms: you feel hot, you sweat,
+# so you know to cool down. Both are switched off for Sylvia. Her olanzapine
+# impairs the brain's temperature control, so she may not feel hot; her oxybutynin
+# suppresses sweating, so the usual first warning never appears. The safe reading
+# inverts the intuition: absence of feeling hot and absence of sweat are NOT
+# reassurance. Advice must tell whoever is with her to check the room with a
+# thermometer rather than ask how she feels - the opposite of "listen to your body".
+id: sylvia
+name: Sylvia
+age_band: b75_84
+lives_alone: true
+mobility_limited: false
+conditions: []
+medications:
+  - drug_name: olanzapine
+    drug_class: antipsychotic
+  - drug_name: oxybutynin
+    drug_class: anticholinergic
+place:
+  postcode: MK41 5EF
+  dwelling_type: flat
+  floor: 3
+  aspect: west
+  has_cooling: false
+  heating_affordable: true

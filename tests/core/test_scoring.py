@@ -77,10 +77,22 @@ def test_vulnerability_codes_appear_in_the_reasons_array(scorer):
 
 
 def test_cold_codes_are_mutually_exclusive(scorer):
-    codes = {r.code for r in scorer.assess(exposure(indoor_day_est=14.0), vuln(0)).reasons}
+    """peak_air must be below the COLD_GUARD threshold or none of these fire —
+    on a warm day a low modelled indoor figure is an artefact, not a cold home."""
+    cold_day = exposure(peak_air=12.0, peak_apparent=12.0, indoor_day_est=14.0)
+    codes = {r.code for r in scorer.assess(cold_day, vuln(0)).reasons}
     cold = codes & {ReasonCode.INDOOR_BELOW_18, ReasonCode.INDOOR_BELOW_16,
                     ReasonCode.INDOOR_BELOW_12}
     assert cold == {ReasonCode.INDOOR_BELOW_16}
+
+
+def test_a_low_indoor_figure_on_a_warm_day_fires_nothing(scorer):
+    """COLD_GUARD. The same indoor value that is a cold home in January is a
+    modelling artefact in June."""
+    warm_day = exposure(peak_air=19.0, peak_apparent=19.0, indoor_day_est=14.0)
+    codes = {r.code for r in scorer.assess(warm_day, vuln(0)).reasons}
+    assert not codes & {ReasonCode.INDOOR_BELOW_18, ReasonCode.INDOOR_BELOW_16,
+                        ReasonCode.INDOOR_BELOW_12}
 
 
 def test_assess_is_deterministic(scorer):
