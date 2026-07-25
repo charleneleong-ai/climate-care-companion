@@ -430,6 +430,27 @@ Tracks A and B meet `assess()` from opposite sides and never write to the same d
 `SelfReport` crosses from A back into Track 0's `exposure/` as an indoor correction, so it
 is defined in `contracts/` and frozen with everything else before either track starts.
 
+### Data contribution surfaces
+
+Two further surfaces take contributors without allocating them a code track, and they
+scale to as many people as are available:
+
+| Surface | Directory | Adds |
+|---|---|---|
+| **Profiles** | `data/personas/*.yaml` | One file per cared-for person — age band, conditions, medications, dwelling, isolation |
+| **Geography** | `data/geography/*.yaml` | Regions, wards, dwelling offsets, cool spaces, pharmacies, warm banks |
+
+The property that makes these work: **adding a file must never require editing Python.**
+Loaders glob the directory, a schema validates each file, and CI fails on an invalid file
+with a readable error naming the file and field. A contributor adding their fifteenth
+persona touches no module anyone else owns, so these surfaces never serialise behind a
+code track.
+
+They are also load-bearing rather than busywork. Persona breadth is what makes the §13
+discrimination test meaningful — three personas is the stated minimum, not a target — and
+geographic detail is what makes `coverage_gap` and `siting_delta` produce a demo worth
+watching rather than a function with two rows of input.
+
 **Interface first, then data.** The scaffold freezes `contracts/` and ships `core/` green
 on day zero, with every data source behind it backed by fixtures rather than network
 calls. Tracks A and B can therefore start against real types and real assessments in hour
