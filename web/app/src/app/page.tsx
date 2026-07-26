@@ -205,8 +205,11 @@ export default function HomePage() {
         {regions.length > 0 && <Legend />}
       </div>
 
+      {/* Tabs only where there is not room for both. Above `lg` the advice and
+          the assistant sit side by side: a question is almost always *about* the
+          advice, and hiding one to read the other means answering from memory. */}
       <nav
-        className="flex gap-1 border-y px-4 pt-2.5"
+        className="flex gap-1 border-y px-4 pt-2.5 lg:hidden"
         style={{ borderColor: 'var(--line)' }}
         role="tablist"
       >
@@ -235,17 +238,29 @@ export default function HomePage() {
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1">
-        {tab === 'advice' ? (
+      <div className="flex min-h-0 flex-1">
+        {/* Below `lg` the inactive panel is hidden rather than unmounted, so
+            switching tabs does not discard a conversation already in progress. */}
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto lg:block ${
+            tab === 'advice' ? '' : 'hidden'
+          }`}
+        >
           <RegionPanel
             profile={profile}
             region={selectedRegion}
             isOwnRegion={selectedRegion?.regionCode === profile.regionCode}
             fetchedAt={fetchedAt}
           />
-        ) : (
+        </div>
+        <div
+          className={`min-h-0 flex-1 border-l lg:flex lg:max-w-[26rem] lg:flex-col ${
+            tab === 'assistant' ? 'flex flex-col' : 'hidden lg:flex'
+          }`}
+          style={{ borderColor: 'var(--line)' }}
+        >
           <Assistant profile={profile} suggestions={suggestions} />
-        )}
+        </div>
       </div>
     </main>
   )
