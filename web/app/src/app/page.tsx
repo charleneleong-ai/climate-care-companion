@@ -209,7 +209,7 @@ export default function HomePage() {
           the assistant sit side by side: a question is almost always *about* the
           advice, and hiding one to read the other means answering from memory. */}
       <nav
-        className="flex gap-1 border-y px-4 pt-2.5 lg:hidden"
+        className="flex gap-1 border-y px-4 pt-2.5 xl:hidden"
         style={{ borderColor: 'var(--line)' }}
         role="tablist"
       >
@@ -242,7 +242,7 @@ export default function HomePage() {
         {/* Below `lg` the inactive panel is hidden rather than unmounted, so
             switching tabs does not discard a conversation already in progress. */}
         <div
-          className={`min-h-0 flex-1 overflow-y-auto lg:block ${
+          className={`min-h-0 flex-1 overflow-y-auto xl:block xl:min-w-[34rem] ${
             tab === 'advice' ? '' : 'hidden'
           }`}
         >
@@ -254,8 +254,8 @@ export default function HomePage() {
           />
         </div>
         <div
-          className={`min-h-0 flex-1 border-l lg:flex lg:max-w-[26rem] lg:flex-col ${
-            tab === 'assistant' ? 'flex flex-col' : 'hidden lg:flex'
+          className={`min-h-0 flex-1 border-l xl:flex xl:w-[24rem] xl:shrink-0 xl:grow-0 xl:flex-col ${
+            tab === 'assistant' ? 'flex flex-col' : 'hidden xl:flex'
           }`}
           style={{ borderColor: 'var(--line)' }}
         >
