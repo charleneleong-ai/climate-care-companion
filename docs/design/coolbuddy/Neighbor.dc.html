@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #EFE8DF; }
+  a { color: #1F5C8B; text-decoration: none; }
+  a:hover { color: #17466A; }
+  *::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes nb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+  @keyframes nb-halo { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.3); opacity: 0; } }
+  @keyframes nb-shimmer { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.75; } }
+  @keyframes nb-shiver { 0%, 100% { transform: translateX(-1.5px); } 50% { transform: translateX(1.5px); } }
+  @keyframes nb-drip { 0% { transform: translateY(0); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(22px); opacity: 0; } }
+  @keyframes nb-listen { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+  @keyframes nb-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.12); } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; box-sizing: border-box; padding: 56px 48px; background: #EFE8DF; font-family: Signika, system-ui, sans-serif; display: flex; gap: 56px; align-items: flex-start; justify-content: center;">
+
+  <div style="display: flex; flex-direction: column; gap: 24px; width: 252px; padding-top: 12px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(140deg, #F2A03F, #4E93BF); padding: 2px; box-sizing: border-box;">
+          <div style="width: 100%; height: 100%; border-radius: 50%; background: #FFF3E4;"></div>
+        </div>
+        <div style="font-size: 27px; font-weight: 700; color: #2A2320; letter-spacing: -0.3px;">CoolBuddy</div>
+      </div>
+      <div style="font-family: Newsreader, Georgia, serif; font-size: 19px; line-height: 1.45; color: #6E635C; margin-top: 12px; text-wrap: pretty;">One screen tells you how today feels. Two buttons do the rest.</div>
+    </div>
+
+    <div style="height: 1px; background: #DED3C6;"></div>
+
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #9C9089; margin-bottom: 4px;">Weather states</div>
+      <sc-for list="{{ moods }}" as="m" hint-placeholder-count="4">
+        <button onClick="{{ m.onTap }}" style="display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: none; cursor: pointer; padding: 10px 13px; border-radius: 11px; background: {{ m.bg }}; color: {{ m.fg }}; font-family: Signika, sans-serif; font-size: 16px; font-weight: 500;" style-hover="background: #E4DBD0;">
+          <span style="width: 13px; height: 13px; border-radius: 50%; background: {{ m.dot }};"></span>
+          <span>{{ m.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 5px;">
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #9C9089; margin-bottom: 4px;">Screens</div>
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="9">
+        <button onClick="{{ r.onTap }}" style="display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: none; cursor: pointer; padding: 9px 13px; border-radius: 11px; background: {{ r.bg }}; color: {{ r.fg }}; font-family: Signika, sans-serif; font-size: 16px; font-weight: 500;" style-hover="background: #E4DBD0;">
+          <span style="font-size: 12px; font-weight: 700; opacity: 0.5; min-width: 13px;">{{ r.num }}</span>
+          <span>{{ r.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="padding: {{ framePad }}; border-radius: 64px; box-sizing: border-box; border: {{ frameBorder }}; transition: border-color 0.4s;">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+
+    <!-- ═══ ONBOARDING ═══ -->
+    <sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; background: #FFF6EC;">
+        <div style="padding: 62px 26px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; gap: 7px;">
+            <sc-for list="{{ obDots }}" as="d" hint-placeholder-count="6">
+              <div style="width: {{ d.w }}; height: 8px; border-radius: 4px; background: {{ d.bg }};"></div>
+            </sc-for>
+          </div>
+          <button onClick="{{ goHome }}" style="border: none; background: none; cursor: pointer; font-family: Signika, sans-serif; font-size: 17px; font-weight: 600; color: #A79C94; padding: 8px;" style-hover="color: #2A2320;">Skip</button>
+        </div>
+
+        <div style="flex: 1; overflow: auto; padding: 24px 26px 8px;">
+
+          <sc-if value="{{ ob0 }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 30px;">
+              <div style="position: relative; width: 172px; height: 172px; display: flex; align-items: center; justify-content: center; animation: nb-bob 4.2s ease-in-out infinite;">
+                <div style="position: absolute; width: 172px; height: 172px; border-radius: 50%; background: radial-gradient(circle, rgba(242,160,63,0.3), rgba(78,147,191,0.22) 68%, transparent 70%); animation: nb-halo 3.4s ease-in-out infinite;"></div>
+                <dc-import name="Avatar" size="156" variant="{{ avatarVariant }}" expr="happy" hint-size="156px,156px"></dc-import>
+              </div>
+              <div style="font-size: 38px; font-weight: 700; color: #2A2320; letter-spacing: -0.6px; margin-top: 26px;">Hi, I'm CoolBuddy.</div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 23px; line-height: 1.5; color: #6E635C; margin-top: 12px; text-wrap: pretty;">I watch the weather so you don't have to. When a day turns risky for you, I'll say so and tell you exactly what to do.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ ob1 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size: 36px; font-weight: 700; color: #2A2320; letter-spacing: -0.5px; line-height: 1.15;">What should I call you?</div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: #6E635C; margin-top: 10px;">Just a first name is fine.</div>
+              <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 26px;">
+                <sc-for list="{{ obFields }}" as="f" hint-placeholder-count="3">
+                  <div>
+                    <div style="font-size: 16px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #A79C94; margin-bottom: 8px;">{{ f.k }}</div>
+                    <div style="min-height: 66px; border-radius: 16px; background: #FFFFFF; border: 2px solid #EADFD1; display: flex; align-items: center; padding: 0 20px; font-size: 22px; font-weight: 500; color: #2A2320;">{{ f.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ ob2 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size: 36px; font-weight: 700; color: #2A2320; letter-spacing: -0.5px; line-height: 1.15;">What makes hot or cold days harder for you?</div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: #6E635C; margin-top: 10px;">Pick any that fit. This is how I know when a day is risky for you and not just warm.</div>
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 22px;">
+                <sc-for list="{{ traits }}" as="t" hint-placeholder-count="5">
+                  <button onClick="{{ t.onTap }}" style="width: 100%; text-align: left; display: flex; align-items: center; gap: 15px; padding: 18px 20px; border: 2px solid {{ t.border }}; cursor: pointer; border-radius: 16px; background: {{ t.bg }}; font-family: Signika, sans-serif; font-size: 20px; font-weight: 500; color: #2A2320;" style-hover="border-color: #1F5C8B;">
+                    <span style="width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; background: {{ t.boxBg }}; border: 2px solid {{ t.boxBorder }};"></span>
+                    <span>{{ t.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ ob3 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size: 36px; font-weight: 700; color: #2A2320; letter-spacing: -0.5px; line-height: 1.15;">Who should I call if I can't reach you?</div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: #6E635C; margin-top: 10px;">I'll try them in this order. They only hear from me if something's wrong.</div>
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 22px;">
+                <sc-for list="{{ people }}" as="p" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 15px; padding: 18px; border-radius: 18px; background: #FFFFFF; border: 2px solid #EADFD1;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; background: {{ p.av }}; display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 700; color: #FFFFFF;">{{ p.initial }}</div>
+                    <div style="flex: 1; line-height: 1.3;">
+                      <div style="font-size: 21px; font-weight: 700; color: #2A2320;">{{ p.name }}</div>
+                      <div style="font-size: 17px; color: #7E736B; margin-top: 2px;">{{ p.role }}</div>
+                    </div>
+                    <div style="font-size: 15px; font-weight: 700; color: #A79C94;">{{ p.order }}</div>
+                  </div>
+                </sc-for>
+                <button style="width: 100%; min-height: 62px; border: 2px dashed #D6C9B9; cursor: pointer; border-radius: 18px; background: transparent; font-family: Signika, sans-serif; font-size: 19px; font-weight: 600; color: #8A7F76;" style-hover="border-color: #1F5C8B; color: #1F5C8B;">Add someone else</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ ob4 }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size: 36px; font-weight: 700; color: #2A2320; letter-spacing: -0.5px; line-height: 1.15;">When should I check in on you?</div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: #6E635C; margin-top: 10px;">A short hello. One tap and I'll leave you alone.</div>
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 22px;">
+                <sc-for list="{{ checkins }}" as="c" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 15px; padding: 20px; border-radius: 18px; background: #FFFFFF; border: 2px solid #EADFD1;">
+                    <div style="flex: 1;">
+                      <div style="font-size: 24px; font-weight: 700; color: #2A2320;">{{ c.time }}</div>
+                      <div style="font-size: 17px; color: #7E736B; margin-top: 3px;">{{ c.note }}</div>
+                    </div>
+                    <div style="width: 62px; height: 34px; border-radius: 17px; background: #3E6B4E; padding: 3px; box-sizing: border-box; display: flex; justify-content: flex-end;">
+                      <div style="width: 28px; height: 28px; border-radius: 50%; background: #FFFFFF;"></div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="padding: 18px 20px; border-radius: 18px; background: #E9EFE9; border: 1px solid #D6E2D6; font-family: Newsreader, Georgia, serif; font-size: 20px; line-height: 1.45; color: #2C4E39; text-wrap: pretty;">On dangerous days I'll check more often. You can turn that off any time in Settings.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ ob5 }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 42px;">
+              <div style="width: 128px; height: 128px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: nb-bob 4.2s ease-in-out infinite;">
+                <dc-import name="Avatar" size="128" variant="{{ avatarVariant }}" expr="happy" hint-size="128px,128px"></dc-import>
+              </div>
+              <div style="font-size: 38px; font-weight: 700; color: #2A2320; letter-spacing: -0.6px; margin-top: 26px;">You're all set, Margaret.</div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 23px; line-height: 1.5; color: #6E635C; margin-top: 12px; text-wrap: pretty;">I'll say hello at ten tomorrow morning. If today turns dangerous before then, you'll hear from me sooner.</div>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <div style="padding: 14px 26px 34px; display: flex; gap: 12px;">
+          <sc-if value="{{ obCanBack }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ obBack }}" style="min-width: 88px; min-height: 70px; border: 2px solid #EADFD1; cursor: pointer; border-radius: 20px; background: transparent; color: #7E736B; font-family: Signika, sans-serif; font-size: 20px; font-weight: 700;" style-hover="border-color: #1F5C8B; color: #1F5C8B;">Back</button>
+          </sc-if>
+          <button onClick="{{ obNext }}" style="flex: 1; min-height: 70px; border: none; cursor: pointer; border-radius: 20px; background: #1F5C8B; color: #FFFFFF; font-family: Signika, sans-serif; font-size: 23px; font-weight: 700;" style-hover="background: #17466A;" style-active="transform: scale(0.985);">{{ obCta }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ HOME ═══ -->
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+      <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; background: {{ sky }}; padding: 70px 24px 34px; box-sizing: border-box; position: relative; overflow: hidden;">
+
+        <div style="position: absolute; inset: -40% -40% auto -40%; height: 90%; border-radius: 50%; background: {{ glow }}; animation: {{ shimmerAnim }}; pointer-events: none;"></div>
+
+        <div style="position: relative;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="font-size: 16px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: {{ inkSoft }};">Thursday · 1:48pm</div>
+            <button onClick="{{ goSettings }}" style="border: none; background: rgba(255,255,255,0.6); cursor: pointer; width: 46px; height: 46px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;" style-hover="background: #FFFFFF;">
+              <div style="width: 20px; height: 3px; border-radius: 2px; background: {{ ink }};"></div>
+              <div style="width: 20px; height: 3px; border-radius: 2px; background: {{ ink }};"></div>
+              <div style="width: 20px; height: 3px; border-radius: 2px; background: {{ ink }};"></div>
+            </button>
+          </div>
+
+          <button onClick="{{ toggleUnit }}" style="border: none; background: none; padding: 0; cursor: pointer; display: flex; align-items: flex-start; gap: 5px; margin-top: 10px;" style-hover="opacity: 0.75;">
+            <div style="font-size: 104px; font-weight: 700; color: {{ ink }}; line-height: 0.86; letter-spacing: -5px; font-family: Signika, sans-serif;">{{ temp }}</div>
+            <div style="display: flex; align-items: flex-start; gap: 1px; font-family: Signika, sans-serif;">
+              <div style="font-size: 44px; font-weight: 400; color: {{ ink }}; line-height: 1;">°</div>
+              <div style="font-size: 34px; font-weight: 600; color: {{ inkSoft }}; line-height: 1.35;">{{ unit }}</div>
+            </div>
+          </button>
+          <div style="font-size: 32px; font-weight: 700; color: {{ ink }}; letter-spacing: -0.4px; margin-top: 10px;">{{ headline }}</div>
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 22px; line-height: 1.45; color: {{ inkSoft }}; margin-top: 8px; max-width: 296px; text-wrap: pretty;">{{ subline }}</div>
+        </div>
+
+        <div style="position: relative; display: flex; justify-content: center; align-items: center; flex: 1;">
+          <div style="position: absolute; width: 168px; height: 168px; border-radius: 50%; background: {{ ink }}; opacity: 0.14; animation: {{ haloAnim }};"></div>
+          <div style="position: relative; width: 168px; height: 168px; border-radius: 50%; background: {{ faceBg }}; box-shadow: 0 14px 34px rgba(0,0,0,0.09); display: flex; flex-direction: column; align-items: center; justify-content: center; animation: {{ faceAnim }};">
+
+            <sc-if value="{{ faceHappy }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; gap: 34px;">
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: {{ ink }};"></div>
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: {{ ink }};"></div>
+              </div>
+              <div style="width: 54px; height: 27px; margin-top: 20px; border-bottom: 7px solid {{ ink }}; border-radius: 0 0 60px 60px;"></div>
+            </sc-if>
+
+            <sc-if value="{{ faceHot }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; gap: 32px; align-items: center;">
+                <div style="width: 22px; height: 7px; border-radius: 4px; background: {{ ink }};"></div>
+                <div style="width: 22px; height: 7px; border-radius: 4px; background: {{ ink }};"></div>
+              </div>
+              <div style="width: 40px; height: 32px; margin-top: 18px; border-radius: 0 0 26px 26px / 0 0 34px 34px; background: {{ ink }};"></div>
+              <div style="position: absolute; top: 34px; right: 32px; width: 11px; height: 14px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: #FFFFFF; opacity: 0.9; animation: nb-drip 2.2s ease-in-out infinite;"></div>
+            </sc-if>
+
+            <sc-if value="{{ faceCold }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; gap: 34px;">
+                <div style="width: 15px; height: 15px; border-radius: 50%; background: {{ ink }};"></div>
+                <div style="width: 15px; height: 15px; border-radius: 50%; background: {{ ink }};"></div>
+              </div>
+              <div style="width: 46px; height: 22px; margin-top: 22px; border-top: 7px solid {{ ink }}; border-radius: 60px 60px 0 0;"></div>
+            </sc-if>
+
+          </div>
+        </div>
+
+        <div style="position: relative; display: flex; flex-direction: column; gap: 12px;">
+          <button onClick="{{ goDo }}" style="width: 100%; min-height: 84px; border: none; cursor: pointer; border-radius: 22px; background: {{ ink }}; color: {{ sky }}; font-family: Signika, sans-serif; font-size: 25px; font-weight: 700; letter-spacing: -0.2px;" style-hover="opacity: 0.9;" style-active="transform: scale(0.985);">What do I do now?</button>
+          <button onClick="{{ goCall }}" style="width: 100%; min-height: 84px; border: 2.5px solid {{ ink }}; cursor: pointer; border-radius: 22px; background: transparent; color: {{ ink }}; font-family: Signika, sans-serif; font-size: 25px; font-weight: 700; letter-spacing: -0.2px;" style-hover="background: rgba(255,255,255,0.45);" style-active="transform: scale(0.985);">Call a person</button>
+        </div>
+
+        <button onClick="{{ goVoice }}" style="position: absolute; right: 18px; top: 296px; width: 84px; height: 84px; border-radius: 50%; border: none; padding: 0; cursor: pointer; background: transparent; animation: {{ sunAnim }};" style-hover="filter: brightness(1.05);">
+          <div style="width: 84px; height: 84px; display: flex; align-items: center; justify-content: center;">
+            <dc-import name="Avatar" size="84" variant="{{ avatarVariant }}" expr="{{ faceExpr }}" hint-size="84px,84px"></dc-import>
+          </div>
+        </button>
+      </div>
+    </sc-if>
+
+    <!-- ═══ WHAT DO I DO NOW ═══ -->
+    <sc-if value="{{ isDo }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; background: {{ sky }};">
+        <div style="flex: 1; overflow: auto; padding: 66px 24px 16px;">
+          <button onClick="{{ goHome }}" style="border: none; background: rgba(255,255,255,0.6); cursor: pointer; width: 48px; height: 48px; border-radius: 50%; font-size: 22px; color: {{ ink }}; font-family: Signika, sans-serif;" style-hover="background: #FFFFFF;">‹</button>
+          <div style="font-size: 38px; font-weight: 700; color: {{ ink }}; letter-spacing: -0.6px; line-height: 1.12; margin-top: 18px; text-wrap: pretty;">{{ doTitle }}</div>
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: {{ inkSoft }}; margin-top: 10px; text-wrap: pretty;">{{ doSub }}</div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+            <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+              <div style="display: flex; gap: 16px; padding: 22px; border-radius: 20px; background: #FFFFFF;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: {{ faceBg }}; color: {{ ink }}; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 700;">{{ s.n }}</div>
+                <div style="line-height: 1.3;">
+                  <div style="font-size: 22px; font-weight: 600; color: #2A2320;">{{ s.title }}</div>
+                  <div style="font-size: 18px; color: #7E736B; margin-top: 6px; line-height: 1.4;">{{ s.body }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: 14px 24px 34px; display: flex; flex-direction: column; gap: 10px;">
+          <button onClick="{{ goCheckin }}" style="width: 100%; min-height: 70px; border: none; cursor: pointer; border-radius: 20px; background: {{ ink }}; color: {{ sky }}; font-family: Signika, sans-serif; font-size: 22px; font-weight: 700;" style-hover="opacity: 0.9;">Done. Check on me later</button>
+          <button onClick="{{ goVoice }}" style="width: 100%; min-height: 58px; border: none; cursor: pointer; border-radius: 18px; background: transparent; color: {{ inkSoft }}; font-family: Signika, sans-serif; font-size: 19px; font-weight: 600;" style-hover="background: rgba(255,255,255,0.5);">Ask CoolBuddy something else</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ CALL A PERSON ═══ -->
+    <sc-if value="{{ isCall }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; background: {{ sky }};">
+        <div style="flex: 1; overflow: auto; padding: 66px 24px 16px;">
+          <button onClick="{{ goHome }}" style="border: none; background: rgba(255,255,255,0.6); cursor: pointer; width: 48px; height: 48px; border-radius: 50%; font-size: 22px; color: {{ ink }}; font-family: Signika, sans-serif;" style-hover="background: #FFFFFF;">‹</button>
+          <div style="font-size: 36px; font-weight: 700; color: {{ ink }}; letter-spacing: -0.5px; margin-top: 18px;">Who should I call?</div>
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: {{ inkSoft }}; margin-top: 8px; text-wrap: pretty;">Tap once and it dials. No menus.</div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 22px;">
+            <sc-for list="{{ callList }}" as="p" hint-placeholder-count="4">
+              <button onClick="{{ p.onTap }}" style="width: 100%; text-align: left; display: flex; align-items: center; gap: 16px; padding: 20px; border: none; cursor: pointer; border-radius: 20px; background: #FFFFFF; font-family: Signika, sans-serif;" style-hover="transform: scale(1.012);">
+                <div style="width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0; background: {{ p.av }}; display: flex; align-items: center; justify-content: center; font-size: 23px; font-weight: 700; color: #FFFFFF;">{{ p.initial }}</div>
+                <div style="flex: 1; line-height: 1.3;">
+                  <div style="font-size: 23px; font-weight: 700; color: #2A2320;">{{ p.name }}</div>
+                  <div style="font-size: 18px; color: #7E736B; margin-top: 3px;">{{ p.role }}</div>
+                </div>
+                <div style="width: 46px; height: 46px; border-radius: 50%; background: #3E6B4E; flex-shrink: 0;"></div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ VOICE ═══ -->
+    <sc-if value="{{ isVoice }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; background: #221C18; padding: 78px 26px 36px; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #8C7F76;">CoolBuddy is listening</div>
+          <button onClick="{{ goHome }}" style="border: none; background: #33291F; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; font-size: 19px; color: #C6B6AA; font-family: Signika, sans-serif;" style-hover="background: #423428;">✕</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 30px;">
+          <div style="position: relative; width: 210px; height: 210px; display: flex; align-items: center; justify-content: center; animation: nb-bob 3.6s ease-in-out infinite;">
+            <div style="position: absolute; width: 210px; height: 210px; border-radius: 50%; background: radial-gradient(circle, rgba(242,160,63,0.32), rgba(78,147,191,0.26) 68%, transparent 70%); animation: nb-halo 2.6s ease-in-out infinite;"></div>
+            <div style="width: 190px; height: 190px; display: flex; align-items: center; justify-content: center;">
+              <dc-import name="Avatar" size="190" variant="{{ avatarVariant }}" expr="{{ faceExpr }}" hint-size="190px,190px"></dc-import>
+            </div>
+          </div>
+
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 26px; line-height: 1.4; color: #F4EBE3; text-align: center; text-wrap: pretty;">{{ voiceLine }}</div>
+
+          <div style="display: flex; gap: 7px; align-items: center; height: 44px;">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="9">
+              <div style="width: 7px; height: 40px; border-radius: 4px; background: #6E5F55; animation: {{ b.a }};"></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ voiceQs }}" as="q" hint-placeholder-count="2">
+            <button onClick="{{ q.onTap }}" style="width: 100%; min-height: 62px; text-align: left; padding: 16px 20px; border: 1.5px solid #423428; cursor: pointer; border-radius: 17px; background: #2C231D; font-family: Signika, sans-serif; font-size: 19px; font-weight: 500; color: #EFE4DA;" style-hover="border-color: #F2A03F;">{{ q.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ SETTINGS ═══ -->
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; background: #FFF6EC;">
+        <div style="flex: 1; overflow: auto; padding: 64px 22px 34px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <button onClick="{{ goHome }}" style="border: none; background: #F3E7D8; cursor: pointer; width: 48px; height: 48px; border-radius: 50%; font-size: 22px; color: #2A2320; font-family: Signika, sans-serif;" style-hover="background: #EADCC9;">‹</button>
+            <div style="font-size: 32px; font-weight: 700; color: #2A2320; letter-spacing: -0.4px;">Settings</div>
+          </div>
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.45; color: #6E635C; margin-top: 10px; text-wrap: pretty;">Change anything you like. Nothing here can break, and I'll confirm before I do something big.</div>
+
+          <div style="display: flex; align-items: center; gap: 16px; margin-top: 22px; padding: 20px; border-radius: 20px; background: #FFFFFF; border: 2px solid #EFE3D2;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #E4EDF4; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: #1F5C8B;">M</div>
+            <div style="line-height: 1.3;">
+              <div style="font-size: 24px; font-weight: 700; color: #2A2320;">Margaret Ellis</div>
+              <div style="font-size: 18px; color: #7E736B; margin-top: 3px;">78 · Flat 3C, 412 Wilson Road, Manchester M14 5TP</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">Temperature</div>
+            <div style="display: flex; gap: 8px; padding: 6px; border-radius: 18px; background: #F3E7D8;">
+              <sc-for list="{{ unitOpts }}" as="u" hint-placeholder-count="2">
+                <button onClick="{{ u.onTap }}" style="flex: 1; min-height: 58px; border: none; cursor: pointer; border-radius: 14px; background: {{ u.bg }}; color: {{ u.fg }}; font-family: Signika, sans-serif; font-size: 21px; font-weight: 700;">{{ u.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">What makes weather harder for you</div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ traits }}" as="t" hint-placeholder-count="5">
+                <button onClick="{{ t.onTap }}" style="width: 100%; text-align: left; display: flex; align-items: center; gap: 14px; padding: 17px 19px; border: 2px solid {{ t.border }}; cursor: pointer; border-radius: 16px; background: {{ t.bg }}; font-family: Signika, sans-serif; font-size: 19px; font-weight: 500; color: #2A2320;" style-hover="border-color: #1F5C8B;">
+                  <span style="width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; background: {{ t.boxBg }}; border: 2px solid {{ t.boxBorder }};"></span>
+                  <span>{{ t.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">Your people</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <sc-for list="{{ people }}" as="p" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 16px; background: #FFFFFF; border: 2px solid #EFE3D2;">
+                  <div style="width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; background: {{ p.av }}; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 700; color: #FFFFFF;">{{ p.initial }}</div>
+                  <div style="flex: 1; line-height: 1.3;">
+                    <div style="font-size: 20px; font-weight: 700; color: #2A2320;">{{ p.name }}</div>
+                    <div style="font-size: 17px; color: #7E736B; margin-top: 2px;">{{ p.role }}</div>
+                  </div>
+                  <div style="font-size: 15px; font-weight: 700; color: #A79C94;">{{ p.order }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">How I reach you</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <sc-for list="{{ prefs }}" as="s" hint-placeholder-count="4">
+                <button onClick="{{ s.onTap }}" style="width: 100%; text-align: left; display: flex; align-items: center; gap: 14px; padding: 18px; border: 2px solid #EFE3D2; cursor: pointer; border-radius: 16px; background: #FFFFFF; font-family: Signika, sans-serif;" style-hover="border-color: #1F5C8B;">
+                  <div style="flex: 1; line-height: 1.3;">
+                    <div style="font-size: 20px; font-weight: 600; color: #2A2320;">{{ s.label }}</div>
+                    <div style="font-size: 17px; color: #7E736B; margin-top: 3px;">{{ s.note }}</div>
+                  </div>
+                  <div style="width: 62px; height: 34px; border-radius: 17px; flex-shrink: 0; background: {{ s.track }}; padding: 3px; box-sizing: border-box; display: flex; justify-content: {{ s.justify }};">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #FFFFFF;"></div>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">Look</div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ themeOpts }}" as="th" hint-placeholder-count="3">
+                <button onClick="{{ th.onTap }}" style="width: 100%; text-align: left; min-height: 58px; border: 2px solid {{ th.border }}; cursor: pointer; border-radius: 16px; background: {{ th.bg }}; color: {{ th.fg }}; font-family: Signika, sans-serif; font-size: 18px; font-weight: 600; padding: 0 18px; display: flex; align-items: center;">{{ th.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">Assistant icon</div>
+            <div style="display: flex; gap: 8px; padding: 6px; border-radius: 18px; background: #F3E7D8;">
+              <sc-for list="{{ avatarOpts }}" as="av" hint-placeholder-count="3">
+                <button onClick="{{ av.onTap }}" style="flex: 1; min-height: 56px; border: none; cursor: pointer; border-radius: 14px; background: {{ av.bg }}; color: {{ av.fg }}; font-family: Signika, sans-serif; font-size: 18px; font-weight: 700;">{{ av.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #A79C94; margin-bottom: 10px;">Language</div>
+            <div style="display: flex; gap: 8px; padding: 6px; border-radius: 18px; background: #F3E7D8;">
+              <sc-for list="{{ langOpts }}" as="l" hint-placeholder-count="3">
+                <button onClick="{{ l.onTap }}" style="flex: 1; min-height: 56px; border: none; cursor: pointer; border-radius: 14px; background: {{ l.bg }}; color: {{ l.fg }}; font-family: Signika, sans-serif; font-size: 18px; font-weight: 700;">{{ l.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <button onClick="{{ goOnboard }}" style="width: 100%; margin-top: 26px; min-height: 62px; border: 2px solid #EADFD1; cursor: pointer; border-radius: 18px; background: transparent; color: #7E736B; font-family: Signika, sans-serif; font-size: 19px; font-weight: 600;" style-hover="border-color: #1F5C8B; color: #1F5C8B;">Show me the setup again</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ CHECK-IN ═══ -->
+    <sc-if value="{{ isCheckin }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between; background: {{ ink }}; padding: 96px 26px 40px; box-sizing: border-box;">
+        <div>
+          <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: {{ sky }}; opacity: 0.75;">Check-in · 3:00pm</div>
+          <div style="font-size: 42px; font-weight: 700; color: {{ sky }}; letter-spacing: -0.8px; line-height: 1.1; margin-top: 16px; text-wrap: pretty;">Margaret, how are you doing?</div>
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 22px; line-height: 1.5; color: {{ sky }}; opacity: 0.85; margin-top: 14px; text-wrap: pretty;">One tap is all I need. No answer in 15 minutes and I'll call you, then Dana.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button onClick="{{ goHome }}" style="width: 100%; min-height: 88px; border: none; cursor: pointer; border-radius: 22px; background: {{ sky }}; color: {{ ink }}; font-family: Signika, sans-serif; font-size: 26px; font-weight: 700;" style-hover="opacity: 0.9;">I'm okay</button>
+          <button onClick="{{ goEsc }}" style="width: 100%; min-height: 88px; border: 2.5px solid {{ sky }}; cursor: pointer; border-radius: 22px; background: transparent; color: {{ sky }}; font-family: Signika, sans-serif; font-size: 26px; font-weight: 700;" style-hover="background: rgba(255,255,255,0.1);">I need help</button>
+          <div style="text-align: center; font-size: 16px; color: {{ sky }}; opacity: 0.75; margin-top: 6px;">No answer for 12 minutes</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ ESCALATING ═══ -->
+    <sc-if value="{{ isEsc }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; background: {{ ink }};">
+        <div style="flex: 1; overflow: auto; padding: 84px 26px 16px;">
+          <div style="display: inline-flex; align-items: center; gap: 9px; padding: 8px 15px; border-radius: 999px; background: rgba(255,255,255,0.16);">
+            <div style="width: 9px; height: 9px; border-radius: 50%; background: {{ sky }};"></div>
+            <div style="font-size: 15px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: {{ sky }};">Getting help</div>
+          </div>
+          <div style="font-size: 36px; font-weight: 700; color: {{ sky }}; letter-spacing: -0.6px; line-height: 1.13; margin-top: 18px; text-wrap: pretty;">Reaching your people now</div>
+          <div style="font-family: Newsreader, Georgia, serif; font-size: 21px; line-height: 1.5; color: {{ sky }}; opacity: 0.8; margin-top: 12px; text-wrap: pretty;">Two check-ins missed on a dangerous day. I'm working down your list.</div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;">
+            <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: {{ c.dot }}; flex-shrink: 0;"></div>
+                <div style="flex: 1; line-height: 1.3;">
+                  <div style="font-size: 19px; font-weight: 600; color: {{ sky }};">{{ c.name }}</div>
+                  <div style="font-size: 16px; color: {{ sky }}; opacity: 0.65; margin-top: 2px;">{{ c.role }}</div>
+                </div>
+                <div style="font-size: 16px; font-weight: 600; color: {{ c.dot }};">{{ c.status }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding: 12px 26px 34px; display: flex; flex-direction: column; gap: 10px;">
+          <button onClick="{{ goDana }}" style="width: 100%; min-height: 68px; border: none; cursor: pointer; border-radius: 20px; background: #C2521F; color: #FFFFFF; font-family: Signika, sans-serif; font-size: 21px; font-weight: 700;" style-hover="background: #A44317;">See what Dana receives</button>
+          <button onClick="{{ goHome }}" style="width: 100%; min-height: 56px; border: none; cursor: pointer; border-radius: 18px; background: transparent; color: #A98C7B; font-family: Signika, sans-serif; font-size: 19px; font-weight: 600;" style-hover="background: #3A241A;">I'm fine, stop this</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ═══ DANA ═══ -->
+    <sc-if value="{{ isDana }}" hint-placeholder-val="{{ false }}">
+      <div style="height: 100%; display: flex; flex-direction: column; background: #F5F1EC;">
+        <div style="flex: 1; overflow: auto; padding: 64px 22px 16px;">
+          <div style="font-size: 14px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #A79C94;">Dana's phone · Caregiver view</div>
+
+          <div style="margin-top: 16px; border-radius: 22px; background: #FFFFFF; border: 2px solid #C2521F; overflow: hidden;">
+            <div style="padding: 15px 20px; background: #C2521F; color: #FFFFFF; font-size: 17px; font-weight: 700; letter-spacing: 0.4px;">Mum needs a check · 3:27pm</div>
+            <div style="padding: 20px;">
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 22px; line-height: 1.45; color: #2A2320; text-wrap: pretty;">Margaret missed two check-ins during a heat warning. She was last active at 1:48 PM.</div>
+              <div style="display: flex; flex-direction: column; margin-top: 16px;">
+                <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
+                  <div style="display: flex; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid #EFE9E1;">
+                    <div style="font-size: 17px; color: #7E736B;">{{ f.k }}</div>
+                    <div style="font-size: 17px; font-weight: 600; color: #2A2320; text-align: right;">{{ f.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
+            <button style="width: 100%; min-height: 66px; border: none; cursor: pointer; border-radius: 18px; background: #1F5C8B; color: #FFFFFF; font-family: Signika, sans-serif; font-size: 21px; font-weight: 700;" style-hover="background: #17466A;">Call Mum</button>
+            <button style="width: 100%; min-height: 62px; border: 1.5px solid #DDD1C3; cursor: pointer; border-radius: 18px; background: #FFFFFF; color: #2A2320; font-family: Signika, sans-serif; font-size: 19px; font-weight: 600;" style-hover="border-color: #1F5C8B;">Ask Ruth next door to knock</button>
+            <button style="width: 100%; min-height: 62px; border: 1.5px solid #E8C9B8; cursor: pointer; border-radius: 18px; background: #FCF1E9; color: #A44317; font-family: Signika, sans-serif; font-size: 19px; font-weight: 600;" style-hover="border-color: #C2521F;">Request a welfare check</button>
+          </div>
+
+          <button onClick="{{ goHome }}" style="width: 100%; margin-top: 18px; min-height: 50px; border: none; cursor: pointer; border-radius: 14px; background: transparent; color: #A79C94; font-family: Signika, sans-serif; font-size: 17px; font-weight: 600;" style-hover="background: #EEE8E0;">Back to Margaret's phone</button>
+        </div>
+      </div>
+    </sc-if>
+
+  </x-import>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;condition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cold&quot;,&quot;good&quot;,&quot;hot&quot;,&quot;extreme&quot;],&quot;default&quot;:&quot;extreme&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo state&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Full color by temperature&quot;,&quot;Neutral beige and white&quot;,&quot;Neutral with color edge&quot;],&quot;default&quot;:&quot;Full color by temperature&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Look&quot;},&quot;avatarStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Person&quot;,&quot;Girl&quot;,&quot;Earth&quot;],&quot;default&quot;:&quot;Person&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Look&quot;}}">
+const MOODS = {
+  cold: {
+    label: 'Cold', tempF: 31, indoorF: 54, dot: '#3C7CA8',
+    sky: '#DCE9F2', glow: 'radial-gradient(circle, rgba(120,170,205,0.5), transparent 70%)',
+    ink: '#1B4666', inkSoft: '#4E738F', faceBg: '#BFD9EA',
+    headline: 'Cold enough to hurt', face: 'cold',
+    subline: "Your flat loses heat fast overnight. Let's keep one room warm.",
+    doTitle: 'Warm one room, not the whole place.',
+    doSub: "It's {IN} in your back rooms. Closing them off makes the front room a good deal warmer by evening.",
+    steps: [
+      { n: '1', title: 'Shut the bedroom doors', body: 'Keep the heat in the front room where you sit.' },
+      { n: '2', title: 'Something hot to drink', body: 'Warms you from the inside faster than a blanket.' },
+      { n: '3', title: 'Blanket over your legs and feet', body: 'That is where you lose the most heat sitting down.' },
+    ],
+    voiceLine: "It's {T} out. Is the heat working in there?",
+    halo: 'none', shimmer: 'nb-shimmer 9s ease-in-out infinite',
+    faceAnim: 'nb-shiver 0.28s ease-in-out infinite', sunAnim: 'nb-bob 4.4s ease-in-out infinite',
+  },
+  good: {
+    label: 'Just right', tempF: 72, indoorF: 73, dot: '#5C9B6B',
+    sky: '#DFF0DC', glow: 'radial-gradient(circle, rgba(140,190,150,0.45), transparent 70%)',
+    ink: '#2C4E39', inkSoft: '#5C7062', faceBg: '#C4E2C0',
+    headline: 'A good day to be out', face: 'happy',
+    subline: 'Nothing to watch for today. Open a window if you like.',
+    doTitle: 'Honestly? Nothing urgent.',
+    doSub: "It's {IN} inside, which is right where you want it. Good weather is the time to get ahead of the next hot stretch.",
+    steps: [
+      { n: '1', title: 'Air the place out', body: 'A cross breeze for an hour keeps the flat cooler all day.' },
+      { n: '2', title: 'Refill your water by the chair', body: 'Six bottles lasts you through a hot day.' },
+      { n: '3', title: 'Call Dana back', body: 'She rang twice yesterday. Want me to dial her?' },
+    ],
+    voiceLine: "It's a mild {T}. What's on your mind?",
+    halo: 'none', shimmer: 'nb-shimmer 12s ease-in-out infinite',
+    faceAnim: 'nb-bob 5s ease-in-out infinite', sunAnim: 'nb-bob 4.4s ease-in-out infinite',
+  },
+  hot: {
+    label: 'Warm', tempF: 91, indoorF: 86, dot: '#D9832F',
+    sky: '#FBE9D6', glow: 'radial-gradient(circle, rgba(232,167,92,0.5), transparent 70%)',
+    ink: '#8A4416', inkSoft: '#A5714A', faceBg: '#F6D3AC',
+    headline: 'Warm', face: 'hot',
+    subline: "Fine indoors with a fan. I'd stay out of the sun until evening.",
+    doTitle: 'Three easy things.',
+    doSub: "It's {IN} in your flat and your place holds heat, so this is about staying ahead of it.",
+    steps: [
+      { n: '1', title: 'A full glass of water now', body: 'Then one every hour, thirsty or not.' },
+      { n: '2', title: 'Fan pointed at you, not the room', body: 'Air moving across your skin is what actually cools you.' },
+      { n: '3', title: 'Blinds down on the sunny side', body: 'Keeps the front room a few degrees cooler.' },
+    ],
+    voiceLine: "It's {T} out. How are you feeling in there?",
+    halo: 'nb-halo 4s ease-in-out infinite', shimmer: 'nb-shimmer 6s ease-in-out infinite',
+    faceAnim: 'nb-bob 3.2s ease-in-out infinite', sunAnim: 'nb-bob 3.2s ease-in-out infinite',
+  },
+  extreme: {
+    label: 'Dangerously hot', tempF: 103, indoorF: 94, dot: '#B93712',
+    sky: '#F9D6C4', glow: 'radial-gradient(circle, rgba(220,110,60,0.6), transparent 68%)',
+    ink: '#7A2A0E', inkSoft: '#9E5837', faceBg: '#F4B191',
+    headline: 'Too hot to stay put', face: 'hot',
+    subline: "Day 3, and your place hasn't cooled off at night. This is the dangerous part.",
+    doTitle: "Do these three, then I'll leave you be.",
+    doSub: "It's been {IN} inside for two days. That is the part that gets people your age.",
+    steps: [
+      { n: '1', title: 'Drink a full glass of water', body: "Even if you're not thirsty. Then one every hour." },
+      { n: '2', title: 'Move to the north bedroom', body: 'It stays noticeably cooler than where you are now.' },
+      { n: '3', title: 'Wet a towel for your neck', body: 'Faster than a shower and it lasts longer.' },
+    ],
+    voiceLine: "{T} and climbing. Tell me how you're feeling.",
+    halo: 'nb-halo 1.5s ease-in-out infinite', shimmer: 'nb-shimmer 2.4s ease-in-out infinite',
+    faceAnim: 'nb-bob 1.3s ease-in-out infinite', sunAnim: 'nb-bob 1.6s ease-in-out infinite',
+  },
+};
+
+const TRAITS = ['I live on my own', 'No air conditioning', 'I take a water pill', 'Stairs are hard for me', 'I use oxygen at home'];
+const OB_CTA = ['Nice to meet you', 'That\u2019s me', 'Next', 'Looks right', 'Sounds good', 'Take me in'];
+
+class Component extends DCLogic {
+  state = {
+    screen: 'home', mood: null, voiceLine: null, unit: 'C', ob: 0,
+    traits: [0, 1, 2], prefs: [0, 1, 3], lang: 'English',
+    theme: null, avatarStyle: null,
+  };
+
+  go(screen) { return () => this.setState({ screen }); }
+  toggle(key, i) {
+    this.setState(st => ({
+      [key]: st[key].includes(i) ? st[key].filter(x => x !== i) : [...st[key], i],
+    }));
+  }
+
+  renderVals() {
+    const key = this.state.mood || (this.props.condition ?? 'extreme');
+    const m = MOODS[key] || MOODS.extreme;
+    const s = this.state.screen;
+    const unit = this.state.unit;
+    const theme = this.state.theme ?? this.props.theme ?? 'Full color by temperature';
+    const neutral = theme !== 'Full color by temperature';
+    const sky = neutral ? '#FBF6EE' : m.sky;
+    const ink = neutral ? '#2A2320' : m.ink;
+    const inkSoft = neutral ? '#6E635C' : m.inkSoft;
+    const faceBg = neutral ? '#EFE1CD' : m.faceBg;
+    const glow = neutral ? 'none' : m.glow;
+    const shimmerAnim = neutral ? 'none' : m.shimmer;
+    const avatarLabel = this.state.avatarStyle ?? this.props.avatarStyle ?? 'Person';
+    const avatarVariant = avatarLabel === 'Girl' ? 'girl' : avatarLabel === 'Earth' ? 'earth' : 'person';
+    const faceExpr = m.face === 'happy' ? 'happy' : m.face === 'cold' ? 'cold' : 'hot';
+    const bordered = theme === 'Neutral with color edge';
+    const frameBorder = bordered ? '10px solid ' + m.dot : '0px solid transparent';
+    const framePad = bordered ? '10px' : '0px';
+    const conv = f => (unit === 'C' ? Math.round(((f - 32) * 5) / 9) : f);
+    const deg = f => conv(f) + '°' + unit;
+    const fill = str => str.split('{T}').join(deg(m.tempF)).split('{IN}').join(deg(m.indoorF));
+
+    const screens = [
+      ['onboard', 'Onboarding'], ['home', 'Home'], ['do', 'What do I do now'],
+      ['call', 'Call a person'], ['voice', 'Voice assistant'], ['settings', 'Settings'],
+      ['checkin', 'Check-in'], ['esc', 'No answer'], ['dana', "Dana's phone"],
+    ];
+
+    const people = [
+      { name: 'Dana', role: 'Your daughter · 20 min away', initial: 'D', av: '#1F5C8B', order: 'First' },
+      { name: 'Ruth', role: 'Next door, flat 4B', initial: 'R', av: '#3E6B4E', order: 'Second' },
+      { name: 'CoolBuddy', role: 'Someone answers, day or night', initial: 'N', av: '#C2521F', order: 'Third' },
+    ];
+
+    const prefRows = [
+      ['Check in twice a day', '10am in the morning, 3pm in the afternoon'],
+      ['Check in more on risky days', 'Every two hours when it gets dangerous'],
+      ['Read everything out loud', 'CoolBuddy speaks instead of showing text'],
+      ['Tell Dana when I miss a check-in', 'Only after I have missed two'],
+    ];
+
+    return {
+      isOnboard: s === 'onboard', isHome: s === 'home', isDo: s === 'do', isCall: s === 'call',
+      isVoice: s === 'voice', isSettings: s === 'settings', isCheckin: s === 'checkin',
+      isEsc: s === 'esc', isDana: s === 'dana',
+      goHome: this.go('home'), goDo: this.go('do'), goCall: this.go('call'),
+      goVoice: this.go('voice'), goCheckin: this.go('checkin'), goEsc: this.go('esc'),
+      goDana: this.go('dana'), goSettings: this.go('settings'),
+      goOnboard: () => this.setState({ screen: 'onboard', ob: 0 }),
+
+      moods: Object.keys(MOODS).map(k => ({
+        label: MOODS[k].label, dot: MOODS[k].dot,
+        bg: k === key ? '#FFFFFF' : 'transparent',
+        fg: k === key ? '#2A2320' : '#6E635C',
+        onTap: () => this.setState({ mood: k, screen: 'home', voiceLine: null }),
+      })),
+      rail: screens.map(([id, label], i) => ({
+        num: String(i + 1), label,
+        bg: s === id ? '#FFFFFF' : 'transparent',
+        fg: s === id ? '#1F5C8B' : '#6E635C',
+        onTap: () => this.setState({ screen: id, ob: 0 }),
+      })),
+
+      sky, glow, ink, inkSoft, faceBg, frameBorder, framePad, avatarVariant, faceExpr,
+      temp: String(conv(m.tempF)), unit,
+      toggleUnit: () => this.setState(st => ({ unit: st.unit === 'F' ? 'C' : 'F' })),
+      unitOpts: ['F', 'C'].map(u => ({
+        label: u === 'F' ? 'Fahrenheit  °F' : 'Celsius  °C',
+        bg: unit === u ? '#FFFFFF' : 'transparent',
+        fg: unit === u ? '#1F5C8B' : '#8A7F76',
+        onTap: () => this.setState({ unit: u }),
+      })),
+      headline: m.headline, subline: m.subline,
+      doTitle: m.doTitle, doSub: fill(m.doSub), steps: m.steps,
+      faceHappy: m.face === 'happy', faceHot: m.face === 'hot', faceCold: m.face === 'cold',
+      haloAnim: neutral ? 'none' : m.halo, shimmerAnim, faceAnim: m.faceAnim, sunAnim: m.sunAnim,
+
+      bars: Array.from({ length: 9 }, (_, i) => ({
+        a: `nb-listen ${0.7 + ((i * 7) % 5) * 0.14}s ease-in-out ${(i % 4) * 0.1}s infinite`,
+      })),
+      voiceLine: this.state.voiceLine || fill(m.voiceLine),
+      voiceQs: [
+        { label: 'I feel dizzy', onTap: () => this.setState({ voiceLine: "Sit down, sip water slowly, cold cloth on the back of your neck. I'll check on you in ten minutes. If you feel worse, one tap gets Dana and 999." }) },
+        { label: 'Is it safe to go outside?', onTap: () => this.setState({ voiceLine: 'Not until after seven tonight. The library is six minutes away and stays cool if you would rather wait there.' }) },
+      ],
+
+      people,
+      callList: people.concat([{ name: '999', role: 'If you feel confused or faint', initial: '9', av: '#8A2E12' }])
+        .map((p, i) => Object.assign({}, p, { onTap: this.go(i === 2 ? 'voice' : 'esc') })),
+
+      traits: TRAITS.map((label, i) => {
+        const on = this.state.traits.includes(i);
+        return {
+          label, bg: on ? '#FFFFFF' : 'transparent', border: on ? '#1F5C8B' : '#EADFD1',
+          boxBg: on ? '#1F5C8B' : '#FFFFFF', boxBorder: on ? '#1F5C8B' : '#CFC3B6',
+          onTap: () => this.toggle('traits', i),
+        };
+      }),
+
+      prefs: prefRows.map(([label, note], i) => {
+        const on = this.state.prefs.includes(i);
+        return {
+          label, note, track: on ? '#3E6B4E' : '#DCD0C0',
+          justify: on ? 'flex-end' : 'flex-start',
+          onTap: () => this.toggle('prefs', i),
+        };
+      }),
+
+      langOpts: ['English', 'Español', '中文'].map(l => ({
+        label: l,
+        bg: this.state.lang === l ? '#FFFFFF' : 'transparent',
+        fg: this.state.lang === l ? '#1F5C8B' : '#8A7F76',
+        onTap: () => this.setState({ lang: l }),
+      })),
+      themeOpts: ['Full color by temperature', 'Neutral beige and white', 'Neutral with color edge'].map(t => ({
+        label: t,
+        bg: theme === t ? '#FFFFFF' : 'transparent',
+        fg: theme === t ? '#1F5C8B' : '#8A7F76',
+        border: theme === t ? '#1F5C8B' : '#EFE3D2',
+        onTap: () => this.setState({ theme: t }),
+      })),
+      avatarOpts: ['Person', 'Girl', 'Earth'].map(a => ({
+        label: a,
+        bg: avatarLabel === a ? '#FFFFFF' : 'transparent',
+        fg: avatarLabel === a ? '#1F5C8B' : '#8A7F76',
+        border: avatarLabel === a ? '#1F5C8B' : '#EFE3D2',
+        onTap: () => this.setState({ avatarStyle: a }),
+      })),
+
+      ob0: this.state.ob === 0, ob1: this.state.ob === 1, ob2: this.state.ob === 2,
+      ob3: this.state.ob === 3, ob4: this.state.ob === 4, ob5: this.state.ob === 5,
+      obCanBack: this.state.ob > 0,
+      obCta: OB_CTA[this.state.ob],
+      obDots: Array.from({ length: 6 }, (_, i) => ({
+        w: i === this.state.ob ? '26px' : '8px',
+        bg: i <= this.state.ob ? '#1F5C8B' : '#E4D7C6',
+      })),
+      obNext: () => this.setState(st => (st.ob >= 5 ? { screen: 'home', ob: 0 } : { ob: st.ob + 1 })),
+      obBack: () => this.setState(st => ({ ob: Math.max(0, st.ob - 1) })),
+      obFields: [
+        { k: 'Your name', v: 'Margaret' },
+        { k: 'Your age', v: '78' },
+        { k: 'Where you live', v: 'Flat 3C, 412 Wilson Road, Manchester' },
+      ],
+      checkins: [
+        { time: '10am in the morning', note: 'A short hello with the day ahead' },
+        { time: '3pm in the afternoon', note: 'The hottest part of the day' },
+      ],
+
+      contacts: [
+        { name: "Margaret's phone", role: 'Called twice, no answer', status: 'No answer', dot: '#C2521F' },
+        { name: 'Dana Whitfield', role: 'Daughter · 20 min away', status: 'Notified', dot: '#E8A75C' },
+        { name: 'Ruth Alvarez', role: 'Neighbour · flat 4B', status: 'Asked to knock', dot: '#E8A75C' },
+        { name: 'NHS 111', role: 'Escalates in 8 minutes', status: 'Waiting', dot: '#8C7264' },
+      ],
+      facts: [
+        { k: 'Last active', v: '1:48pm' },
+        { k: 'Indoor temperature', v: deg(MOODS.extreme.indoorF) + ' for 2 days' },
+        { k: 'Outside now', v: deg(MOODS.extreme.tempF) + ', amber warning until 9pm' },
+        { k: 'Nearest cool place', v: 'Library, 6 min walk' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
