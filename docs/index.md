@@ -12,6 +12,15 @@ hot the bedroom actually gets.
 > **Demonstrator only.** Not medical advice and not clinically validated. Every
 > person in these documents is fictional.
 
+## Try it
+
+**[Live demo](https://starsmerchant-away-mouse-armed.trycloudflare.com/)** —
+`/companion` for one person's view, `/monitoring` for the register.
+
+> A Cloudflare quick tunnel to a laptop. **The address changes every time the
+> tunnel restarts.** If it does not load it has expired rather than broken; the
+> repo below runs the same thing locally.
+
 ## Design
 
 - [CoolBuddy — mobile handoff](design/coolbuddy/) — the phone surface: nine
