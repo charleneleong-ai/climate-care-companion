@@ -133,63 +133,134 @@ export function outwardCode(postcode: string): string {
 }
 
 /**
- * Five demo personas that prove the concept: same weather, five different
- * pieces of advice. Deliberately spread across regions and risk directions
- * so a demo shows contrast whatever the actual UK weather is on the day.
+ * Demo personas.
+ *
+ * Organised around three arguments the demo makes:
+ *
+ *   Pair A — polypharmacy cascade (Alan vs Victor):
+ *   The same cardiovascular diagnosis. Alan is on one drug; Victor is on four.
+ *   Each drug adds a new interaction chain. Same GP letter, completely different plan.
+ *
+ *   Pair B — dormant condition activated by heat (Pat vs Doris):
+ *   Both have dementia. Pat has no comorbidities or medications; Doris has COPD,
+ *   polypharmacy, and no caregiver. The condition alone is not the risk.
+ *
+ *   Standalone C — advice contradiction (Sylvia):
+ *   Her antipsychotic and anticholinergic switch off both the feeling of heat
+ *   and sweating — so the generic NHS message ("your body will warn you")
+ *   is factually wrong for her. The personalised watch-for inverts it explicitly.
+ *
+ *   Standalone D — low-score, high-stakes (Ben):
+ *   Young, low vulnerability score. A risk number alone would skip him. But his
+ *   insulin degrades above 25 °C — a life-critical storage failure that the
+ *   interaction rules reach regardless of tier.
  */
 export const DEMO_PROFILES: Profile[] = [
+  // ── Pair A · Low end ─────────────────────────────────────────────────────
   {
-    id: 'demo-doris',
-    name: 'Doris',
-    regionCode: 'TLC', // North East — usually the cold end of the country
-    postcodeOutward: 'NE6',
-    factors: ['over85', 'livesAlone', 'cardiovascular', 'coldHome', 'mobility'],
+    id: 'demo-alan',
+    name: 'Alan',
+    regionCode: 'TLF', // East of England — Bedford area
+    postcodeOutward: 'MK40',
+    factors: ['over65', 'cardiovascular'],
+    medClasses: ['beta_blocker'],
     notes:
-      'Retired, lives alone in a Victorian terrace. Worries about the heating bill and tends to sit in one room.',
+      'Cardiovascular disease, on bisoprolol. Lives with his daughter. ' +
+      'Two interactions fire on a hot day: beta_blocker_exertion and cardiovascular_heat_load. ' +
+      'Compare with Victor — same diagnosis, very different plan.',
     createdAt: '2026-07-25T09:00:00.000Z',
     isDemo: true,
   },
+  // ── Pair A · High end ────────────────────────────────────────────────────
   {
-    id: 'demo-marcus',
-    name: 'Marcus',
-    regionCode: 'TLI', // London — the hot end, and urban heat island
-    postcodeOutward: 'E14',
-    factors: ['overheatingHome', 'outdoorWork', 'respiratory'],
+    id: 'demo-victor',
+    name: 'Victor',
+    regionCode: 'TLF',
+    postcodeOutward: 'MK40',
+    factors: ['over75', 'livesAlone', 'cardiovascular', 'renal', 'respiratory', 'medication'],
+    medClasses: ['diuretic', 'ace_arb', 'beta_blocker', 'ssri'],
     notes:
-      'Cycle courier, asthmatic. Eighth-floor flat with windows on one side only, so it never cools down at night.',
+      'Cardiovascular + renal + COPD, on furosemide, ramipril, bisoprolol and citalopram. Lives alone. ' +
+      'Eight interaction chains fire simultaneously. The generic "drink plenty" advice is wrong for him: ' +
+      'renal_and_cardiovascular points the watch-for signs the opposite way to thirst. ' +
+      'beta_blocker_exertion removes the cardiac warning that a gentle walk is dangerous.',
     createdAt: '2026-07-25T09:01:00.000Z',
     isDemo: true,
   },
+  // ── Pair B · Low end ─────────────────────────────────────────────────────
   {
-    id: 'demo-priya',
-    name: 'Priya',
-    regionCode: 'TLG', // West Midlands
-    postcodeOutward: 'B15',
-    factors: ['pregnant', 'youngChild'],
-    notes: 'Seven months pregnant with a three-year-old. Walks the school run twice a day.',
+    id: 'demo-pat',
+    name: 'Pat',
+    regionCode: 'TLF',
+    postcodeOutward: 'MK45',
+    factors: ['over65', 'dementia'],
+    medClasses: [],
+    notes:
+      'Early-onset dementia, no medications. Lives with her husband, has cooling, ground-floor bungalow. ' +
+      'One interaction fires: dementia_cannot_self_report. She cannot tell you she is too hot, ' +
+      'but she can move to a cooler room, and someone is watching. ' +
+      'Compare with Doris — same condition, very different risk.',
     createdAt: '2026-07-25T09:02:00.000Z',
     isDemo: true,
   },
+  // ── Pair B · High end ────────────────────────────────────────────────────
   {
-    id: 'demo-callum',
-    name: 'Callum',
-    regionCode: 'TLM', // Scotland
-    postcodeOutward: 'IV2',
-    factors: ['outdoorWork', 'diabetes'],
-    notes: 'Estate worker in the Highlands, outdoors most of the day year round.',
+    id: 'demo-doris',
+    name: 'Doris',
+    regionCode: 'TLF',
+    postcodeOutward: 'MK40',
+    factors: [
+      'over85',
+      'livesAlone',
+      'dementia',
+      'respiratory',
+      'mobility',
+      'medication',
+      'overheatingHome',
+    ],
+    medClasses: ['diuretic', 'ace_arb', 'ssri'],
+    notes:
+      'Dementia + COPD, on furosemide, ramipril and sertraline. Lives alone, mobility limited, ' +
+      'third-floor south-facing flat with no cooling. ' +
+      'Five interaction chains fire: diuretic+ACE, SSRI hyponatraemia, respiratory heat, ' +
+      'dementia self-report, and mobility cannot self-rescue — none of which she can recognise. ' +
+      'The condition (dementia) is the same as Pat. The risk is not.',
     createdAt: '2026-07-25T09:03:00.000Z',
     isDemo: true,
   },
+  // ── Standalone C — advice contradiction ──────────────────────────────────
   {
-    id: 'demo-eileen',
-    name: 'Eileen',
-    regionCode: 'TLK', // South West
-    postcodeOutward: 'TR1',
-    factors: ['over65', 'medication', 'diabetes', 'livesAlone'],
-    medClasses: ['diuretic', 'beta_blocker'],
+    id: 'demo-sylvia',
+    name: 'Sylvia',
+    regionCode: 'TLF',
+    postcodeOutward: 'MK41',
+    factors: ['over75', 'livesAlone', 'cardiovascular', 'mobility', 'medication'],
+    medClasses: ['antipsychotic', 'anticholinergic'],
     notes:
-      'Takes a diuretic and a beta-blocker, so she dehydrates quickly and does not feel heat building up.',
+      'On olanzapine and oxybutynin. Lives alone, mobility limited, third-floor west flat. ' +
+      'The NHS heat message says "your body will warn you — you will feel hot and start to sweat." ' +
+      'For Sylvia both are switched off: olanzapine impairs temperature perception, ' +
+      'oxybutynin suppresses sweating. anticholinergic_absent_sweating fires and states explicitly: ' +
+      '"its absence is not reassurance." The caregiver must check the room — not ask how she feels.',
     createdAt: '2026-07-25T09:04:00.000Z',
+    isDemo: true,
+  },
+  // ── Standalone D — low score, high stakes ────────────────────────────────
+  {
+    id: 'demo-ben',
+    name: 'Ben',
+    regionCode: 'TLF',
+    postcodeOutward: 'MK44',
+    factors: ['livesAlone', 'cardiovascular'],
+    medClasses: ['heat_sensitive', 'ace_arb'],
+    notes:
+      'Type 1 diabetic, 61, on insulin glargine and lisinopril. ' +
+      'Low vulnerability score — a risk number alone would skip him. ' +
+      'But heat_sensitive_storage fires at tier Low regardless of age: ' +
+      'insulin degrades above 25 °C and the failure arrives with no symptom until it is too late. ' +
+      'diuretic_and_ace also fires: lisinopril blunts thirst so dehydration affecting ' +
+      'insulin sensitivity goes unnoticed. Two interactions reached by following the person, not the tier.',
+    createdAt: '2026-07-25T09:05:00.000Z',
     isDemo: true,
   },
 ]
