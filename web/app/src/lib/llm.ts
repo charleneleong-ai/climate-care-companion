@@ -20,9 +20,21 @@ export interface LLMRequest {
 
 export interface LLMProvider {
   name: string
+  /**
+   * Whether this provider could actually answer, checked without a network call.
+   *
+   * Exists because the SDK defers auth resolution to request time, so the first
+   * sign of a missing key arrives mid-stream — after the response headers have
+   * gone out, when the only way to report it is a sentence in the body. That
+   * turns a permanent misconfiguration into something indistinguishable from a
+   * blip, and the reader is told to try again forever.
+   */
+  configured(): ConfigurationState
   /** Streams plain text chunks. Voice wraps this unchanged — see assistant/route.ts. */
   stream(req: LLMRequest): AsyncIterable<string>
 }
+
+export type ConfigurationState = { ok: true } | { ok: false; reason: string }
 
 /** Thrown when the model declines the request, so the route can answer sensibly. */
 export class ModelRefusalError extends Error {
@@ -42,6 +54,22 @@ class ClaudeProvider implements LLMProvider {
     // Zero-arg constructor resolves ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN,
     // or an `ant auth login` profile — so local dev needs no explicit key.
     this.client = new Anthropic()
+  }
+
+  configured(): ConfigurationState {
+    // Read back what the SDK actually resolved rather than re-reading the
+    // environment ourselves: it accepts several auth sources and this way the
+    // check cannot drift from the resolution it is predicting.
+    const resolved = this.client as unknown as Record<string, unknown>
+    if (['apiKey', 'authToken', 'credentials'].some((key) => resolved[key])) {
+      return { ok: true }
+    }
+    return {
+      ok: false,
+      reason:
+        'No Anthropic credentials. Set ANTHROPIC_API_KEY in web/app/.env.local, ' +
+        'or run LLM_PROVIDER=ollama to use a local model.',
+    }
   }
 
   async *stream(req: LLMRequest): AsyncIterable<string> {
@@ -80,6 +108,13 @@ class ClaudeProvider implements LLMProvider {
 
 class OllamaProvider implements LLMProvider {
   name = `ollama (${process.env.OLLAMA_MODEL ?? 'llama3.1'})`
+
+  configured(): ConfigurationState {
+    // Ollama needs no credentials. Whether the daemon is actually running can
+    // only be learned by calling it, and that failure already surfaces with a
+    // clear status line from the fetch below.
+    return { ok: true }
+  }
 
   async *stream(req: LLMRequest): AsyncIterable<string> {
     const host = process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434'

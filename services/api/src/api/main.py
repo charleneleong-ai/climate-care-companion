@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -17,6 +18,7 @@ from contracts import (
     Person,
     Place,
     ReasonCode,
+    Tier,
 )
 from core.corpus import Corpus
 from core.scoring import RiskScorer
@@ -25,8 +27,12 @@ from actions.checklist import PreventionPlanBuilder
 from actions.interactions import InteractionTable
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from checkin.env import load_env
+from checkin.webpush import PushPayload, PushSubscription, SubscriptionStore, WebPushChannel
 from exposure.openmeteo import OpenMeteoClient
-from persons.loader import PersonaLoader
+from persons.loader import PersonaLoader, floor_band, load_dwelling_offsets
+
+load_env()
 
 app = FastAPI(
     title="Climatise Companion",
@@ -85,24 +91,41 @@ def list_people() -> list[dict[str, Any]]:
 
 
 @app.get("/people/{person_id}/assessment")
-def get_assessment(person_id: str) -> dict[str, Any]:
-    """Read path. Serves a computed assessment — no network call on this request."""
+def get_assessment(
+    person_id: str,
+    audience: Audience = Audience.CAREGIVER,
+    fixture: str | None = None,
+) -> dict[str, Any]:
+    """A seeded persona's assessment and their plan.
+
+    Returns the plan as well as the tier, matching `/assess`, so signing in as a
+    persona lands on the same screen a real sign-up does. A tier without a next
+    step is a weather app.
+    """
     person = PERSONAS.load().get(person_id)
     if person is None:
         raise HTTPException(status_code=404, detail=f"no person with id {person_id!r}")
 
     place = PERSONAS.places()[person_id]
-    try:
-        exposure = exposure_for(place, date.today())
-    except LookupError as exc:
-        # No live forecast and nothing cached. Inventing one would be worse than
-        # saying so — a caregiver acting on a fabricated figure is the failure
-        # this whole system exists to prevent.
-        raise HTTPException(
-            status_code=503,
-            detail="No forecast available and no cached assessment to fall back on.",
-        ) from exc
+    if fixture == "heat":
+        # Same fixture /assess uses, so signing in as a persona and setting up as
+        # yourself show the same scenario rather than two different days.
+        exposure = replace(
+            HEAT_FIXTURE, indoor_night_est=HEAT_FIXTURE.overnight_min + place.dwelling_offset
+        )
+    else:
+        try:
+            exposure = exposure_for(place, date.today())
+        except LookupError as exc:
+            # No live forecast and nothing cached. Inventing one would be worse
+            # than saying so — a caregiver acting on a fabricated figure is the
+            # failure this whole system exists to prevent.
+            raise HTTPException(
+                status_code=503,
+                detail="No forecast available and no cached assessment to fall back on.",
+            ) from exc
     assessment = SCORER.assess(exposure, VULNERABILITY.profile(person))
+    plan = PLANNER.build(person, exposure, assessment, audience)
     return {
         "person_id": person.id,
         "name": person.name,
@@ -129,6 +152,21 @@ def get_assessment(person_id: str) -> dict[str, Any]:
             "dwelling_offset": place.dwelling_offset,
             "alert_level": exposure.alert_level,
             "source": exposure.source,
+        },
+        "plan": {
+            "audience": plan.audience,
+            "items": [
+                {
+                    "code": item.code,
+                    "text": item.text,
+                    "watch_for": item.watch_for,
+                    "escalate_to": item.escalate_to,
+                    "source": item.source,
+                }
+                for item in plan.items
+            ],
+            "watch_points": list(plan.watch_points),
+            "escalate_to": list(plan.escalation_targets()),
         },
         "not_medical_advice": True,  # SC-2
     }
@@ -164,10 +202,19 @@ class PersonRequest(BaseModel):
 
 
 class PlaceRequest(BaseModel):
+    """Where the person sleeps, in enough detail to model the bedroom.
+
+    `aspect` is asked for rather than assumed south. FR-11's offsets span 2.8°C
+    between a top-floor south-facing flat and a ground-floor north-facing one —
+    larger than the gap between tiers — so guessing it does not produce a slightly
+    wrong answer, it produces a different one.
+    """
+
     lat: float = FALLBACK_LAT
     lon: float = FALLBACK_LON
     dwelling_type: DwellingType = DwellingType.HOUSE
     floor: int = 0
+    aspect: Aspect = Aspect.SOUTH
     has_cooling: bool = False
 
     def to_place(self, person_id: str, offset: float) -> Place:
@@ -180,7 +227,7 @@ class PlaceRequest(BaseModel):
             region="",
             dwelling_type=self.dwelling_type,
             floor=self.floor,
-            aspect=Aspect.SOUTH,
+            aspect=self.aspect,
             has_cooling=self.has_cooling,
             heating_affordable=True,
             dwelling_offset=offset,
@@ -209,10 +256,15 @@ HEAT_FIXTURE = ExposureFeatures(
 class AssessRequest(BaseModel):
     person: PersonRequest
     place: PlaceRequest = Field(default_factory=PlaceRequest)
-    dwelling_offset: float = 1.2
-    """Until the front end collects dwelling detail, a middling home. The offset
-    is the input FR-11 actually needs, so it is accepted directly rather than
-    guessed from a coldHome/overheatingHome checkbox."""
+    dwelling_offset: float | None = None
+    """Override for a caller that already holds a measured offset. Left unset,
+    the offset is looked up from the same FR-11 table the personas use — so a
+    web sign-up and a seeded persona are modelled by one rule rather than two.
+
+    It used to default to 1.2, "a middling home". That silently invented the
+    single input the indoor model is most sensitive to, and reported the result
+    with the same confidence as a real one.
+    """
     audience: Audience = Audience.CAREGIVER
     fixture: str | None = None
     """Pass 'heat' to substitute the Bedford 19 July 2025 fixture instead of
@@ -221,6 +273,19 @@ class AssessRequest(BaseModel):
     Other values are rejected with 422 so a typo never silently produces a
     fabricated assessment.
     """
+
+    def offset(self) -> float:
+        if self.dwelling_offset is not None:
+            return self.dwelling_offset
+        key = (
+            self.place.dwelling_type.value,
+            floor_band(self.place.floor),
+            self.place.aspect.value,
+        )
+        offsets = load_dwelling_offsets()
+        if key not in offsets:
+            raise HTTPException(422, f"no dwelling offset for {key}")
+        return offsets[key]
 
 
 @app.post("/assess")
@@ -241,7 +306,7 @@ def assess(request: AssessRequest) -> dict[str, Any]:
         )
 
     person = request.person.to_person()
-    place = request.place.to_place(person.id, request.dwelling_offset)
+    place = request.place.to_place(person.id, request.offset())
 
     if request.fixture == "heat":
         # Apply dwelling offset to the indoor estimates so profiles with
@@ -316,4 +381,82 @@ def assess(request: AssessRequest) -> dict[str, Any]:
             "escalate_to": list(plan.escalation_targets()),
         },
         "not_medical_advice": True,
+    }
+
+
+# ── Push registration ────────────────────────────────────────────────────────
+#
+# Held here rather than in the Next.js process because the three-hourly sweep
+# reads the same store, and a copy in the web tier would be the wrong one within
+# a restart.
+
+SUBSCRIPTIONS = SubscriptionStore()
+
+
+class SubscribeRequest(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+    person_id: str
+    audience: Audience
+
+
+class UnsubscribeRequest(BaseModel):
+    endpoint: str
+
+
+@app.post("/push/subscribe")
+def push_subscribe(request: SubscribeRequest) -> dict[str, Any]:
+    if request.person_id not in PERSONAS.load():
+        raise HTTPException(404, f"no person {request.person_id}")
+    SUBSCRIPTIONS.add(
+        PushSubscription(
+            endpoint=request.endpoint,
+            p256dh=request.p256dh,
+            auth=request.auth,
+            person_id=request.person_id,
+            audience=request.audience,
+        )
+    )
+    return {"registered": True, "devices": len(SUBSCRIPTIONS.subscriptions)}
+
+
+@app.delete("/push/subscribe")
+def push_unsubscribe(request: UnsubscribeRequest) -> dict[str, Any]:
+    SUBSCRIPTIONS.remove(request.endpoint)
+    return {"registered": False, "devices": len(SUBSCRIPTIONS.subscriptions)}
+
+
+@app.post("/push/test/{person_id}")
+def push_test(person_id: str, audience: Audience = Audience.CAREGIVER) -> dict[str, Any]:
+    """Fire one real notification, so a demo can prove the phone buzzes.
+
+    Deliberately marked as a test in the body. A notification indistinguishable
+    from a real alert is a false positive with a person's name on it.
+    """
+    channel = WebPushChannel(store=SUBSCRIPTIONS)
+    outcomes = channel.send_to(
+        person_id,
+        audience,
+        PushPayload(
+            title="Climatise — test alert",
+            body="This is a test. Your alerts are working.",
+            tier=Tier.ELEVATED,
+            person_id=person_id,
+        ),
+    )
+    # Per-device, because "it failed" is not actionable when three phones are
+    # registered and only one is broken.
+    return {
+        "devices": len(outcomes),
+        "delivered": sum(1 for o in outcomes if o.delivered),
+        "results": [
+            {
+                "endpoint": o.endpoint[:60],
+                "status": o.status,
+                "error": o.error,
+                "removed": o.should_prune,
+            }
+            for o in outcomes
+        ],
     }

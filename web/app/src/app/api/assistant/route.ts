@@ -161,6 +161,22 @@ export async function POST(request: Request) {
   const system = buildSystemPrompt(profile, weather, mode === 'voice' ? 'voice' : 'text')
   const provider = getProvider()
 
+  // Before a single byte goes out. Once the stream opens the status code is
+  // spent, and a missing API key would be reported as "try that again" — advice
+  // that will never once work.
+  const configuration = provider.configured()
+  if (!configuration.ok) {
+    console.error('[api/assistant] not configured:', configuration.reason)
+    return Response.json(
+      {
+        error:
+          'The assistant is not available. Everything else in the app — your risk, ' +
+          'your plan, your alerts — works without it.',
+      },
+      { status: 503 },
+    )
+  }
+
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

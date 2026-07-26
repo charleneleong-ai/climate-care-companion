@@ -88,6 +88,44 @@ export function factorLabel(id: string): string {
   return id
 }
 
+export type DwellingType = 'house' | 'flat' | 'bungalow' | 'care_home'
+export type Aspect = 'north' | 'east' | 'south' | 'west'
+export type CheckedOn = 'daily' | 'sometimes' | 'nobody'
+
+export interface Home {
+  dwellingType: DwellingType
+  /** 0 = ground. Anything above the first floor is treated as top by FR-11. */
+  floor: number
+  /** Which way the main windows face — the single largest term in the offset. */
+  aspect: Aspect
+  /** Fan, air conditioning, or a room that reliably stays cool. */
+  hasCooling: boolean
+}
+
+export const DWELLING_OPTIONS: { id: DwellingType; label: string; hint?: string }[] = [
+  { id: 'house', label: 'A house' },
+  { id: 'flat', label: 'A flat' },
+  { id: 'bungalow', label: 'A bungalow' },
+  { id: 'care_home', label: 'A care home' },
+]
+
+export const ASPECT_OPTIONS: { id: Aspect; label: string; hint?: string }[] = [
+  { id: 'south', label: 'South', hint: 'Sun most of the day — the hottest' },
+  { id: 'west', label: 'West', hint: 'Afternoon and evening sun' },
+  { id: 'east', label: 'East', hint: 'Morning sun' },
+  { id: 'north', label: 'North', hint: 'Little direct sun — the coolest' },
+]
+
+export const CHECKED_ON_OPTIONS: { id: CheckedOn; label: string; hint?: string }[] = [
+  { id: 'daily', label: 'Yes, most days', hint: 'Family, a carer, or a neighbour' },
+  { id: 'sometimes', label: 'Now and then' },
+  {
+    id: 'nobody',
+    label: 'No one really',
+    hint: 'We will write the advice to you directly rather than to someone else',
+  },
+]
+
 export interface Profile {
   id: string
   name: string
@@ -105,6 +143,24 @@ export interface Profile {
    * different risk. Optional so profiles saved before this existed still load.
    */
   medClasses?: string[]
+  /**
+   * The home, in the terms FR-11 models a bedroom with.
+   *
+   * Asked rather than assumed. The offsets span 2.8°C between a top-floor
+   * south-facing flat and a ground-floor north-facing one — wider than the gap
+   * between two tiers — so a guessed home does not give a slightly wrong answer,
+   * it gives a different one. Optional so profiles saved before this existed
+   * still load.
+   */
+  home?: Home
+  /**
+   * Whether anyone checks on them.
+   *
+   * Not a vulnerability weight — it decides who advice is addressed to and
+   * whether a rise has anyone to notify. Someone with nobody is precisely who
+   * the council view exists to find.
+   */
+  checkedOn?: CheckedOn
   /** Free text the assistant can use — "I look after my mum next door". */
   notes?: string
   createdAt: string

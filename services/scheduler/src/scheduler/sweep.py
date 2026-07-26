@@ -1,0 +1,215 @@
+"""The only part of the system that initiates.
+
+Everything else waits to be opened. A caregiver has to remember the app exists,
+on the evening they are least likely to be thinking about it. §5.3 runs this
+loop instead: score everyone on the register every three hours, and when someone's
+tier rises, say so.
+
+Two messages leave for every one rise, because a caregiver and the person they
+look after need different sentences. The caregiver gets a name, a tier and the
+single most specific action. The person gets no tier word at all — "Severe" read
+alone on a phone frightens without telling anyone what to do — and a closing line
+naming who to tell, because the failure mode for this group is not noticing and
+not saying.
+
+Wording never gets composed here. Both messages are pre-approved templates whose
+one free slot is filled verbatim from the prevention plan, which has already been
+through the SC-1 medication gate at corpus load.
+"""
+
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+
+from actions.checklist import PreventionPlanBuilder
+from actions.notify import Notification, NotificationPolicy
+from checkin.channels import ConversationChannel
+from checkin.messages import TemplateLibrary, TemplateMessage
+from contracts import (
+    Assessment,
+    Audience,
+    ExposureFeatures,
+    Person,
+    Place,
+    PreventionPlan,
+)
+from core.scoring import RiskScorer
+from core.vulnerability import VulnerabilityScorer
+from exposure.openmeteo import OpenMeteoClient
+from persons.loader import PersonaLoader
+from scheduler.contacts import Contact, ContactBook
+
+TEMPLATE_BY_AUDIENCE = {
+    Audience.CAREGIVER: "heat_alert_caregiver",
+    Audience.CARED_FOR: "heat_alert_person",
+}
+
+FALLBACK_ACTION = {
+    Audience.CAREGIVER: "check on them this evening.",
+    Audience.CARED_FOR: "drink water regularly, even if you are not thirsty.",
+}
+"""Used only when the plan comes back with nothing addressed to that audience.
+
+A tier rose, so silence is not an option — but inventing specific advice to fill
+the gap would be composing clinical text, which is exactly what the template
+mechanism exists to prevent. These two are deliberately the blandest true things
+in the corpus.
+"""
+
+
+@dataclass(frozen=True, slots=True)
+class Dispatch:
+    """One message, sent or about to be. The audit trail for FR-21."""
+
+    notification: Notification
+    contact: Contact
+    message: TemplateMessage
+    plan: PreventionPlan
+
+
+@dataclass(frozen=True, slots=True)
+class SweepResult:
+    at: datetime
+    assessed: int
+    dispatched: tuple[Dispatch, ...]
+    unreachable: tuple[tuple[str, Audience], ...]
+    """Rises that had no one to tell. Not an error — someone registered with no
+    caregiver is the person the council view exists to find — but it must surface
+    rather than vanish into a skipped iteration."""
+    failed: tuple[tuple[str, str], ...] = ()
+    """(person_id, reason) for anyone the sweep could not complete.
+
+    Distinct from `unreachable`, which means "nobody to contact". This means the
+    attempt itself broke — no forecast, a refused send — and the person's risk is
+    therefore unknown rather than known-and-undeliverable.
+    """
+
+    @property
+    def completed(self) -> int:
+        return self.assessed - len(self.failed)
+
+
+class HeatSweep:
+    """One pass over the register.
+
+    Holds the policy across passes, because "upward transition" is a claim about
+    two assessments and the second one is three hours later.
+    """
+
+    def __init__(
+        self,
+        personas: PersonaLoader,
+        weather: OpenMeteoClient,
+        scorer: RiskScorer,
+        planner: PreventionPlanBuilder,
+        contacts: ContactBook,
+        channel: ConversationChannel,
+        vulnerability: VulnerabilityScorer | None = None,
+        templates: TemplateLibrary | None = None,
+        policy: NotificationPolicy | None = None,
+        fallback_latlon: tuple[float, float] = (52.1364, -0.4669),
+    ) -> None:
+        self.personas = personas
+        self.weather = weather
+        self.scorer = scorer
+        self.vulnerability = vulnerability or VulnerabilityScorer()
+        self.planner = planner
+        self.contacts = contacts
+        self.channel = channel
+        self.templates = templates or TemplateLibrary.load()
+        self.policy = policy or NotificationPolicy()
+        self.fallback_latlon = fallback_latlon
+
+    def exposure_for(self, place: Place, when: datetime) -> ExposureFeatures:
+        latitude = place.lat or self.fallback_latlon[0]
+        longitude = place.lon or self.fallback_latlon[1]
+        forecast = self.weather.fetch(latitude, longitude, when)
+        return self.weather.features_for(forecast, when.date(), place.dwelling_offset)
+
+    def run(self, now: datetime | None = None) -> SweepResult:
+        """Assess everyone on the register, and tell whoever needs telling.
+
+        Each person is isolated. The bug this prevents was live and confirmed by
+        execution: `TwilioChannel.send` raises `PermissionError` for anyone off
+        the SC-6 allow-list — which, in this build, is most of the register — so
+        the first such person ended the evening's sweep for everyone after them
+        in dict order. Nine people silently unassessed, and the result
+        indistinguishable from "nothing to report".
+
+        `WebPushChannel.send_to` already isolates per *device*. This is the same
+        rule one level up, where it matters more.
+        """
+        now = now or datetime.now(UTC)
+        people = self.personas.load()
+        places = self.personas.places()
+        dispatched: list[Dispatch] = []
+        unreachable: list[tuple[str, Audience]] = []
+        failed: list[tuple[str, str]] = []
+
+        for person_id, person in people.items():
+            try:
+                dispatched.extend(self.sweep_person(person_id, person, places, now, unreachable))
+            except Exception as exc:
+                failed.append((person_id, f"{type(exc).__name__}: {exc}"))
+
+        return SweepResult(
+            at=now,
+            assessed=len(people),
+            dispatched=tuple(dispatched),
+            unreachable=tuple(unreachable),
+            failed=tuple(failed),
+        )
+
+    def sweep_person(
+        self,
+        person_id: str,
+        person: Person,
+        places: dict[str, Place],
+        now: datetime,
+        unreachable: list[tuple[str, Audience]],
+    ) -> list[Dispatch]:
+        exposure = self.exposure_for(places[person_id], now)
+        assessment = self.scorer.assess(exposure, self.vulnerability.profile(person))
+        sent: list[Dispatch] = []
+        for notification in self.policy.notifications_for(person_id, assessment.tier, now):
+            dispatch = self.dispatch(notification, person, exposure, assessment)
+            if dispatch is None:
+                unreachable.append((person_id, notification.audience))
+            else:
+                sent.append(dispatch)
+        return sent
+
+    def dispatch(
+        self,
+        notification: Notification,
+        person: Person,
+        exposure: ExposureFeatures,
+        assessment: Assessment,
+    ) -> Dispatch | None:
+        contact = self.contacts.get(notification.person_id, notification.audience)
+        if contact is None:
+            return None
+
+        plan = self.planner.build(person, exposure, assessment, audience=notification.audience)
+        message = self.bind(notification, person, plan)
+        self.channel.send(contact.msisdn, message)
+        return Dispatch(notification=notification, contact=contact, message=message, plan=plan)
+
+    def bind(
+        self, notification: Notification, person: Person, plan: PreventionPlan
+    ) -> TemplateMessage:
+        """Fill the one free slot from the plan, never from a sentence written here."""
+        template = self.templates.get(TEMPLATE_BY_AUDIENCE[notification.audience])
+        action = plan.items[0].text if plan.items else FALLBACK_ACTION[notification.audience]
+        if notification.audience is Audience.CAREGIVER:
+            return template.bind(person.name, notification.to_tier.name.title(), action)
+        return template.bind(person.name, action)
+
+
+def next_sweep_at(now: datetime, every_hours: int = 3) -> datetime:
+    """§5.3's three-hourly cadence, aligned to the clock rather than to start-up.
+
+    An unaligned loop drifts, and a sweep that lands at 02:47 instead of midnight
+    is one that missed the evening it was built for.
+    """
+    days, hour = divmod((now.hour // every_hours + 1) * every_hours, 24)
+    return now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=days)

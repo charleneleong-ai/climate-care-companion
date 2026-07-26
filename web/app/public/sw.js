@@ -75,3 +75,52 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(request).then((hit) => hit ?? caches.match('/'))),
   )
 })
+
+/**
+ * Push. The reason this is an app and not a bookmark.
+ *
+ * The payload is rendered, never composed here — the body arrives already
+ * approved and already through the SC-1 medication gate. A service worker that
+ * writes its own clinical text would sit outside every safety check in the
+ * system.
+ */
+self.addEventListener('push', (event) => {
+  let payload = {}
+  try {
+    payload = event.data ? event.data.json() : {}
+  } catch {
+    // A push we cannot parse still means something happened. Better a vague
+    // nudge to open the app than silence during a heat episode.
+  }
+
+  const title = payload.title || 'Climatise'
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body || 'Your heat risk has changed. Open Climatise.',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      // Severe overrides Do Not Disturb-adjacent quieting. Tier is carried
+      // explicitly rather than inferred from the wording.
+      requireInteraction: payload.tier === 'Severe',
+      tag: payload.personId ? `climatise-${payload.personId}` : 'climatise',
+      // Replace rather than stack: the current tier is the only one that matters,
+      // and three stale notifications are how a phone gets muted.
+      renotify: true,
+      data: { url: payload.url || '/companion' },
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const target = event.notification.data?.url || '/companion'
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Focus an open copy rather than opening a second one.
+      for (const client of clients) {
+        if (client.url.includes(target) && 'focus' in client) return client.focus()
+      }
+      return self.clients.openWindow(target)
+    }),
+  )
+})
