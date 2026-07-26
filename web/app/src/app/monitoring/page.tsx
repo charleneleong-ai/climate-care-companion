@@ -3,27 +3,37 @@
 /**
  * /monitoring — population-level dashboard.
  *
- * Shows the national picture on 19 July 2025: what the national alerting
- * cascade said (nothing), what this system would have found (5 of 8 demo
- * profiles at HIGH risk), and the death count context from UKHSA data.
- *
- * This is the clinical/policy view — the argument for why individual-level
- * risk assessment matters even when there is no regional alert.
+ * Shows the national picture on 19 July 2025: UK choropleth map (England
+ * amber/red, Scotland green), death count stats, cohort tier breakdown,
+ * and the alerting gap this system closes.
  */
 
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-// ── Static data for 19 July 2025 ─────────────────────────────────────────────
+import { HEAT_FIXTURE_REGIONS, HEAT_FIXTURE_META } from '@/lib/heat-fixture'
+import { BAND_COLOURS } from '@/lib/risk'
+
+const UKMap = dynamic(() => import('@/components/UKMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center text-[14px] faint">
+      Loading map…
+    </div>
+  ),
+})
+
+// ── Static data for 19 July 2025 ─────────────────────────────────────────────────────────────────────────────────────
 // Sources: UKHSA Heat Mortality Monitoring Report 2025, LSHTM/Imperial/Met Office.
 
 const SCENARIO = {
-  date: 'Saturday 19 July 2025',
-  location: 'England',
-  peak: '29°C',
-  overnight: '17°C — no overnight recovery',
-  spellDay: 3,
-  alert: 'None',
+  date: HEAT_FIXTURE_META.date,
+  location: HEAT_FIXTURE_META.location,
+  peak: `${HEAT_FIXTURE_META.peakTemp}°C`,
+  overnight: `${HEAT_FIXTURE_META.overnight}°C — no overnight recovery`,
+  spellDay: HEAT_FIXTURE_META.spellDay,
+  alert: HEAT_FIXTURE_META.alertLevel,
   alertDetail: 'No heat-health alert was issued in any English region on this date.',
 }
 
@@ -163,6 +173,38 @@ export default function MonitoringPage() {
         <Link href="/" className="btn btn-ghost px-3 py-1.5 text-[13px]" style={{ minHeight: 'auto' }}>
           ← Map
         </Link>
+      </div>
+
+      {/* UK choropleth map — England amber/red, Scotland green */}
+      <div
+        className="relative mt-4 overflow-hidden rounded-[var(--radius-lg)] border"
+        style={{ borderColor: '#d97706', height: '42dvh', minHeight: '260px', background: '#fffbeb' }}
+      >
+        <UKMap
+          regions={HEAT_FIXTURE_REGIONS}
+          onSelectRegion={() => {}}
+        />
+        {/* Legend */}
+        <div
+          className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-medium"
+          style={{ background: 'var(--surface)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-md)' }}
+        >
+          <span className="faint">Cold</span>
+          <span className="flex overflow-hidden rounded-full" aria-hidden="true">
+            {(['cold-severe','cold-high','cold-moderate','comfortable','heat-moderate','heat-high','heat-severe'] as const).map(
+              (band) => (
+                <span key={band} className="h-2.5 w-3.5" style={{ background: BAND_COLOURS[band] }} />
+              )
+            )}
+          </span>
+          <span className="faint">Hot</span>
+        </div>
+        <div
+          className="absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+          style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #d97706' }}
+        >
+          19 Jul 2025 · No alert issued
+        </div>
       </div>
 
       {/* Scenario context */}
