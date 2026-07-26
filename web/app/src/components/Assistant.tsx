@@ -13,6 +13,9 @@ interface Props {
   profile: Profile
   /** Prompts seeded from the current risk band, so the first tap is useful. */
   suggestions: string[]
+  /** Follows the scenario switch on screen, so the assistant is talking about
+   *  the same day as the advice panel beside it rather than live weather. */
+  heatScenario: boolean
 }
 
 /**
@@ -23,7 +26,7 @@ interface Props {
  * chunks into speechSynthesis. `send()` already takes the text and streams the
  * reply — that is the whole integration point.
  */
-export default function Assistant({ profile, suggestions }: Props) {
+export default function Assistant({ profile, suggestions, heatScenario }: Props) {
   const [turns, setTurns] = useState<Turn[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
@@ -59,7 +62,12 @@ export default function Assistant({ profile, suggestions }: Props) {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ profile, messages: history, mode: 'text' }),
+        body: JSON.stringify({
+          profile,
+          messages: history,
+          mode: 'text',
+          demo: heatScenario ? 'heat' : undefined,
+        }),
         signal: controller.signal,
       })
 

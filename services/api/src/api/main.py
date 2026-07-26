@@ -116,11 +116,7 @@ def get_assessment(
 
     place = PERSONAS.places()[person_id]
     if fixture == "heat":
-        # Same fixture /assess uses, so signing in as a persona and setting up as
-        # yourself show the same scenario rather than two different days.
-        exposure = replace(
-            HEAT_FIXTURE, indoor_night_est=HEAT_FIXTURE.overnight_min + place.dwelling_offset
-        )
+        exposure = heat_fixture_for(place.dwelling_offset)
     else:
         try:
             exposure = exposure_for(place, date.today())
@@ -260,6 +256,31 @@ HEAT_FIXTURE = ExposureFeatures(
     source=ExposureSource.FIXTURE,
 )
 
+
+def heat_fixture_for(dwelling_offset: float) -> ExposureFeatures:
+    """The worked example as one particular building would experience it.
+
+    The fixture's own estimates are for a 2.8°C offset. A bungalow does not get
+    a top-floor flat's bedroom, so the two indoor figures are re-derived through
+    FR-11 while everything outdoors stays fixed.
+
+    Shared because both fixture routes had grown their own arithmetic and drifted
+    apart: /assess put Doris at 24.6°C and High, the persona route at 19.8°C and
+    Elevated — the same woman on the same day, two different answers depending on
+    which screen you opened. Neither touched indoor_day_est at all, so every
+    persona was served the fixture's 25.85 whatever their home.
+    """
+    return replace(
+        HEAT_FIXTURE,
+        indoor_night_est=INDOOR.night(
+            HEAT_FIXTURE.overnight_min, HEAT_FIXTURE.peak_air, dwelling_offset
+        ),
+        indoor_day_est=INDOOR.day(
+            HEAT_FIXTURE.overnight_min, HEAT_FIXTURE.peak_air, dwelling_offset
+        ),
+    )
+
+
 # Episode 4 as it actually built: 17 to 19 July 2025, England, ~146 excess deaths
 # and no regional alert on any of the three days. The 19th is HEAT_FIXTURE above;
 # the two days before it are what a council would have been able to see coming.
@@ -350,29 +371,7 @@ def assess(request: AssessRequest) -> dict[str, Any]:
     place = request.place.to_place(person.id, request.offset())
 
     if request.fixture == "heat":
-        # Apply dwelling offset to the indoor estimates so profiles with
-        # overheatingHome still reflect their building correctly.
-        exposure = ExposureFeatures(
-            date=HEAT_FIXTURE.date,
-            overnight_min=HEAT_FIXTURE.overnight_min,
-            peak_apparent=HEAT_FIXTURE.peak_apparent,
-            peak_air=HEAT_FIXTURE.peak_air,
-            hours_above_26=HEAT_FIXTURE.hours_above_26,
-            indoor_night_est=(
-                HEAT_FIXTURE.overnight_min * 0.6
-                + HEAT_FIXTURE.peak_apparent * 0.4
-                + request.dwelling_offset
-            ),
-            indoor_day_est=(
-                HEAT_FIXTURE.overnight_min * 0.3
-                + HEAT_FIXTURE.peak_apparent * 0.55
-                + request.dwelling_offset
-                + 2
-            ),
-            spell_day=HEAT_FIXTURE.spell_day,
-            alert_level=HEAT_FIXTURE.alert_level,
-            source=HEAT_FIXTURE.source,
-        )
+        exposure = heat_fixture_for(place.dwelling_offset)
     else:
         try:
             exposure = exposure_for(place, date.today())
