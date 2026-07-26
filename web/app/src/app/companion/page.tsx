@@ -92,14 +92,16 @@ export default function CompanionPage() {
   const [stale, setStale] = useState(false)
   const [failed, setFailed] = useState(false)
   const [audience, setAudience] = useState<'caregiver' | 'cared_for'>('caregiver')
-  // Heatwave scenario: reads ?demo=heat from URL, toggled by the banner button.
-  const [heatScenario, setHeatScenario] = useState(false)
+  // Heatwave scenario is the default — it is the demo's point.
+  // ?demo=live in the URL switches to live weather instead.
+  const [heatScenario, setHeatScenario] = useState(true)
 
   useEffect(() => {
     setProfile(loadProfile())
-    // Pick up ?demo=heat from the URL on first load.
+    // ?demo=live overrides the default to show current conditions.
     if (typeof window !== 'undefined') {
-      setHeatScenario(new URLSearchParams(window.location.search).get('demo') === 'heat')
+      const demo = new URLSearchParams(window.location.search).get('demo')
+      if (demo === 'live') setHeatScenario(false)
     }
   }, [])
 
@@ -204,7 +206,7 @@ export default function CompanionPage() {
               </>
             ) : (
               <p className="text-[13px] faint">
-                Showing live weather. Switch to see a recent heatwave scenario.
+                Showing live weather today.
               </p>
             )}
           </div>
@@ -214,7 +216,7 @@ export default function CompanionPage() {
             className="btn btn-ghost shrink-0 px-3 py-1.5 text-[13px]"
             style={{ minHeight: 'auto', color: heatScenario ? '#92400e' : undefined }}
           >
-            {heatScenario ? 'Show live' : 'Heatwave'}
+            {heatScenario ? 'Show live' : '19 Jul 2025'}
           </button>
         </div>
       </div>
