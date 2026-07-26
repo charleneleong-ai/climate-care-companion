@@ -18,14 +18,20 @@ through the SC-1 medication gate at corpus load.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from actions.checklist import PreventionPlanBuilder
+from actions.escalation import Escalation, EscalationPolicy, Responder, Urgency
 from actions.notify import Notification, NotificationPolicy
 from checkin.channels import ConversationChannel
+from checkin.log import CheckinLog
+from checkin.log import Outcome as CheckinOutcome
 from checkin.messages import TemplateLibrary, TemplateMessage
 from contracts import (
     Assessment,
+    DateRange,
+    RedFlag,
+    SelfReport,
     Audience,
     ExposureFeatures,
     Person,
@@ -106,6 +112,8 @@ class HeatSweep:
         vulnerability: VulnerabilityScorer | None = None,
         templates: TemplateLibrary | None = None,
         policy: NotificationPolicy | None = None,
+        checkins: CheckinLog | None = None,
+        escalation: EscalationPolicy | None = None,
         fallback_latlon: tuple[float, float] = (52.1364, -0.4669),
     ) -> None:
         self.personas = personas
@@ -117,6 +125,8 @@ class HeatSweep:
         self.channel = channel
         self.templates = templates or TemplateLibrary.load()
         self.policy = policy or NotificationPolicy()
+        self.checkins = checkins or CheckinLog()
+        self.escalation = escalation or EscalationPolicy()
         self.fallback_latlon = fallback_latlon
 
     def exposure_for(self, place: Place, when: datetime) -> ExposureFeatures:
@@ -190,14 +200,58 @@ class HeatSweep:
             return None
 
         plan = self.planner.build(person, exposure, assessment, audience=notification.audience)
-        message = self.bind(notification, person, plan)
+        escalation = self.escalation_for(person, assessment)
+        message = self.bind(notification, person, plan, escalation)
         self.channel.send(contact.msisdn, message)
         return Dispatch(notification=notification, contact=contact, message=message, plan=plan)
 
+    def escalation_for(self, person: Person, assessment: Assessment) -> Escalation:
+        """What the latest check-in means, if anything.
+
+        A person with no check-in history has no `SelfReport`, which is not the
+        same as one who did not answer — so the policy is handed None and decides
+        on the tier alone.
+        """
+        latest = self.checkins.latest_for(person.id)
+        report: SelfReport | None = None
+        if latest is not None:
+            report = SelfReport(
+                person_id=person.id,
+                window=DateRange(start=latest_date(latest), end=latest_date(latest)),
+                answered=latest.outcome is CheckinOutcome.COMPLETED,
+                red_flags=tuple(RedFlag(f) for f in latest.red_flags),
+            )
+        has_caregiver = self.contacts.get(person.id, Audience.CAREGIVER) is not None
+        return self.escalation.decide(
+            person,
+            assessment.tier,
+            report,
+            has_caregiver,
+            self.checkins.consecutive_missed(person.id),
+        )
+
     def bind(
-        self, notification: Notification, person: Person, plan: PreventionPlan
+        self,
+        notification: Notification,
+        person: Person,
+        plan: PreventionPlan,
+        escalation: Escalation,
     ) -> TemplateMessage:
-        """Fill the one free slot from the plan, never from a sentence written here."""
+        """Fill the one free slot from the plan, never from a sentence written here.
+
+        When somebody has to attend, the caregiver gets that instead of the
+        advice. A list of things to do is the wrong shape for "go round" — it
+        invites the reader to do them remotely and feel they have responded.
+        """
+        if notification.audience is Audience.CAREGIVER and escalation.urgency is Urgency.EMERGENCY:
+            return self.templates.get("escalation_emergency").bind(person.name, escalation.detail)
+        if (
+            notification.audience is Audience.CAREGIVER
+            and escalation.needs_visit
+            and escalation.responder is not Responder.NOBODY
+        ):
+            return self.templates.get("escalation_visit").bind(person.name, escalation.reason)
+
         template = self.templates.get(TEMPLATE_BY_AUDIENCE[notification.audience])
         action = plan.items[0].text if plan.items else FALLBACK_ACTION[notification.audience]
         if notification.audience is Audience.CAREGIVER:
@@ -213,3 +267,12 @@ def next_sweep_at(now: datetime, every_hours: int = 3) -> datetime:
     """
     days, hour = divmod((now.hour // every_hours + 1) * every_hours, 24)
     return now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=days)
+
+
+def latest_date(record) -> date:
+    """The day a check-in happened, for the SelfReport window.
+
+    Parsed rather than assumed to be today: a sweep at one minute past midnight
+    is reasoning about a call made the previous evening.
+    """
+    return datetime.fromisoformat(record.started_at).date()
