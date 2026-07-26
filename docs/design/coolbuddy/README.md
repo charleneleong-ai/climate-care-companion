@@ -16,6 +16,18 @@ codebase's own patterns rather than copied; here that means Next.js routes in
 | [`Avatar.dc.html`](Avatar.dc.html) | Shared avatar component: Person / Girl / Earth. |
 | [`ios-frame.jsx`](ios-frame.jsx) | Device bezel for presentation only. Not product UI. |
 
+## Viewing them
+
+GitHub renders `.html` as source, so the prototypes are not viewable in place.
+
+- **CoolBuddy prototype** — <https://claude.ai/code/artifact/f83b44c1-7970-4bd9-832b-e22bc7ed29ed>
+- **Risk over time** — <https://claude.ai/code/artifact/bfd76cb8-fc9f-4442-9499-ad64d0107571>
+  — the same three days from the engine's side: the register day by day, one
+  person's trajectory, and who crosses with how much notice.
+
+Locally, open the files directly in a browser; they are self-contained and need
+no server.
+
 ## How this relates to what already runs
 
 The prototype carries **simulated** temperatures, tiers and advice. This repo
