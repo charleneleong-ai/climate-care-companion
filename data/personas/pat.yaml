@@ -1,0 +1,36 @@
+# Low-risk dementia contrast — demo pair with Doris. Fictional — SC-6.
+#
+# Same primary condition as Doris (dementia), but early-onset and without
+# the compounding factors that make Doris's case lethal on a heat day:
+#   - No respiratory disease  → hot air does not worsen her breathing
+#   - No diuretic             → fluid balance not pharmacologically disrupted
+#   - No SSRI                 → no sodium risk
+#   - Not mobility-limited    → can move to a cooler room
+#   - Lives with spouse       → someone is watching and can check the room
+#   - Bungalow, ground, east  → lower dwelling offset than Doris's 3rd floor south flat
+#   - Has cooling             → indoor temperature controlled
+#
+# On 19 July 2025 Pat returns ELEVATED with one interaction
+# (dementia_cannot_self_report — which always fires because she cannot
+# recognise or communicate heat distress). Doris returns HIGH with five.
+#
+# The contrast shows that dementia alone is not the lethal factor — it is
+# dementia combined with no caregiver, no cooling, polypharmacy, and a
+# hot building. Each factor that Pat lacks is a factor Doris cannot escape.
+#
+# vulnerability 4: dementia (2) + lives alone — wait, she lives with spouse.
+# vulnerability 2: dementia (2) only
+id: pat
+name: Pat
+age_band: b65_74
+lives_alone: false
+mobility_limited: false
+conditions: [dementia]
+medications: []
+place:
+  postcode: MK45 2NP
+  dwelling_type: bungalow
+  floor: 0
+  aspect: east
+  has_cooling: true
+  heating_affordable: true

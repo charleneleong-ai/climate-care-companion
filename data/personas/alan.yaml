@@ -1,0 +1,35 @@
+# Low-risk cardiovascular contrast — demo pair with Victor. Fictional — SC-6.
+#
+# Same primary condition as Victor (cardiovascular), but without the compounding
+# factors that make Victor's case lethal on a heat day:
+#   - No renal disease        → "drink plenty" is not dangerous for Alan
+#   - No respiratory disease  → hot air does not tighten his airways
+#   - No ACE inhibitor        → thirst mechanism intact
+#   - No SSRI                 → no sodium risk from sweating
+#   - Lives with family       → someone will notice
+#   - Has cooling             → indoor temperature controlled
+#   - Ground floor, north     → lowest dwelling offset
+#
+# On 19 July 2025 Alan returns ELEVATED with one interaction (cardiovascular_heat_load
+# + beta_blocker_exertion). Victor returns HIGH with eight. Same GP diagnosis on
+# the front of the notes — completely different plans from the system.
+#
+# This is the demo slide: why the condition alone is not the risk.
+#
+# vulnerability 3: cardiovascular (2) + beta_blocker (1)
+id: alan
+name: Alan
+age_band: b65_74
+lives_alone: false
+mobility_limited: false
+conditions: [cardiovascular]
+medications:
+  - drug_name: bisoprolol
+    drug_class: beta_blocker
+place:
+  postcode: MK40 4LM
+  dwelling_type: house
+  floor: 0
+  aspect: north
+  has_cooling: true
+  heating_affordable: true
