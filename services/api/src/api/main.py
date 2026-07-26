@@ -187,6 +187,25 @@ class PlaceRequest(BaseModel):
         )
 
 
+# Spec §8.6 worked example — Bedford, 19 July 2025. No regional heat-health
+# alert was issued that day, which is the entire point of the fixture: HIGH tier
+# with alert_level=NONE. Used by ?fixture=heat for the demo, and by the
+# verification suite. Hardcoded so the demo is repeatable whatever today's
+# weather happens to be.
+HEAT_FIXTURE = ExposureFeatures(
+    date=date(2025, 7, 19),
+    overnight_min=17.0,
+    peak_apparent=29.0,
+    peak_air=29.0,
+    hours_above_26=7,
+    indoor_night_est=24.6,
+    indoor_day_est=25.85,
+    spell_day=3,
+    alert_level=AlertLevel.NONE,
+    source=ExposureSource.FIXTURE,
+)
+
+
 class AssessRequest(BaseModel):
     person: PersonRequest
     place: PlaceRequest = Field(default_factory=PlaceRequest)
@@ -195,6 +214,13 @@ class AssessRequest(BaseModel):
     is the input FR-11 actually needs, so it is accepted directly rather than
     guessed from a coldHome/overheatingHome checkbox."""
     audience: Audience = Audience.CAREGIVER
+    fixture: str | None = None
+    """Pass 'heat' to substitute the Bedford 19 July 2025 fixture instead of
+    fetching live weather. Intended for demos and for verifying the full stack
+    against a known scenario on any day of the year.
+    Other values are rejected with 422 so a typo never silently produces a
+    fabricated assessment.
+    """
 
 
 @app.post("/assess")
@@ -204,17 +230,51 @@ def assess(request: AssessRequest) -> dict[str, Any]:
     This is the endpoint the front end calls now that it no longer scores. It
     returns the assessment and the prevention plan together, because a tier
     without a next step is a weather app.
+
+    Pass fixture='heat' in the body to use the Bedford 19 July 2025 scenario
+    instead of live weather — useful for demos and integration tests.
     """
+    if request.fixture is not None and request.fixture != "heat":
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown fixture {request.fixture!r}. Only 'heat' is supported.",
+        )
+
     person = request.person.to_person()
     place = request.place.to_place(person.id, request.dwelling_offset)
 
-    try:
-        exposure = exposure_for(place, date.today())
-    except LookupError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail="No forecast available and nothing cached to fall back on.",
-        ) from exc
+    if request.fixture == "heat":
+        # Apply dwelling offset to the indoor estimates so profiles with
+        # overheatingHome still reflect their building correctly.
+        exposure = ExposureFeatures(
+            date=HEAT_FIXTURE.date,
+            overnight_min=HEAT_FIXTURE.overnight_min,
+            peak_apparent=HEAT_FIXTURE.peak_apparent,
+            peak_air=HEAT_FIXTURE.peak_air,
+            hours_above_26=HEAT_FIXTURE.hours_above_26,
+            indoor_night_est=(
+                HEAT_FIXTURE.overnight_min * 0.6
+                + HEAT_FIXTURE.peak_apparent * 0.4
+                + request.dwelling_offset
+            ),
+            indoor_day_est=(
+                HEAT_FIXTURE.overnight_min * 0.3
+                + HEAT_FIXTURE.peak_apparent * 0.55
+                + request.dwelling_offset
+                + 2
+            ),
+            spell_day=HEAT_FIXTURE.spell_day,
+            alert_level=HEAT_FIXTURE.alert_level,
+            source=HEAT_FIXTURE.source,
+        )
+    else:
+        try:
+            exposure = exposure_for(place, date.today())
+        except LookupError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="No forecast available and nothing cached to fall back on.",
+            ) from exc
 
     assessment = SCORER.assess(exposure, VULNERABILITY.profile(person))
     plan = PLANNER.build(person, exposure, assessment, request.audience)

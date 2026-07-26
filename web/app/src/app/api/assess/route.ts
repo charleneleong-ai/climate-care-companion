@@ -9,7 +9,7 @@ import { describeWeatherCode, fetchAllRegions } from '@/lib/weather'
 /**
  * Risk + advice for a profile against live weather.
  *
- * GET  /api/assess              → all five demo personas (quickest way to see
+ * GET  /api/assess              → all eight demo personas (quickest way to see
  *                                 the same weather produce different advice)
  * GET  /api/assess?id=demo-doris → one demo persona
  * POST /api/assess  { profile }  → any profile
@@ -18,7 +18,11 @@ import { describeWeatherCode, fetchAllRegions } from '@/lib/weather'
  * this, see the result. No UI, no onboarding, no map.
  */
 
-async function assessProfiles(profiles: Profile[], atTemperature?: number) {
+async function assessProfiles(
+  profiles: Profile[],
+  atTemperature?: number,
+  fixture?: 'heat',
+) {
   const snapshot = await fetchAllRegions().catch(() => null)
 
   return Promise.all(
@@ -27,7 +31,7 @@ async function assessProfiles(profiles: Profile[], atTemperature?: number) {
 
       let core
       try {
-        core = await assessViaCore(profile)
+        core = await assessViaCore(profile, fixture)
       } catch (error) {
         // The core being unreachable is a fact to report, not an exception to
         // swallow. A caregiver told "no assessment available" can act on that;
@@ -97,9 +101,18 @@ function parseAt(raw: string | null): { value?: number; error?: string } {
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams
   const id = params.get('id')
+  const demo = params.get('demo')
+  const fixture = demo === 'heat' ? ('heat' as const) : undefined
 
   const at = parseAt(params.get('at'))
   if (at.error) return NextResponse.json({ error: at.error }, { status: 400 })
+
+  if (demo !== null && demo !== 'heat') {
+    return NextResponse.json(
+      { error: `Unknown demo scenario "${demo}". Try: ?demo=heat (Bedford, 19 July 2025, no alert)` },
+      { status: 400 },
+    )
+  }
 
   const profiles = id ? DEMO_PROFILES.filter((p) => p.id === id) : DEMO_PROFILES
 
@@ -112,7 +125,11 @@ export async function GET(request: Request) {
 
   try {
     return NextResponse.json(
-      { atTemperature: at.value ?? null, results: await assessProfiles(profiles, at.value) },
+      {
+        atTemperature: at.value ?? null,
+        fixture: fixture ?? null,
+        results: await assessProfiles(profiles, at.value, fixture),
+      },
       { headers: { 'Cache-Control': 'no-store' } },
     )
   } catch (error) {

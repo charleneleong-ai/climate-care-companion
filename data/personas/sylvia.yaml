@@ -1,19 +1,19 @@
 # The "your body will warn you" contradiction. Fictional — SC-6.
-# Expected vulnerability 8: age 75-84 (2) + lives alone (2) + antipsychotic (2)
-#   + anticholinergic (2).
-# Generic heat guidance leans on the body's own alarms: you feel hot, you sweat,
-# so you know to cool down. Both are switched off for Sylvia. Her olanzapine
-# impairs the brain's temperature control, so she may not feel hot; her oxybutynin
-# suppresses sweating, so the usual first warning never appears. The safe reading
-# inverts the intuition: absence of feeling hot and absence of sweat are NOT
-# reassurance. Advice must tell whoever is with her to check the room with a
-# thermometer rather than ask how she feels - the opposite of "listen to your body".
+# Enriched: mobility_limited added (olanzapine causes metabolic syndrome and
+# weight gain, leading to limited mobility in long-term users — she cannot
+# self-rescue to a cooler room). cardiovascular added (metabolic syndrome from
+# long-term antipsychotic use substantially elevates CVD risk; a leading cause
+# of premature death in people with serious mental illness).
+# Cannot feel heat, cannot sweat, cannot move, heart working harder —
+# four compounding failures, none visible from the outside.
+# vulnerability 11: age 75-84 (2) + lives alone (2) + cardiovascular (2)
+#   + mobility_limited (1) + antipsychotic (2) + anticholinergic (2)
 id: sylvia
 name: Sylvia
 age_band: b75_84
 lives_alone: true
-mobility_limited: false
-conditions: []
+mobility_limited: true
+conditions: [cardiovascular]
 medications:
   - drug_name: olanzapine
     drug_class: antipsychotic

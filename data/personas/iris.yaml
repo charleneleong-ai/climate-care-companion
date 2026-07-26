@@ -1,16 +1,17 @@
 # The silent overheater. Fictional — SC-6.
-# Expected vulnerability 8: age 85+ (3) + lives alone (2) + mobility limited (1)
-#   + anticholinergic (2).
-# Her oxybutynin suppresses sweating — the body's main way of shedding heat and
-# the usual first warning sign. So the absence of sweat is not reassurance, it is
-# the danger, and because she cannot easily move to a cooler room the cool room has
-# to come to her. Demonstrates why watch-for advice matters as much as what-to-do.
+# Enriched: cardiovascular added (oxybutynin prescribed for overactive bladder,
+# which co-exists with heart failure in ~40% of this demographic).
+# renal added (CKD frequently accompanies both at this age).
+# Fully silent multi-organ scenario: cannot sweat, cannot move to a cooler
+# room, heart straining, kidney function declining — none visible externally.
+# vulnerability 12: age 85+ (3) + lives alone (2) + cardiovascular (2)
+#   + renal (2) + mobility_limited (1) + anticholinergic (2)
 id: iris
 name: Iris
 age_band: b85_plus
 lives_alone: true
 mobility_limited: true
-conditions: []
+conditions: [cardiovascular, renal]
 medications:
   - drug_name: oxybutynin
     drug_class: anticholinergic

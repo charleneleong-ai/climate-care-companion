@@ -26,7 +26,7 @@ def test_low_vulnerability_persona_never_alarms_across_the_season(scorer, benign
 def test_even_the_frailest_persona_stays_low_in_benign_weather(scorer, benign_season, people):
     """FR-18 across a whole season, not just one day. Frailty alone is not harm."""
     profile = VulnerabilityScorer().profile(people["doris"])
-    assert profile.score == 10
+    assert profile.score == 13  # enriched: +respiratory +ssri +mobility_limited
     assert {scorer.assess(day, profile).tier for day in benign_season} == {Tier.LOW}
 
 

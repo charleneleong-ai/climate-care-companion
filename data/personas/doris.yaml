@@ -1,16 +1,24 @@
 # The spec section 8.6 worked example. Fictional — SC-6.
-# Expected: vulnerability 10, and HIGH on 19 July 2025 in Bedford with no alert.
+# Enriched: COPD added (common dementia comorbidity in 85+ women).
+# sertraline added (first-line for dementia-related depression/agitation).
+# mobility_limited added (realistic at this age with dementia + COPD).
+# Three interaction chains now fire simultaneously, none of which she can
+# recognise or act on herself: diuretic+ACE, ssri_hyponatraemia, respiratory_heat.
+# vulnerability 13: age 85+ (3) + lives alone (2) + dementia (2) + respiratory (1)
+#   + mobility_limited (1) + diuretic (2) + ace_arb (1) + ssri (1)
 id: doris
 name: Doris
 age_band: b85_plus
 lives_alone: true
-mobility_limited: false
-conditions: [dementia]
+mobility_limited: true
+conditions: [dementia, respiratory]
 medications:
   - drug_name: furosemide
     drug_class: diuretic
   - drug_name: ramipril
     drug_class: ace_arb
+  - drug_name: sertraline
+    drug_class: ssri
 place:
   postcode: MK40 1AA
   dwelling_type: flat
