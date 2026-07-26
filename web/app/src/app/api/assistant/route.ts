@@ -198,11 +198,14 @@ export async function POST(request: Request) {
           )
         } else {
           console.error('[api/assistant] stream failed', error)
-          // The response has already started, so an HTTP error code is no
-          // longer available — surface it in the stream instead.
-          controller.enqueue(
-            encoder.encode('\n\nSomething went wrong on my end. Please try that again.'),
-          )
+          // The response has already started, so an HTTP status is spent —
+          // the message has to carry the distinction instead.
+          //
+          // "Try again" is only honest for a transient fault. An exhausted
+          // credit balance or a rejected key will fail identically forever, and
+          // telling someone to retry it is the same mistake the pre-flight
+          // check above was added to stop.
+          controller.enqueue(encoder.encode(`\n\n${describeStreamFailure(error)}`))
         }
       } finally {
         controller.close()
@@ -218,4 +221,28 @@ export async function POST(request: Request) {
       'X-Accel-Buffering': 'no',
     },
   })
+}
+
+/**
+ * What to tell the reader when the stream dies mid-flight.
+ *
+ * Only two outcomes matter to them: is this worth retrying, or is the assistant
+ * simply not going to answer today? Everything else is operator detail and
+ * belongs in the log, not on a screen someone opened because they were worried.
+ */
+function describeStreamFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  const unaffected =
+    'Your risk and your plan are unaffected — they are computed without it.'
+
+  if (/credit balance|billing|quota|insufficient_quota/i.test(message)) {
+    return `The assistant has run out of credit on this account, so it cannot answer right now. ${unaffected}`
+  }
+  if (/authentication|invalid[ _-]?api[ _-]?key|401|403/i.test(message)) {
+    return `The assistant is not set up correctly on this deployment. ${unaffected}`
+  }
+  if (/rate[ _-]?limit|429|overloaded|529/i.test(message)) {
+    return 'The assistant is busy at the moment. Worth trying again in a minute.'
+  }
+  return 'Something went wrong reaching the assistant. Worth trying again.'
 }
