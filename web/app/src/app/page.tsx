@@ -9,9 +9,53 @@ import RegionPanel from '@/components/RegionPanel'
 import type { MapRegion } from '@/components/UKMap'
 import { clearProfile, loadProfile, saveProfile } from '@/lib/client-store'
 import { DEMO_PROFILES, type Profile } from '@/lib/profile'
-import { regionByCode } from '@/lib/regions'
-import { assessRisk, BAND_COLOURS, bandLabel } from '@/lib/risk'
+import { regionByCode, REGIONS } from '@/lib/regions'
+import { assessRegionBaseline, assessRisk, BAND_COLOURS, bandLabel } from '@/lib/risk'
 import type { RegionWeather } from '@/lib/weather'
+
+type ApiRegion = RegionWeather & MapRegion & { conditions: string }
+
+// ── 19 July 2025 heatwave fixture ────────────────────────────────────────────
+// Plausible regional apparent temperatures for that day. England was at peak;
+// Scotland and NI were cooler. Overnight 17°C across England — no recovery.
+// Sources: Met Office, UKHSA episode 4 data.
+const HEAT_TEMPS: Record<string, number> = {
+  TLC: 23, // North East
+  TLD: 24, // North West
+  TLE: 25, // Yorkshire & Humber
+  TLF: 28, // East Midlands
+  TLG: 27, // West Midlands
+  TLH: 29, // East of England — Bedford (the worked example)
+  TLI: 29, // London
+  TLJ: 29, // South East
+  TLK: 26, // South West
+  TLL: 24, // Wales
+  TLM: 20, // Scotland
+  TLN: 19, // Northern Ireland
+}
+
+const HEAT_FIXTURE_REGIONS: ApiRegion[] = REGIONS.map((r) => {
+  const temp = HEAT_TEMPS[r.code] ?? 22
+  const weather: RegionWeather = {
+    regionCode: r.code,
+    regionName: r.name,
+    temperature: temp,
+    apparentTemperature: temp,
+    humidity: 45,
+    windSpeed: 10,
+    weatherCode: 0, // clear sky
+    todayMax: temp,
+    todayMin: 17,
+    todayApparentMax: temp,
+    todayApparentMin: 17,
+    observedAt: '2025-07-19T14:00:00Z',
+  }
+  return {
+    ...weather,
+    conditions: 'Clear sky',
+    ...assessRegionBaseline(weather),
+  } as ApiRegion
+})
 
 // Leaflet touches `window` on import, so it can never be server-rendered.
 const UKMap = dynamic(() => import('@/components/UKMap'), {
@@ -21,16 +65,18 @@ const UKMap = dynamic(() => import('@/components/UKMap'), {
   ),
 })
 
-type ApiRegion = RegionWeather & MapRegion & { conditions: string }
-
 export default function HomePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [ready, setReady] = useState(false)
-  const [regions, setRegions] = useState<ApiRegion[]>([])
+  const [liveRegions, setLiveRegions] = useState<ApiRegion[]>([])
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [tab, setTab] = useState<'advice' | 'assistant'>('advice')
+  // Heatwave scenario default — same as /personal and /caregiver.
+  const [heatScenario, setHeatScenario] = useState(true)
+
+  const regions = heatScenario ? HEAT_FIXTURE_REGIONS : liveRegions
 
   useEffect(() => {
     const stored = loadProfile()
@@ -49,7 +95,7 @@ export default function HomePage() {
       })
       .then((body) => {
         if (cancelled) return
-        setRegions(body.regions)
+        setLiveRegions(body.regions)
         setFetchedAt(body.fetchedAt)
       })
       .catch((e) => {
@@ -110,6 +156,29 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[34rem] flex-col">
+      {/* Heatwave / live toggle — sticky at top, above the header */}
+      <div
+        className="flex items-center justify-between gap-3 border-b px-4 py-2"
+        style={{
+          borderColor: heatScenario ? '#d97706' : 'var(--line)',
+          background: heatScenario ? '#fffbeb' : 'var(--surface)',
+        }}
+      >
+        <p className="text-[12px]" style={{ color: heatScenario ? '#92400e' : 'var(--ink-faint)' }}>
+          {heatScenario
+            ? '☀️ 19 July 2025 · 29°C peak · No heat-health alert issued · 146 excess deaths'
+            : 'Showing live weather today.'}
+        </p>
+        <button
+          type="button"
+          onClick={() => setHeatScenario((v) => !v)}
+          className="btn btn-ghost shrink-0 px-2.5 py-1 text-[12px]"
+          style={{ minHeight: 'auto', color: heatScenario ? '#92400e' : undefined }}
+        >
+          {heatScenario ? 'Show live' : '19 Jul 2025'}
+        </button>
+      </div>
+
       <header
         className="flex items-center justify-between gap-3 border-b px-5 py-4"
         style={{ borderColor: 'var(--line)' }}
