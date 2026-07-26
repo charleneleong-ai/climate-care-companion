@@ -16,27 +16,21 @@ def people():
     return PersonaLoader().load()
 
 
-def test_low_vulnerability_persona_never_alarms_across_the_season(
-    scorer, benign_season, people
-):
+def test_low_vulnerability_persona_never_alarms_across_the_season(scorer, benign_season, people):
     profile = VulnerabilityScorer().profile(people["margaret"])
     tiers = [scorer.assess(day, profile).tier for day in benign_season]
     cried = sum(tier is not Tier.LOW for tier in tiers)
     assert cried == 0, f"cried wolf on {cried} of 92 benign days"
 
 
-def test_even_the_frailest_persona_stays_low_in_benign_weather(
-    scorer, benign_season, people
-):
+def test_even_the_frailest_persona_stays_low_in_benign_weather(scorer, benign_season, people):
     """FR-18 across a whole season, not just one day. Frailty alone is not harm."""
     profile = VulnerabilityScorer().profile(people["doris"])
-    assert profile.score == 10
+    assert profile.score == 13  # enriched: +respiratory +ssri +mobility_limited
     assert {scorer.assess(day, profile).tier for day in benign_season} == {Tier.LOW}
 
 
-def test_every_persona_stays_low_across_the_benign_season(
-    scorer, benign_season, people
-):
+def test_every_persona_stays_low_across_the_benign_season(scorer, benign_season, people):
     vulnerability = VulnerabilityScorer()
     for person_id, person in people.items():
         profile = vulnerability.profile(person)

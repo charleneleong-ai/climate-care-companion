@@ -1,16 +1,17 @@
 # SEVERE archetype — the person this intervention exists to save. Fictional — SC-6.
-# Expected vulnerability 10: age 85+ (3) + lives alone (2) + dementia (2)
-#   + lithium (3). Lithium has the narrowest therapeutic window in the formulary;
-# dehydration in heat concentrates it toward toxicity, and she cannot self-report
-# the early tremor or drowsiness. Top-floor, south-facing flat with no cooling puts
-# the largest dwelling offset (2.8) on top of that. She is HIGH on a day with no
-# regional alert — the exact person a region-level warning misses.
+# Enriched: mobility_limited added (lithium causes long-term tremor affecting
+# gait at 87). cardiovascular added (lithium-related thyroid dysfunction
+# frequently leads to atrial fibrillation in this age group).
+# Cannot move to a cooler room AND heart is working harder AND narrow-window
+# drug is concentrating — three simultaneous lethal mechanisms.
+# vulnerability 13: age 85+ (3) + lives alone (2) + dementia (2)
+#   + cardiovascular (2) + mobility_limited (1) + lithium (3)
 id: elsie
 name: Elsie
 age_band: b85_plus
 lives_alone: true
-mobility_limited: false
-conditions: [dementia]
+mobility_limited: true
+conditions: [dementia, cardiovascular]
 medications:
   - drug_name: lithium carbonate
     drug_class: lithium

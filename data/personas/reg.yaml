@@ -1,19 +1,21 @@
 # The fluid tightrope. Fictional — SC-6.
-# Expected vulnerability 11: age 75-84 (2) + lives alone (2) + cardiovascular (2)
-#   + renal (2) + diuretic (2) + ace_arb (1).
-# The clinically dangerous case where the standard "drink plenty in the heat"
-# message is wrong: too little fluid strains the kidneys, too much strains the
-# heart. His furosemide increases loss while ramipril blunts thirst, so he can dry
-# out without feeling it. This is where a generic public alert can actively harm
-# and a per-person plan (renal_and_cardiovascular + diuretic combos) is the value.
+# Enriched: respiratory added (COPD is present in ~30% of CKD patients;
+# the cardio-renal-pulmonary triad is one of the most dangerous presentations
+# in heat). spironolactone added as a second diuretic (standard in heart
+# failure alongside furosemide, but raises potassium already stressed by ACE
+# in heat — adding an electrolyte risk on top of the volume tightrope).
+# vulnerability 12: age 75-84 (2) + lives alone (2) + cardiovascular (2)
+#   + renal (2) + respiratory (1) + diuretic (2) + ace_arb (1)
 id: reg
 name: Reg
 age_band: b75_84
 lives_alone: true
 mobility_limited: false
-conditions: [cardiovascular, renal]
+conditions: [cardiovascular, renal, respiratory]
 medications:
   - drug_name: furosemide
+    drug_class: diuretic
+  - drug_name: spironolactone
     drug_class: diuretic
   - drug_name: ramipril
     drug_class: ace_arb

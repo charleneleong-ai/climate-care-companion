@@ -15,8 +15,8 @@ BEDFORD_19_JULY_2025 = ExposureFeatures(
     peak_apparent=29.0,
     peak_air=29.0,
     hours_above_26=7,
-    indoor_night_est=24.6,     # 0.6(17) + 0.4(29) + 2.8
-    indoor_day_est=25.85,      # 0.3(17) + 0.55(29) + 2.8 + 2
+    indoor_night_est=24.6,  # 0.6(17) + 0.4(29) + 2.8
+    indoor_day_est=25.85,  # 0.3(17) + 0.55(29) + 2.8 + 2
     spell_day=3,
     # No heat-health alert was issued in any region during Episode 4.
     # That is the entire point of this fixture.
@@ -39,20 +39,25 @@ def assessment(doris):
 
 def test_doris_scores_exactly_six_and_lands_high(assessment):
     assert assessment.exposure_score == 3
-    assert assessment.vulnerability_score == 10
-    assert assessment.risk_score == pytest.approx(6.0)
+    assert assessment.vulnerability_score == 13  # enriched: +respiratory +ssri +mobility
+    assert assessment.risk_score == pytest.approx(6.9)
     assert assessment.tier is Tier.HIGH
 
 
 def test_reason_set_is_exactly_the_spec_worked_example(assessment):
+    # Doris enriched with COPD + sertraline + mobility_limited (realistic 85+
+    # dementia presentation). Reason set extended accordingly.
     assert {r.code for r in assessment.reasons} == {
         ReasonCode.BEDROOM_WARM,
         ReasonCode.SUSTAINED_SPELL,
         ReasonCode.AGE_85_PLUS,
         ReasonCode.LIVES_ALONE,
         ReasonCode.DEMENTIA,
+        ReasonCode.RESPIRATORY,
+        ReasonCode.MOBILITY_LIMITED,
         ReasonCode.MED_DIURETIC,
         ReasonCode.MED_ACE_ARB,
+        ReasonCode.MED_SSRI,
     }
 
 
