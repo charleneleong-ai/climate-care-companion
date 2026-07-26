@@ -1,4 +1,7 @@
+# Both forms: the trailing slash matches a directory but not a symlink of
+# the same name, which is how a node_modules symlink was once committed.
 node_modules/
+node_modules
 .next/
 out/
 build/

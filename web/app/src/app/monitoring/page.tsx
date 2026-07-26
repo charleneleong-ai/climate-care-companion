@@ -295,11 +295,172 @@ export default function MonitoringPage() {
         </Link>
       </div>
 
+      <ForecastHorizon />
+
       <p className="mt-6 text-[12px] faint">
         Death counts from UKHSA <em>Heat mortality monitoring report, England: 2025</em> (Crown
         copyright, OGL v3). Cohort tiers computed by the Climatise risk engine against the Bedford
         19 July 2025 fixture. All personas are fictional (SC-6).
       </p>
     </main>
+  )
+}
+
+
+// ── Live forecast horizon ────────────────────────────────────────────────────
+
+interface ForecastDay {
+  date: string
+  lead_days: number
+  peak_air: number | null
+  tiers: Record<string, number>
+  at_risk: number
+}
+
+interface FirstAtRisk {
+  person_id: string
+  name: string
+  date: string
+  lead_days: number
+}
+
+const TIER_ORDER = ['Severe', 'High', 'Elevated', 'Low'] as const
+
+const TIER_TONE: Record<string, string> = {
+  Low: '#7fb069',
+  Elevated: '#f3c05a',
+  High: '#e07a3f',
+  Severe: '#c1362f',
+}
+
+function ForecastHorizon() {
+  const [days, setDays] = useState<ForecastDay[]>([])
+  const [first, setFirst] = useState<FirstAtRisk[]>([])
+  const [registerSize, setRegisterSize] = useState(0)
+  const [label, setLabel] = useState('')
+  const [unavailable, setUnavailable] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/monitoring')
+      .then((r) => r.json())
+      .then((body) => {
+        setDays(body.days ?? [])
+        setFirst(body.first_at_risk ?? [])
+        setRegisterSize(body.register_size ?? 0)
+        setLabel(body.label ?? '')
+        setUnavailable(Boolean(body.unavailable))
+      })
+      .catch(() => setUnavailable(true))
+  }, [])
+
+  if (unavailable) {
+    return (
+      <section className="mt-10">
+        <h2 className="section-label">The days ahead</h2>
+        <p className="text-[15px] muted">
+          No forecast available right now, so this section is empty rather than
+          estimated.
+        </p>
+      </section>
+    )
+  }
+
+  if (days.length === 0) return null
+
+
+  return (
+    <section className="mt-10">
+      <h2 className="section-label">The days ahead</h2>
+      <p className="mb-1 text-[15px] muted">
+        Every one of the {registerSize} people on the register, scored against each
+        day of the episode. {label}
+      </p>
+      <p className="mb-4 text-[15px] muted">
+        The register is quiet for two days and then it is not. Nothing about the
+        third day was a surprise on the first — which is the whole argument for
+        assessing ahead rather than reporting after.
+      </p>
+
+      <div className="card p-4">
+        <ol className="flex flex-col gap-3">
+          {days.map((day) => {
+            const when = new Date(day.date)
+            return (
+              <li key={day.date} className="flex items-center gap-3">
+                <span className="w-[5.5rem] shrink-0 text-[13px] tabular-nums">
+                  {when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                </span>
+                <span className="w-[3.5rem] shrink-0 font-mono text-[13px] tabular-nums faint">
+                  {day.peak_air === null ? '—' : `${day.peak_air.toFixed(1)}°`}
+                </span>
+                {/* Stacked by tier: a day where six people are High is a
+                    different day from one where twelve are Elevated, and a
+                    single count cannot tell them apart. */}
+                <span aria-hidden="true" className="flex h-3 flex-1 overflow-hidden rounded-full"
+                      style={{ background: 'var(--line)' }}>
+                  {TIER_ORDER.map((tier) => {
+                    const n = day.tiers[tier] ?? 0
+                    if (n === 0) return null
+                    return (
+                      <span
+                        key={tier}
+                        style={{
+                          width: `${(n / registerSize) * 100}%`,
+                          background: TIER_TONE[tier],
+                        }}
+                      />
+                    )
+                  })}
+                </span>
+                <span className="w-[7.5rem] shrink-0 text-right text-[13px] tabular-nums">
+                  {day.at_risk > 0 ? (
+                    <strong>{day.at_risk} of {registerSize} at risk</strong>
+                  ) : (
+                    <span className="faint">none at risk</span>
+                  )}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+
+      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
+        {TIER_ORDER.map((tier) => (
+          <span key={tier} className="flex items-center gap-1.5 text-[12px] faint">
+            <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm"
+                  style={{ background: TIER_TONE[tier] }} />
+            {tier}
+          </span>
+        ))}
+      </div>
+
+      {first.length > 0 && (
+        <>
+          <h3 className="section-label mt-6">Who crosses first, and how long there is</h3>
+          <div className="card">
+            {first.slice(0, 8).map((person) => (
+              <p key={person.person_id} className="row flex items-baseline justify-between gap-3">
+                <span className="text-[15px] font-semibold">{person.name}</span>
+                <span className="text-[13.5px] muted">
+                  {new Date(person.date).toLocaleDateString('en-GB', { weekday: 'long' })} ·{' '}
+                  <strong>
+                    {person.lead_days === 0
+                      ? 'today'
+                      : `${person.lead_days} day${person.lead_days === 1 ? '' : 's'} notice`}
+                  </strong>
+                </span>
+              </p>
+            ))}
+          </div>
+          <p className="mt-2.5 text-[13px] faint">
+            Lead time is the whole argument. Tablets can be moved off a windowsill
+            and a fluid plan settled with a pharmacist two days out. The same
+            information on the final evening is a report, not a prevention — and
+            no regional alert was issued on any of these three days.
+          </p>
+        </>
+      )}
+    </section>
   )
 }
