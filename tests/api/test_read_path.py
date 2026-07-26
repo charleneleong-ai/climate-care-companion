@@ -86,3 +86,71 @@ def test_tier_casing_matches_the_interaction_rules(client):
     served = client.get("/people/doris/assessment").json()["tier"]
     assert served[0].isupper() and served[1:].islower(), f"{served} is not title case"
     assert all(t[0].isupper() and t[1:].islower() for t in tiers)
+
+
+PLACE_BODY = {
+    "person": {
+        "id": "doris",
+        "name": "Doris",
+        "age_band": "b85_plus",
+        "lives_alone": True,
+        "mobility_limited": False,
+        "conditions": ["cardiovascular", "dementia"],
+        "med_classes": ["beta_blocker"],
+    },
+    # Top-floor south-facing flat: FR-11 offset 2.8, which is the dwelling the
+    # worked example is written for, so its declared estimates apply unchanged.
+    "place": {"dwelling_type": "flat", "floor": 3, "aspect": "south", "has_cooling": False},
+}
+BUNGALOW = {**PLACE_BODY["place"], "dwelling_type": "bungalow", "floor": 0}
+
+
+def assess_heat(client, place=None, **extra):
+    body = {**PLACE_BODY, "fixture": "heat", **extra}
+    if place is not None:
+        body["place"] = place
+    return client.post("/assess", json=body)
+
+
+class TestAssessFixture:
+    """The heat fixture is a different day, not a different model."""
+
+    def test_the_worked_example_is_reproduced_exactly(self, client):
+        """Spec section 8.6 declares 24.6 and 25.85 for a 2.8 offset. Pinning the
+        literals holds the fixture and FR-11 against each other, so neither can
+        drift without a test naming which one moved."""
+        exposure = assess_heat(client).json()["exposure"]
+        assert exposure["indoor_night_est_modelled"] == pytest.approx(24.6)
+        assert exposure["indoor_day_est_modelled"] == pytest.approx(25.85)
+
+    def test_sending_a_place_without_an_offset_is_not_a_500(self, client):
+        """Omitting dwelling_offset is the documented way to make the core do the
+        real lookup, and it crashed the demo path on a None."""
+        assert assess_heat(client).status_code == 200
+
+    def test_the_dwelling_moves_both_estimates(self, client):
+        """A bungalow must not be served a top-floor flat's bedroom. Both routes
+        left indoor_day_est at the fixture value for everyone regardless of home."""
+        flat = assess_heat(client).json()["exposure"]
+        bungalow = assess_heat(client, place=BUNGALOW).json()["exposure"]
+        assert bungalow["indoor_night_est_modelled"] < flat["indoor_night_est_modelled"]
+        assert bungalow["indoor_day_est_modelled"] < flat["indoor_day_est_modelled"]
+
+    def test_an_explicit_offset_overrides_the_lookup(self, client):
+        """The branch that already worked, kept covered while the other was fixed."""
+        exposure = assess_heat(client, dwelling_offset=2.8).json()["exposure"]
+        assert exposure["indoor_night_est_modelled"] == pytest.approx(24.6)
+
+    def test_the_persona_route_agrees_with_assess(self, client):
+        """Doris came back 24.6 and High from /assess but 19.8 and Elevated from
+        her own page — the same woman on the same day, differing by which screen
+        you opened, because each route had grown its own arithmetic."""
+        served = client.get("/people/doris/assessment?fixture=heat").json()
+        posted = assess_heat(client).json()
+        # The two routes serialise different subsets of ExposureFeatures; what
+        # must not differ is any figure they both choose to report.
+        shared = served["exposure"].keys() & posted["exposure"].keys()
+        assert {k: served["exposure"][k] for k in shared} == {
+            k: posted["exposure"][k] for k in shared
+        }
+        assert served["tier"] == posted["tier"] == "High"

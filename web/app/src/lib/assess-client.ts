@@ -13,6 +13,7 @@
  */
 
 import { conditionsFor } from './codes'
+import { regionByCode } from './regions'
 import type { RegionWeather } from './weather'
 import type { Profile } from './profile'
 
@@ -88,6 +89,12 @@ const DEFAULT_DWELLING_OFFSET = 1.2
 const OVERHEATING_OFFSET = 2.8
 
 export function requestBodyFor(profile: Profile) {
+  // The core defaults to Bedford when no coordinates arrive, which is the
+  // fixture's location — so every live assessment silently described Bedford
+  // under the reader's own region name.
+  const region = regionByCode(profile.regionCode)
+  const where = region ? { lat: region.lat, lon: region.lon } : {}
+
   const person = {
     id: profile.id,
     name: profile.name,
@@ -101,6 +108,7 @@ export function requestBodyFor(profile: Profile) {
   if (!profile.home) {
     return {
       person,
+      place: where,
       dwelling_offset: profile.factors.includes('overheatingHome')
         ? OVERHEATING_OFFSET
         : DEFAULT_DWELLING_OFFSET,
@@ -112,6 +120,7 @@ export function requestBodyFor(profile: Profile) {
   return {
     person,
     place: {
+      ...where,
       dwelling_type: profile.home.dwellingType,
       floor: profile.home.floor,
       aspect: profile.home.aspect,

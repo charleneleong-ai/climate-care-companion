@@ -259,7 +259,7 @@ export default function HomePage() {
           }`}
           style={{ borderColor: 'var(--line)' }}
         >
-          <Assistant profile={profile} suggestions={suggestions} />
+          <Assistant profile={profile} suggestions={suggestions} heatScenario={heatScenario} />
         </div>
       </div>
     </main>
