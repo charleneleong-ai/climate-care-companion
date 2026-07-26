@@ -3,6 +3,11 @@
 /**
  * The companion screen.
  *
+ * Add ?demo=heat to the URL to show the Bedford 19 July 2025 heatwave scenario
+ * instead of live weather. A banner explains the date, what happened, and why
+ * it was missed by the national alert system. Toggling between live and the
+ * scenario is the demo's core move: same person, same profile, different risk.
+ *
  * What a caregiver opens at nine at night to find out whether the person they
  * look after is safe. Scored by the Python core — this renders, it does not
  * decide.
@@ -87,14 +92,23 @@ export default function CompanionPage() {
   const [stale, setStale] = useState(false)
   const [failed, setFailed] = useState(false)
   const [audience, setAudience] = useState<'caregiver' | 'cared_for'>('caregiver')
+  // Heatwave scenario: reads ?demo=heat from URL, toggled by the banner button.
+  const [heatScenario, setHeatScenario] = useState(false)
 
-  useEffect(() => setProfile(loadProfile()), [])
+  useEffect(() => {
+    setProfile(loadProfile())
+    // Pick up ?demo=heat from the URL on first load.
+    if (typeof window !== 'undefined') {
+      setHeatScenario(new URLSearchParams(window.location.search).get('demo') === 'heat')
+    }
+  }, [])
 
-  const load = useCallback(async (p: Profile) => {
+  const load = useCallback(async (p: Profile, scenario: boolean) => {
     // NFR-04: show the last answer straight away rather than a spinner. A
     // caregiver on a bad connection gets something they can act on, labelled
     // as stale, instead of nothing.
-    const cached = typeof localStorage !== 'undefined' ? localStorage.getItem(CACHE_KEY) : null
+    const cacheKey = scenario ? `${CACHE_KEY}:heat` : CACHE_KEY
+    const cached = typeof localStorage !== 'undefined' ? localStorage.getItem(cacheKey) : null
     if (cached) {
       try {
         setResult(JSON.parse(cached) as Result)
@@ -105,7 +119,8 @@ export default function CompanionPage() {
     }
 
     try {
-      const response = await fetch('/api/assess', {
+      const url = scenario ? '/api/assess?demo=heat' : '/api/assess'
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ profile: p }),
@@ -117,15 +132,15 @@ export default function CompanionPage() {
       setResult(body)
       setStale(false)
       setFailed(false)
-      localStorage.setItem(CACHE_KEY, JSON.stringify(body))
+      localStorage.setItem(cacheKey, JSON.stringify(body))
     } catch {
       setFailed(true)
     }
   }, [])
 
   useEffect(() => {
-    if (profile) void load(profile)
-  }, [profile, load])
+    if (profile) void load(profile, heatScenario)
+  }, [profile, load, heatScenario])
 
   if (!profile) {
     return (
@@ -165,6 +180,44 @@ export default function CompanionPage() {
       <h1 className="mt-1.5 text-[21px] font-semibold tracking-tight">
         Is it safe for {result.profile.name} tonight?
       </h1>
+
+      {/* Heatwave scenario banner — explains the historic date and the
+          national alerting gap this system exists to close. */}
+      <div
+        className="mt-4 overflow-hidden rounded-[var(--radius-lg)] border"
+        style={{
+          borderColor: heatScenario ? '#d97706' : 'var(--line)',
+          background: heatScenario ? '#fffbeb' : 'var(--surface)',
+        }}
+      >
+        <div className="flex items-start justify-between gap-3 p-3.5">
+          <div className="min-w-0">
+            {heatScenario ? (
+              <>
+                <p className="text-[13px] font-semibold" style={{ color: '#92400e' }}>
+                  Showing: 19 July 2025 · Bedford
+                </p>
+                <p className="mt-0.5 text-[12.5px]" style={{ color: '#78350f' }}>
+                  No heat-health alert was issued that day. An estimated 146 people
+                  died. This is what the system would have shown.
+                </p>
+              </>
+            ) : (
+              <p className="text-[13px] faint">
+                Showing live weather. Switch to see a recent heatwave scenario.
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setHeatScenario((v) => !v)}
+            className="btn btn-ghost shrink-0 px-3 py-1.5 text-[13px]"
+            style={{ minHeight: 'auto', color: heatScenario ? '#92400e' : undefined }}
+          >
+            {heatScenario ? 'Show live' : 'Heatwave'}
+          </button>
+        </div>
+      </div>
 
       {(stale || failed) && (
         <p

@@ -139,6 +139,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // ?demo=heat works on POST too — the companion page uses this to show the
+  // heatwave scenario without changing the stored profile.
+  const params = new URL(request.url).searchParams
+  const demo = params.get('demo')
+  const fixture = demo === 'heat' ? ('heat' as const) : undefined
+
   let body: unknown
   try {
     body = await request.json()
@@ -156,7 +162,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const [result] = await assessProfiles([profile])
+    const [result] = await assessProfiles([profile], undefined, fixture)
     return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('[api/assess] failed', error)
