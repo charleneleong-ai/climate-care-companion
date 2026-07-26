@@ -77,30 +77,46 @@ function ageBandFor(factors: string[]): string {
 }
 
 /**
- * Dwelling offset, from the one signal onboarding collects.
+ * Fallback for profiles saved before onboarding asked about the home.
  *
- * "My home gets too hot" stands in for a top-floor south-facing flat until the
- * real dwelling fields exist. FR-11 wants type, floor and aspect; this is a
- * two-value approximation of a twenty-four-row lookup, and it is the largest
- * remaining gap between what the core can do and what this app asks for.
+ * "My home gets too hot" standing in for a top-floor south-facing flat is a
+ * two-value approximation of a twenty-four-row lookup. A profile carrying a
+ * `home` sends it instead and the core does the real FR-11 lookup; this exists
+ * only so an older saved profile still assesses rather than erroring.
  */
 const DEFAULT_DWELLING_OFFSET = 1.2
 const OVERHEATING_OFFSET = 2.8
 
 export function requestBodyFor(profile: Profile) {
+  const person = {
+    id: profile.id,
+    name: profile.name,
+    age_band: ageBandFor(profile.factors),
+    lives_alone: profile.factors.includes('livesAlone'),
+    mobility_limited: profile.factors.includes('mobility'),
+    conditions: conditionsFor(profile.factors),
+    med_classes: profile.medClasses ?? [],
+  }
+
+  if (!profile.home) {
+    return {
+      person,
+      dwelling_offset: profile.factors.includes('overheatingHome')
+        ? OVERHEATING_OFFSET
+        : DEFAULT_DWELLING_OFFSET,
+    }
+  }
+
+  // Omitting dwelling_offset is what makes the core look up the real one from
+  // the same table the seeded personas use, rather than taking our guess.
   return {
-    person: {
-      id: profile.id,
-      name: profile.name,
-      age_band: ageBandFor(profile.factors),
-      lives_alone: profile.factors.includes('livesAlone'),
-      mobility_limited: profile.factors.includes('mobility'),
-      conditions: conditionsFor(profile.factors),
-      med_classes: profile.medClasses ?? [],
+    person,
+    place: {
+      dwelling_type: profile.home.dwellingType,
+      floor: profile.home.floor,
+      aspect: profile.home.aspect,
+      has_cooling: profile.home.hasCooling,
     },
-    dwelling_offset: profile.factors.includes('overheatingHome')
-      ? OVERHEATING_OFFSET
-      : DEFAULT_DWELLING_OFFSET,
   }
 }
 

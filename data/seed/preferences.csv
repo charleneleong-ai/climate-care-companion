@@ -1,0 +1,19 @@
+# How each person wants to be reached, per audience.
+#
+# A row is a decision someone made. An absent row means nobody has asked them
+# yet — which the code treats as "ask", not as a default.
+#
+# channel: voice | whatsapp | sms | push | none
+# daily_checkin: call every day during a risk window, not only on a rise. Opt-in.
+person_id,audience,channel,call_time,quiet_start,quiet_end,daily_checkin
+doris,cared_for,voice,15:00,20:00,08:30,true
+doris,caregiver,whatsapp,,,,false
+harold,cared_for,voice,14:00,21:00,08:00,false
+harold,caregiver,whatsapp,,,,false
+margaret,cared_for,sms,,,,false
+elsie,cared_for,voice,15:30,20:30,09:00,true
+elsie,caregiver,whatsapp,,,,false
+iris,cared_for,voice,15:00,21:00,08:00,false
+iris,caregiver,push,,,,false
+reg,cared_for,none,,,,false
+reg,caregiver,whatsapp,,,,false

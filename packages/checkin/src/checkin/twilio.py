@@ -151,6 +151,58 @@ class DryRunTwilio:
         ]
 
 
+REMEDY_BY_CODE = {
+    63007: "The sandbox has not been joined from this handset, or TWILIO_SENDER is "
+    "not this account's sandbox number. WhatsApp `join <two-words>` to the number "
+    "in Console > Messaging > Try it out, then retry.",
+    63016: "Outside the 24-hour session window, so only an approved template may be "
+    "sent. Set TWILIO_CONTENT_SID, or have the recipient message in first.",
+    21608: "Trial accounts may only message verified numbers. Verify the recipient "
+    "in Console > Phone Numbers > Verified Caller IDs.",
+    21211: "The To number is not valid E.164. It needs the country code, e.g. +447…",
+}
+"""What to actually do about the codes this integration hits in practice.
+
+Twilio's own message names the fault but not the fix, and the fix is the part
+that costs an afternoon — 63007 in particular reads like a configuration error
+when it usually means nobody texted the join code.
+"""
+
+
+class TwilioSendError(RuntimeError):
+    """Carries Twilio's own error code and message.
+
+    `raise_for_status` throws these away and leaves a bare "400 Bad Request",
+    which is indistinguishable between a malformed number, an unjoined sandbox
+    and an expired session window. The whole diagnosis is in the body.
+    """
+
+    def __init__(self, status: int, code: int | None, message: str, more_info: str) -> None:
+        parts = [f"Twilio refused the send (HTTP {status}, code {code}): {message}"]
+        if remedy := REMEDY_BY_CODE.get(code or 0):
+            parts.append(f"  → {remedy}")
+        if more_info:
+            parts.append(f"  → {more_info}")
+        super().__init__("\n".join(parts))
+        self.status = status
+        self.code = code
+
+    @classmethod
+    def from_response(cls, response: Any) -> "TwilioSendError":
+        try:
+            body = response.json()
+        except ValueError:
+            # A proxy's 502 is HTML, not JSON. JSONDecodeError subclasses
+            # ValueError; anything else is a real fault worth propagating.
+            body = {}
+        return cls(
+            status=response.status_code,
+            code=body.get("code"),
+            message=body.get("message", "no message returned"),
+            more_info=body.get("more_info", ""),
+        )
+
+
 class TwilioChannel:
     """Live sender. Guarded identically to the other channels: absent credentials
     refuse construction, and an unlisted recipient refuses send."""
@@ -207,5 +259,6 @@ class TwilioChannel:
             ),
             auth=(self.account_sid, self.auth_token),
         )
-        response.raise_for_status()
+        if response.status_code >= 400:
+            raise TwilioSendError.from_response(response)
         return response.json()["sid"]

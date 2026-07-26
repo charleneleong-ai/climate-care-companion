@@ -12,7 +12,24 @@ import {
   StepProgress,
 } from '@/components/ui'
 import { newProfileId, saveProfile } from '@/lib/client-store'
-import { FACTOR_GROUPS, factorLabel, type Profile } from '@/lib/profile'
+import {
+  DEMO_NHS_NUMBERS,
+  factorsFromRecord,
+  knownMedClasses,
+  lookupRecord,
+  type NhsRecord,
+} from '@/lib/nhs'
+import {
+  ASPECT_OPTIONS,
+  CHECKED_ON_OPTIONS,
+  DWELLING_OPTIONS,
+  FACTOR_GROUPS,
+  factorLabel,
+  type Aspect,
+  type CheckedOn,
+  type DwellingType,
+  type Profile,
+} from '@/lib/profile'
 import { REGIONS, regionByCode } from '@/lib/regions'
 import { assessRisk, bandLabel, BAND_COLOURS } from '@/lib/risk'
 import type { RegionWeather } from '@/lib/weather'
@@ -30,13 +47,13 @@ import type { RegionWeather } from '@/lib/weather'
  * anything personal, which is the point at which people decide to trust it.
  */
 
-type StepId = 'intro' | 'name' | 'location' | 'factors' | 'notes' | 'review'
+type StepId = 'intro' | 'nhs' | 'name' | 'location' | 'home' | 'factors' | 'checkedOn' | 'notes' | 'review'
 
 /**
  * Only these four carry a "step N of 4" label — the intro and the review are
  * not questions, and counting them would make the form look longer than it is.
  */
-const NUMBERED: StepId[] = ['name', 'location', 'factors', 'notes']
+const NUMBERED: StepId[] = ['name', 'location', 'home', 'factors', 'checkedOn', 'notes']
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -48,8 +65,22 @@ export default function OnboardingPage() {
   const [outward, setOutward] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [factors, setFactors] = useState<string[]>([])
+  const [medClasses, setMedClasses] = useState<string[]>([])
+  const [dwellingType, setDwellingType] = useState<DwellingType>('house')
+  const [floor, setFloor] = useState(0)
+  const [aspect, setAspect] = useState<Aspect>('south')
+  const [hasCooling, setHasCooling] = useState(false)
+  const [checkedOn, setCheckedOn] = useState<CheckedOn>('sometimes')
   const [noneApply, setNoneApply] = useState(false)
   const [notes, setNotes] = useState('')
+
+  // NHS record import. `imported` is kept after the step is left so the review
+  // screen can say where the answers came from — a tick someone did not make
+  // themselves should be attributed.
+  const [nhsInput, setNhsInput] = useState('')
+  const [nhsError, setNhsError] = useState<string | null>(null)
+  const [found, setFound] = useState<NhsRecord | null>(null)
+  const [imported, setImported] = useState<NhsRecord | null>(null)
 
   const [lookingUp, setLookingUp] = useState(false)
   const [lookupError, setLookupError] = useState<string | null>(null)
@@ -129,6 +160,29 @@ export default function OnboardingPage() {
     void loadWeather(code)
   }
 
+  function findRecord() {
+    const { record, error } = lookupRecord(nhsInput)
+    setFound(record)
+    setNhsError(error)
+  }
+
+  /**
+   * Take the record's answers and carry on at the location step.
+   *
+   * The postcode is filled but still confirmed rather than accepted silently: a
+   * record holds where someone is registered, which is not always where they
+   * sleep, and the whole indoor model hangs off that address.
+   */
+  function useRecord(record: NhsRecord) {
+    setImported(record)
+    setName(record.name.split(' ')[0])
+    setPostcode(record.postcode)
+    setFactors(factorsFromRecord(record))
+    setMedClasses(knownMedClasses(record))
+    setNoneApply(false)
+    go('location')
+  }
+
   function toggleFactor(id: string) {
     setNoneApply(false)
     setFactors((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]))
@@ -151,6 +205,9 @@ export default function OnboardingPage() {
       regionCode,
       postcodeOutward: outward || undefined,
       factors,
+      medClasses: medClasses.length ? medClasses : undefined,
+      home: { dwellingType, floor, aspect, hasCooling },
+      checkedOn,
       notes: notes.trim() || undefined,
       createdAt: new Date().toISOString(),
     }
@@ -206,7 +263,120 @@ export default function OnboardingPage() {
                 </li>
               ))}
             </ul>
-            <StepActions onNext={() => go('name')} nextLabel="Start" />
+            <StepActions onNext={() => go('nhs')} nextLabel="Start" />
+          </Step>
+        )}
+
+        {step === 'nhs' && (
+          <Step
+            title="Bring in your NHS record?"
+            intro="It fills in your conditions and medicines so you don't have to remember them. You can type everything yourself instead."
+          >
+            <p
+              className="mb-4 rounded-lg border px-3.5 py-2.5 text-[14px]"
+              style={{ borderColor: 'var(--line-strong)', color: 'var(--ink-soft)' }}
+            >
+              <strong>This is a demonstration.</strong> There is no real NHS
+              connection here. Use one of the test numbers below to see how it would
+              work.
+            </p>
+
+            <label htmlFor="nhs" className="mb-2 block font-medium">
+              NHS number
+            </label>
+            <input
+              id="nhs"
+              data-step-focus
+              value={nhsInput}
+              onChange={(e) => {
+                setNhsInput(e.target.value)
+                setNhsError(null)
+                setFound(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') findRecord()
+              }}
+              placeholder="999 000 0001"
+              inputMode="numeric"
+              enterKeyHint="search"
+              className="field"
+            />
+            {nhsError && <FieldError>{nhsError}</FieldError>}
+
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {DEMO_NHS_NUMBERS.map((number) => (
+                <button
+                  key={number}
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ minHeight: 'auto', padding: '0.35rem 0.6rem', fontSize: '13px' }}
+                  onClick={() => {
+                    setNhsInput(number)
+                    setNhsError(null)
+                    setFound(lookupRecord(number).record)
+                  }}
+                >
+                  {number}
+                </button>
+              ))}
+            </div>
+
+            {!found && (
+              <button type="button" className="btn btn-primary mt-4" onClick={findRecord}>
+                Find my record
+              </button>
+            )}
+
+            {found && (
+              <div className="card mt-4 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] faint">
+                  Record found
+                </p>
+                <p className="mt-1.5 text-[16px] font-semibold">{found.name}</p>
+                <p className="text-[13.5px] muted">
+                  {found.gpPractice} · {found.postcode} · updated {found.lastUpdated}
+                </p>
+
+                <dl className="mt-3 space-y-2 text-[14px]">
+                  <div>
+                    <dt className="text-[12px] faint">Conditions</dt>
+                    <dd>
+                      {found.conditions.length
+                        ? found.conditions.map(factorLabel).join(' · ')
+                        : 'None recorded'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[12px] faint">Repeat prescriptions</dt>
+                    <dd>{found.medicines.length ? found.medicines.join(' · ') : 'None recorded'}</dd>
+                  </div>
+                </dl>
+
+                {found.conditions.length === 0 && (
+                  /* SC-7. An empty record is thin evidence, not evidence of safety,
+                     and someone shown "nothing found" reads it as "I'm fine". */
+                  <p className="mt-3 text-[13px] muted">
+                    Nothing is coded on this record. That does not mean there is no
+                    risk — age and housing matter too, so the next questions still
+                    apply.
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  className="btn btn-primary mt-4"
+                  onClick={() => useRecord(found)}
+                >
+                  Use these details
+                </button>
+              </div>
+            )}
+
+            <StepActions
+              onBack={() => go('intro')}
+              onNext={() => go('name')}
+              nextLabel="I'll type it myself"
+            />
           </Step>
         )}
 
@@ -232,7 +402,7 @@ export default function OnboardingPage() {
               className="field"
             />
             <StepActions
-              onBack={() => go('intro')}
+              onBack={() => go('nhs')}
               onNext={() => go('location')}
               nextDisabled={!name.trim()}
             />
@@ -345,10 +515,82 @@ export default function OnboardingPage() {
 
             <StepActions
               onBack={() => go('name')}
-              onNext={() => go('factors')}
+              onNext={() => go('home')}
               nextDisabled={!regionCode}
               helper={regionCode ? undefined : 'Check a postcode, or pick your area from the list.'}
             />
+          </Step>
+        )}
+
+        {step === 'home' && (
+          <Step
+            title="Tell us about your home"
+            intro="How hot a bedroom gets overnight depends more on the building than on the forecast. These three answers change the estimate more than anything else you tell us."
+          >
+            <fieldset className="mb-5">
+              <legend className="mb-2 font-medium">What kind of home is it?</legend>
+              <div className="space-y-2">
+                {DWELLING_OPTIONS.map((option) => (
+                  <RadioChoice
+                    key={option.id}
+                    label={option.label}
+                    selected={dwellingType === option.id}
+                    onSelect={() => setDwellingType(option.id)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="mb-5">
+              <legend className="mb-2 font-medium">Which floor do you sleep on?</legend>
+              <div className="space-y-2">
+                {[
+                  { value: 0, label: 'Ground floor' },
+                  { value: 1, label: 'First floor' },
+                  { value: 2, label: 'Second floor or higher' },
+                ].map((option) => (
+                  <RadioChoice
+                    key={option.value}
+                    label={option.label}
+                    selected={floor === option.value}
+                    onSelect={() => setFloor(option.value)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="mb-5">
+              <legend className="mb-2 font-medium">
+                Which way does the bedroom window face?
+              </legend>
+              <p className="mb-2 text-[14px] muted">
+                A rough guess is fine. If you are not sure, think about when the sun
+                comes in.
+              </p>
+              <div className="space-y-2">
+                {ASPECT_OPTIONS.map((option) => (
+                  <Choice
+                    key={option.id}
+                    label={option.label}
+                    hint={option.hint}
+                    selected={aspect === option.id}
+                    onToggle={() => setAspect(option.id)}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-2 font-medium">Anything to keep it cool?</legend>
+              <Choice
+                label="I have a fan, air conditioning, or a room that stays cool"
+                hint="This changes the advice — without it, cooling the room early matters much more"
+                selected={hasCooling}
+                onToggle={() => setHasCooling(!hasCooling)}
+              />
+            </fieldset>
+
+            <StepActions onBack={() => go('location')} onNext={() => go('factors')} />
           </Step>
         )}
 
@@ -391,8 +633,8 @@ export default function OnboardingPage() {
             </div>
 
             <StepActions
-              onBack={() => go('location')}
-              onNext={() => go('notes')}
+              onBack={() => go('home')}
+              onNext={() => go('checkedOn')}
               nextDisabled={factors.length === 0 && !noneApply}
               helper={
                 factors.length === 0 && !noneApply
@@ -400,6 +642,34 @@ export default function OnboardingPage() {
                   : undefined
               }
             />
+          </Step>
+        )}
+
+        {step === 'checkedOn' && (
+          <Step
+            title="Does anyone check on you?"
+            intro="This decides who we write to. If nobody does, we address the advice to you rather than to someone who is not there."
+          >
+            <div className="space-y-2">
+              {CHECKED_ON_OPTIONS.map((option) => (
+                <Choice
+                  key={option.id}
+                  label={option.label}
+                  hint={option.hint}
+                  selected={checkedOn === option.id}
+                  onToggle={() => setCheckedOn(option.id)}
+                />
+              ))}
+            </div>
+
+            {checkedOn === 'nobody' && (
+              <p className="mt-4 text-[14px] muted">
+                Councils use this to find people who would otherwise be missed during a
+                heat alert. It is the single most useful thing you can tell us.
+              </p>
+            )}
+
+            <StepActions onBack={() => go('factors')} onNext={() => go('notes')} />
           </Step>
         )}
 
@@ -424,7 +694,7 @@ export default function OnboardingPage() {
             <p className="mt-2 text-right text-[14px] faint">{notes.length}/500</p>
 
             <StepActions
-              onBack={() => go('factors')}
+              onBack={() => go('checkedOn')}
               onNext={() => go('review')}
               nextLabel={notes.trim() ? 'Continue' : 'Skip this'}
             />

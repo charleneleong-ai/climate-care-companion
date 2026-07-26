@@ -9,6 +9,7 @@
 import { isValidProfile, type Profile } from './profile'
 
 const KEY = 'climatise.profile'
+const PERSONA_KEY = 'climatise.persona'
 
 export function loadProfile(): Profile | null {
   if (typeof window === 'undefined') return null
@@ -36,6 +37,52 @@ export function clearProfile(): void {
   if (typeof window === 'undefined') return
   try {
     window.localStorage.removeItem(KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+export interface SignedInPersona {
+  id: string
+  name: string
+}
+
+/**
+ * Sign in as a seeded persona.
+ *
+ * Kept separate from the profile rather than flattened into one: a persona
+ * carries a dwelling, a medication list and an age band the `Profile` shape has
+ * nowhere to hold, and the companion screen reads the core's answer for them
+ * directly. Storing a half-populated Profile would quietly produce a *different*
+ * assessment from the one the register holds.
+ */
+export function signInAsPersona(id: string, name: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(PERSONA_KEY, JSON.stringify({ id, name }))
+    // A persona and a personal profile are mutually exclusive identities.
+    window.localStorage.removeItem(KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadPersona(): SignedInPersona | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(PERSONA_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return typeof parsed?.id === 'string' && typeof parsed?.name === 'string' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function clearPersona(): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(PERSONA_KEY)
   } catch {
     /* ignore */
   }

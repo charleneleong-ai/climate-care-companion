@@ -8,7 +8,6 @@ tests listed against it in CONTRIBUTING.md.
 """
 
 import pytest
-from actions.notify import NotificationPolicy
 from contracts import OrgType
 from org.models import Cohort, CohortMember, Org
 from org.views import CareHomeView, CouncilView, HospitalView
@@ -18,7 +17,6 @@ from predictors.heatwave import EnsembleHeatwave
 from predictors.indoor import LearnedIndoor
 
 STUBS = [
-    (NotificationPolicy().should_notify, "Track A"),
     (CouncilView().render, "Track B"),
     (HospitalView().render, "Track B"),
     (CareHomeView().render, "Track B"),

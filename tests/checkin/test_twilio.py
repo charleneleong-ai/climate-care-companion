@@ -10,6 +10,7 @@ from checkin.twilio import (
     DryRunTwilio,
     TwilioChannel,
     TwilioFormatter,
+    TwilioSendError,
     TwilioTransport,
 )
 from checkin.channels import ConversationChannel
@@ -230,3 +231,74 @@ def test_the_messages_url_targets_the_account():
 def test_the_allowlist_is_empty_by_default(monkeypatch):
     monkeypatch.delenv(ALLOWED_RECIPIENTS_ENV, raising=False)
     assert TwilioChannel.allowlist_from_env() == frozenset()
+
+
+class TestSendErrors:
+    """Twilio's failures, surfaced rather than flattened to a status code."""
+
+    @staticmethod
+    def failing(status: int, body: dict[str, object]):
+        class Response:
+            status_code = status
+
+            @staticmethod
+            def json() -> dict[str, object]:
+                return body
+
+        class Client:
+            @staticmethod
+            def post(*_args: object, **_kwargs: object) -> object:
+                return Response()
+
+        return TwilioChannel(
+            account_sid="AC0",
+            auth_token="token",
+            sender="whatsapp:+14155238886",
+            allowed_recipients=frozenset({"+447700900001"}),
+            client=Client(),
+        )
+
+    def test_the_twilio_code_reaches_the_caller(self):
+        """A bare "400 Bad Request" cannot distinguish an unjoined sandbox from a
+        malformed number, and the two have nothing in common to try next."""
+        channel = self.failing(
+            400,
+            {
+                "code": 63007,
+                "message": "Twilio could not find a Channel with the specified From address",
+                "more_info": "https://www.twilio.com/docs/errors/63007",
+            },
+        )
+        with pytest.raises(TwilioSendError, match="63007") as caught:
+            channel.send("+447700900001", TemplateMessage("t", "en_GB", "hello"))
+        assert caught.value.code == 63007
+
+    def test_a_known_code_carries_what_to_do_about_it(self):
+        channel = self.failing(400, {"code": 63007, "message": "…", "more_info": ""})
+        with pytest.raises(TwilioSendError, match="join"):
+            channel.send("+447700900001", TemplateMessage("t", "en_GB", "hello"))
+
+    def test_an_unparseable_body_still_raises_something_useful(self):
+        """A 502 from a proxy is HTML, not JSON."""
+
+        class Response:
+            status_code = 502
+
+            @staticmethod
+            def json():
+                raise ValueError("not json")
+
+        class Client:
+            @staticmethod
+            def post(*_args: object, **_kwargs: object) -> object:
+                return Response()
+
+        channel = TwilioChannel(
+            account_sid="AC0",
+            auth_token="token",
+            sender="whatsapp:+1",
+            allowed_recipients=frozenset({"+447700900001"}),
+            client=Client(),
+        )
+        with pytest.raises(TwilioSendError, match="502"):
+            channel.send("+447700900001", TemplateMessage("t", "en_GB", "hello"))
