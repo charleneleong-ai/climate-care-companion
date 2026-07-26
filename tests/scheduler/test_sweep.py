@@ -5,10 +5,13 @@ nothing sends and nothing errors. These tests assert on what left the building.
 """
 
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 from actions.checklist import PreventionPlanBuilder
 from actions.interactions import InteractionTable
+from checkin.log import CheckinLog
 from checkin.messages import TemplateLibrary, TemplateMessage
 from contracts import AlertLevel, Audience, ExposureFeatures, ExposureSource, Tier
 from core.corpus import Corpus
@@ -57,9 +60,15 @@ class FixedWeather:
         )
 
 
-def sweep_with(weather: FixedWeather, channel: RecordingChannel) -> HeatSweep:
+def sweep_with(
+    weather: FixedWeather, channel: RecordingChannel, checkins: CheckinLog | None = None
+) -> HeatSweep:
     corpus = Corpus.load()
     return HeatSweep(
+        # An empty log by default. Without this the suite reads whatever is in
+        # /tmp from manual testing, and a stale red flag there silently turns
+        # every escalation into an emergency.
+        checkins=checkins or CheckinLog(Path(mkdtemp()) / "checkins.json"),
         personas=PersonaLoader(),
         weather=weather,
         scorer=RiskScorer(corpus),
@@ -115,13 +124,50 @@ def test_the_person_is_never_told_a_tier_word(hot):
 
 
 def test_the_action_in_the_message_comes_from_the_plan(hot):
-    """Not composed at send time. This is what keeps the SC-1 gate meaningful."""
+    """Not composed at send time. This is what keeps the SC-1 gate meaningful.
+
+    Escalation messages are excluded rather than expected to carry plan text:
+    when the answer is "somebody has to attend", the message deliberately drops
+    the advice, and asserting otherwise would be asserting the bug.
+    """
     channel = RecordingChannel()
     result = sweep_with(hot, channel).run(T0)
 
-    carried = [d for d in result.dispatched if d.plan.items]
+    carried = [
+        d
+        for d in result.dispatched
+        if d.plan.items and not d.message.name.startswith("climatise_escalation")
+    ]
     assert carried
     assert all(d.plan.items[0].text in d.message.variables for d in carried)
+
+
+def test_someone_who_cannot_self_report_gets_a_visit_not_advice(hot):
+    """Doris has dementia and lives alone. At High or above, a list of things to
+    do is addressed to somebody who may not be able to follow it — her caregiver
+    is told to go round instead."""
+    result = sweep_with(hot, RecordingChannel()).run(T0)
+
+    to_her_caregiver = [
+        d
+        for d in result.dispatched
+        if d.notification.person_id == "doris" and d.notification.audience is Audience.CAREGIVER
+    ]
+    assert to_her_caregiver
+    assert to_her_caregiver[0].message.name == "climatise_escalation_visit"
+
+
+def test_the_person_themselves_still_gets_their_own_advice(hot):
+    """The escalation changes what the caregiver is told, not what she is."""
+    result = sweep_with(hot, RecordingChannel()).run(T0)
+
+    to_her = [
+        d
+        for d in result.dispatched
+        if d.notification.person_id == "doris" and d.notification.audience is Audience.CARED_FOR
+    ]
+    assert to_her
+    assert to_her[0].message.name == "climatise_heat_alert_person"
 
 
 def test_a_mild_evening_sends_nothing(mild):

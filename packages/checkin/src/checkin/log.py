@@ -128,6 +128,20 @@ class CheckinLog:
         found = self.for_person(person_id)
         return found[-1] if found else None
 
+    def consecutive_missed(self, person_id: str) -> int:
+        """Unanswered check-ins at the end of the run, most recent first.
+
+        Counted from the end rather than totalled, because a pattern is a claim
+        about *now*: someone who missed three calls in March and has answered
+        every one since is not the person the escalation is for.
+        """
+        missed = 0
+        for record in reversed(self.for_person(person_id)):
+            if record.outcome is Outcome.COMPLETED:
+                break
+            missed += 1
+        return missed
+
 
 def now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")

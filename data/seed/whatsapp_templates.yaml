@@ -85,3 +85,28 @@ heat_alert_invite:
 
     The link carries the warning that caused it, so the app can open by explaining
     why the message arrived rather than with a blank sign-up form.
+
+escalation_visit:
+  name: climatise_escalation_visit
+  language: en_GB
+  body: >
+    {{1}} needs someone to check on them in person. {{2}} If you cannot go,
+    please arrange for someone who can.
+  variables: [cared_for_name, reason]
+  notes: >
+    Sent instead of the advice message, not alongside it. When the answer is
+    "somebody has to attend", a list of things to do is the wrong shape: it
+    invites the reader to do those things remotely and feel they have responded.
+    {{2}} is the escalation's own sentence, already plain language.
+
+escalation_emergency:
+  name: climatise_escalation_emergency
+  language: en_GB
+  body: >
+    Urgent: {{1}} has reported {{2}}. Call 999 now. Do not wait to check on them
+    yourself first.
+  variables: [cared_for_name, symptoms]
+  notes: >
+    SC-3 — only ever sent when an explicit red flag was reported, never inferred
+    from a tier. The closing line exists because the instinct is to drive over
+    and look, and for these symptoms that costs the time an ambulance needs.
