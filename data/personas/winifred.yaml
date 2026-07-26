@@ -1,20 +1,26 @@
 # The care-home resident. Fictional — SC-6.
-# Expected vulnerability 8: age 85+ (3) + dementia (2) + mobility limited (1)
-#   + antipsychotic (2).
-# Not lives_alone — she is in a care home, which is exactly why she still needs
-# the plan rather than less: LSHTM found care-home death risk roughly doubled at
-# 25C vs 16C, because homes built to retain winter heat overheat in summer. Her
-# quetiapine impairs the brain's temperature control, so staff must check the room
-# rather than ask how she feels. This is the clinician/setting side of the value.
+# Enriched: sertraline added (prescribed in 40–60% of dementia patients in UK care
+# homes for agitation/depression; it lowers sodium, which is already at risk from
+# sweating in a hot building). cardiovascular added (atrial fibrillation is present
+# in ~30% of care home residents with dementia at this age). amitriptyline added
+# as a low-dose anticholinergic (widely prescribed for neuropathic pain in care
+# homes, but it also suppresses sweating — amplifying the thermoregulation failure
+# from quetiapine). Three drugs now impair heat response simultaneously.
+# Score: age 85+ (3) + dementia (2) + cardiovascular (2) + mobility_limited (1)
+#   + antipsychotic (2) + anticholinergic (2) + ssri (1) = 13
 id: winifred
 name: Winifred
 age_band: b85_plus
 lives_alone: false
 mobility_limited: true
-conditions: [dementia]
+conditions: [dementia, cardiovascular]
 medications:
   - drug_name: quetiapine
     drug_class: antipsychotic
+  - drug_name: amitriptyline
+    drug_class: anticholinergic
+  - drug_name: sertraline
+    drug_class: ssri
 place:
   postcode: MK43 9GH
   dwelling_type: care_home

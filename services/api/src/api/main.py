@@ -17,6 +17,7 @@ from contracts import (
     Person,
     Place,
     ReasonCode,
+    Tier,
 )
 from core.corpus import Corpus
 from core.scoring import RiskScorer
@@ -25,8 +26,12 @@ from actions.checklist import PreventionPlanBuilder
 from actions.interactions import InteractionTable
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from checkin.env import load_env
+from checkin.webpush import PushPayload, PushSubscription, SubscriptionStore, WebPushChannel
 from exposure.openmeteo import OpenMeteoClient
 from persons.loader import PersonaLoader
+
+load_env()
 
 app = FastAPI(
     title="Climatise Companion",
@@ -256,4 +261,82 @@ def assess(request: AssessRequest) -> dict[str, Any]:
             "escalate_to": list(plan.escalation_targets()),
         },
         "not_medical_advice": True,
+    }
+
+
+# ── Push registration ────────────────────────────────────────────────────────
+#
+# Held here rather than in the Next.js process because the three-hourly sweep
+# reads the same store, and a copy in the web tier would be the wrong one within
+# a restart.
+
+SUBSCRIPTIONS = SubscriptionStore()
+
+
+class SubscribeRequest(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+    person_id: str
+    audience: Audience
+
+
+class UnsubscribeRequest(BaseModel):
+    endpoint: str
+
+
+@app.post("/push/subscribe")
+def push_subscribe(request: SubscribeRequest) -> dict[str, Any]:
+    if request.person_id not in PERSONAS.load():
+        raise HTTPException(404, f"no person {request.person_id}")
+    SUBSCRIPTIONS.add(
+        PushSubscription(
+            endpoint=request.endpoint,
+            p256dh=request.p256dh,
+            auth=request.auth,
+            person_id=request.person_id,
+            audience=request.audience,
+        )
+    )
+    return {"registered": True, "devices": len(SUBSCRIPTIONS.subscriptions)}
+
+
+@app.delete("/push/subscribe")
+def push_unsubscribe(request: UnsubscribeRequest) -> dict[str, Any]:
+    SUBSCRIPTIONS.remove(request.endpoint)
+    return {"registered": False, "devices": len(SUBSCRIPTIONS.subscriptions)}
+
+
+@app.post("/push/test/{person_id}")
+def push_test(person_id: str, audience: Audience = Audience.CAREGIVER) -> dict[str, Any]:
+    """Fire one real notification, so a demo can prove the phone buzzes.
+
+    Deliberately marked as a test in the body. A notification indistinguishable
+    from a real alert is a false positive with a person's name on it.
+    """
+    channel = WebPushChannel(store=SUBSCRIPTIONS)
+    outcomes = channel.send_to(
+        person_id,
+        audience,
+        PushPayload(
+            title="Climatise — test alert",
+            body="This is a test. Your alerts are working.",
+            tier=Tier.ELEVATED,
+            person_id=person_id,
+        ),
+    )
+    # Per-device, because "it failed" is not actionable when three phones are
+    # registered and only one is broken.
+    return {
+        "devices": len(outcomes),
+        "delivered": sum(1 for o in outcomes if o.delivered),
+        "results": [
+            {
+                "endpoint": o.endpoint[:60],
+                "status": o.status,
+                "error": o.error,
+                "removed": o.should_prune,
+            }
+            for o in outcomes
+        ],
     }

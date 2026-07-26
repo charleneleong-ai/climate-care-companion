@@ -16,6 +16,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
+import AppShell from '@/components/AppShell'
 import { loadProfile } from '@/lib/client-store'
 import type { Profile } from '@/lib/profile'
 
@@ -129,8 +130,8 @@ export default function CompanionPage() {
 
   if (!profile) {
     return (
-      <main className="mx-auto max-w-[30rem] px-5 py-10">
-        <h1 className="text-xl font-semibold">No one set up yet</h1>
+      <AppShell title="Welcome">
+        <h2 className="text-[17px] font-semibold">No one set up yet</h2>
         <p className="mt-2 text-[16px] muted">
           Tell us about the person you look after and we can tell you whether tonight is
           safe for them.
@@ -138,17 +139,17 @@ export default function CompanionPage() {
         <Link href="/onboarding" className="btn btn-primary mt-6 inline-flex">
           Set up
         </Link>
-      </main>
+      </AppShell>
     )
   }
 
   if (!result) {
     return (
-      <main className="mx-auto max-w-[30rem] px-5 py-10">
+      <AppShell title="Checking…">
         <p className="text-[16px] muted">
           {failed ? 'Cannot reach the risk service, and nothing is saved yet.' : 'Checking…'}
         </p>
-      </main>
+      </AppShell>
     )
   }
 
@@ -158,14 +159,7 @@ export default function CompanionPage() {
   const visible = audience === 'caregiver' ? plan.items : plan.items.filter((i) => i.text)
 
   return (
-    <main className="mx-auto max-w-[30rem] px-5 pb-24 pt-8">
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] faint">
-        Climatise · companion
-      </p>
-      <h1 className="mt-1.5 text-[21px] font-semibold tracking-tight">
-        Is it safe for {result.profile.name} tonight?
-      </h1>
-
+    <AppShell title={`Is it safe for ${result.profile.name} tonight?`}>
       {(stale || failed) && (
         <p
           role="status"
@@ -177,7 +171,7 @@ export default function CompanionPage() {
       )}
 
       {/* NFR-07: shape, word and colour together. */}
-      <section className={`card mt-5 p-5 tone-${tier.tone}`}>
+      <section className={`card p-5 tone-${tier.tone}`}>
         <div className="flex items-center gap-3">
           <span aria-hidden="true" className={`glyph glyph-${tier.shape}`} />
           <span className="text-[22px] font-bold tracking-tight">{a.tier}</span>
@@ -274,7 +268,7 @@ export default function CompanionPage() {
         validated. Never change a prescribed medicine on the basis of this app — speak
         to a pharmacist or GP.
       </p>
-    </main>
+    </AppShell>
   )
 }
 

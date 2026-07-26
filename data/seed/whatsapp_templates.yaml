@@ -41,3 +41,47 @@ caregiver_no_answer:
     Sent to the caregiver, not the cared-for person. A missed check-in during a
     risk window is the condition the system exists to catch, so it escalates
     rather than retrying silently.
+
+heat_alert_caregiver:
+  name: climatise_heat_alert_caregiver
+  language: en_GB
+  body: >
+    {{1}}'s heat risk has risen to {{2}} for tonight. The most important thing to
+    do: {{3}} Open Climatise for the rest of the plan.
+  variables: [cared_for_name, tier, first_action]
+  notes: >
+    FR-21. Sent on an upward tier transition, not on a schedule. Carries one action
+    rather than the whole plan — a message a caregiver reads at a bus stop can hold
+    one instruction, and the app holds the rest. {{3}} is lifted verbatim from the
+    prevention plan, so it has already been through the SC-1 gate.
+
+heat_alert_person:
+  name: climatise_heat_alert_person
+  language: en_GB
+  body: >
+    Hello {{1}}. It is going to be hot tonight where you are. One thing that will
+    help: {{2}} If you feel unwell, tell someone straight away.
+  variables: [first_name, first_action]
+  notes: >
+    The same event, written for the person themselves. Shorter, second person, one
+    clause per sentence, and no tier word — a label like "Severe" read alone on a
+    phone frightens without telling anyone what to do. It closes by naming who to
+    tell, because the failure mode for this group is not noticing and not saying.
+
+heat_alert_invite:
+  name: climatise_heat_alert_invite
+  language: en_GB
+  body: >
+    Heat health warning for {{1}} from {{2}}. People over 65 and those with heart,
+    lung or kidney conditions are most at risk. Find out what this means for you
+    and get advice for your own situation: {{3}}
+  variables: [area, start, link]
+  notes: >
+    The acquisition message, sent to residents in an alerted area who are not yet
+    registered. Deliberately not personalised — nothing is known about the reader
+    yet, and pretending otherwise would be the wrong first impression from a
+    health service. It states the general risk, names who it applies to, and
+    offers the personal version behind one tap.
+
+    The link carries the warning that caused it, so the app can open by explaining
+    why the message arrived rather than with a blank sign-up form.

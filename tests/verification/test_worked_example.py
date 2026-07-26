@@ -39,20 +39,25 @@ def assessment(doris):
 
 def test_doris_scores_exactly_six_and_lands_high(assessment):
     assert assessment.exposure_score == 3
-    assert assessment.vulnerability_score == 10
-    assert assessment.risk_score == pytest.approx(6.0)
+    assert assessment.vulnerability_score == 13
+    assert assessment.risk_score == pytest.approx(6.9)  # enriched Doris vuln 13, exposure 3
     assert assessment.tier is Tier.HIGH
 
 
 def test_reason_set_is_exactly_the_spec_worked_example(assessment):
+    # Doris enriched with respiratory + sertraline + mobility_limited (realistic
+    # 85+ dementia presentation). Reason set extended accordingly.
     assert {r.code for r in assessment.reasons} == {
         ReasonCode.BEDROOM_WARM,
         ReasonCode.SUSTAINED_SPELL,
         ReasonCode.AGE_85_PLUS,
         ReasonCode.LIVES_ALONE,
         ReasonCode.DEMENTIA,
+        ReasonCode.RESPIRATORY,
+        ReasonCode.MOBILITY_LIMITED,
         ReasonCode.MED_DIURETIC,
         ReasonCode.MED_ACE_ARB,
+        ReasonCode.MED_SSRI,
     }
 
 

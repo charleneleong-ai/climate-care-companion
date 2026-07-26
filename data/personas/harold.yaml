@@ -1,16 +1,23 @@
 # Mid-vulnerability persona. Fictional — SC-6.
-# Expected: vulnerability 5 (age 2 + cardiovascular 2 + beta blocker 1).
-# Lives with his wife, which is what separates him from Doris under allocation:
-# someone is already watching him.
+# Enriched: respiratory added (COPD with heart failure is one of the most common
+# dual diagnoses in men this age — the two conditions worsen each other in heat,
+# hot air tightening airways while the heart works harder to compensate).
+# sertraline added (depression post-cardiac events is well-documented; his GP
+# would routinely prescribe it). respiratory_and_cardiovascular now fires.
+# His wife is still watching but cannot run both interactions simultaneously.
+# Score: age 75-84 (2) + cardiovascular (2) + respiratory (1)
+#   + beta_blocker (1) + ssri (1) = 7
 id: harold
 name: Harold
 age_band: b75_84
 lives_alone: false
 mobility_limited: false
-conditions: [cardiovascular]
+conditions: [cardiovascular, respiratory]
 medications:
   - drug_name: bisoprolol
     drug_class: beta_blocker
+  - drug_name: sertraline
+    drug_class: ssri
 place:
   postcode: MK41 9AB
   dwelling_type: house

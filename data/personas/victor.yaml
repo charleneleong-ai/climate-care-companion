@@ -1,19 +1,20 @@
 # The public-advice contradiction. Fictional — SC-6.
-# Expected vulnerability 12: age 75-84 (2) + lives alone (2) + cardiovascular (2)
-#   + renal (2) + diuretic (2) + ace_arb (1) + beta_blocker (1).
-# Generic heat guidance: "drink plenty of fluids." For Victor this is backwards.
-# Too little fluid strains the kidneys; too much strains the heart. His furosemide
-# increases loss, his ramipril blunts thirst, and his bisoprolol reduces the signal
-# that he is working hard. So he will dehydrate and not know it OR over-drink and
-# overload his heart. The interaction renal_and_cardiovascular fires and tells him
-# the exact amount his GP will settle today, not a public figure. A generic alert
-# that triggers "drink more" could kill him.
+# Enriched: respiratory added (cor pulmonale — right heart failure from chronic
+# lung disease — is a very common endpoint of the cardiovascular + renal + COPD
+# triad in men in their late 70s). citalopram added (SSRI prescribed for the
+# depression that accompanies multi-morbidity at this level; it also lowers sodium,
+# adding a fourth electrolyte risk on top of the diuretic+ACE combination).
+# Victor now has a fully realistic late-stage multi-morbidity presentation where
+# every piece of standard advice — drink more, go for a walk, get some fresh air —
+# could be harmful for a specific clinical reason.
+# Score: age 75-84 (2) + lives alone (2) + cardiovascular (2) + renal (2)
+#   + respiratory (1) + diuretic (2) + ace_arb (1) + beta_blocker (1) + ssri (1) = 14
 id: victor
 name: Victor
 age_band: b75_84
 lives_alone: true
 mobility_limited: false
-conditions: [cardiovascular, renal]
+conditions: [cardiovascular, renal, respiratory]
 medications:
   - drug_name: furosemide
     drug_class: diuretic
@@ -21,6 +22,8 @@ medications:
     drug_class: ace_arb
   - drug_name: bisoprolol
     drug_class: beta_blocker
+  - drug_name: citalopram
+    drug_class: ssri
 place:
   postcode: MK40 3CD
   dwelling_type: flat

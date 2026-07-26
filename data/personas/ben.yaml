@@ -1,19 +1,24 @@
 # Breadth beyond the very old. Fictional — SC-6.
-# Expected vulnerability 2: lives alone (2) only — a deliberately LOW score.
-# Ben is the case a vulnerability number alone would rank as safe and skip. But
-# insulin degrades above 25C, and a degraded supply is a life/death failure that
-# arrives with no symptom until it is too late. The heat_sensitive_storage
-# interaction fires at tier Low regardless of age, so the plan reaches him when a
-# risk score would not. This is why the intervention is not only an elderly tool.
+# Enriched: cardiovascular added (Type 1 diabetes carries a 2–4x elevated CVD
+# risk; hypertension is present in ~60% of T1D adults by their 40s). lisinopril
+# added (standard renal-protective ACE inhibitor in diabetic nephropathy; it also
+# blunts thirst in heat — so he is less likely to notice dehydration affecting his
+# insulin sensitivity). The low vulnerability score (4) still proves the point:
+# a number alone would skip him, but heat_sensitive_storage fires at tier Low
+# regardless, and diuretic_and_ace fires on his medication pair. Two interactions
+# reached by following the person, not the tier.
+# Score: lives alone (2) + cardiovascular (2) + ace_arb (1) = 5
 id: ben
 name: Ben
 age_band: under_65
 lives_alone: true
 mobility_limited: false
-conditions: []
+conditions: [cardiovascular]
 medications:
   - drug_name: insulin glargine
     drug_class: heat_sensitive
+  - drug_name: lisinopril
+    drug_class: ace_arb
 place:
   postcode: MK44 1JK
   dwelling_type: house

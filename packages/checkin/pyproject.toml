@@ -3,7 +3,13 @@ name = "climatise-checkin"
 version = "0.1.0"
 description = "Voice check-in scripting over a closed utterance set."
 requires-python = ">=3.13"
-dependencies = ["climatise-contracts", "climatise-core"]
+dependencies = [
+  "climatise-contracts",
+  "climatise-core",
+  "pywebpush>=2.3,<3",
+  "cryptography>=44",
+  "python-dotenv>=1.2,<2",
+]
 
 [build-system]
 requires = ["hatchling"]

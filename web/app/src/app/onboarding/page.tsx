@@ -12,6 +12,13 @@ import {
   StepProgress,
 } from '@/components/ui'
 import { newProfileId, saveProfile } from '@/lib/client-store'
+import {
+  DEMO_NHS_NUMBERS,
+  factorsFromRecord,
+  knownMedClasses,
+  lookupRecord,
+  type NhsRecord,
+} from '@/lib/nhs'
 import { FACTOR_GROUPS, factorLabel, type Profile } from '@/lib/profile'
 import { REGIONS, regionByCode } from '@/lib/regions'
 import { assessRisk, bandLabel, BAND_COLOURS } from '@/lib/risk'
@@ -30,7 +37,7 @@ import type { RegionWeather } from '@/lib/weather'
  * anything personal, which is the point at which people decide to trust it.
  */
 
-type StepId = 'intro' | 'name' | 'location' | 'factors' | 'notes' | 'review'
+type StepId = 'intro' | 'nhs' | 'name' | 'location' | 'factors' | 'notes' | 'review'
 
 /**
  * Only these four carry a "step N of 4" label — the intro and the review are
@@ -48,8 +55,17 @@ export default function OnboardingPage() {
   const [outward, setOutward] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [factors, setFactors] = useState<string[]>([])
+  const [medClasses, setMedClasses] = useState<string[]>([])
   const [noneApply, setNoneApply] = useState(false)
   const [notes, setNotes] = useState('')
+
+  // NHS record import. `imported` is kept after the step is left so the review
+  // screen can say where the answers came from — a tick someone did not make
+  // themselves should be attributed.
+  const [nhsInput, setNhsInput] = useState('')
+  const [nhsError, setNhsError] = useState<string | null>(null)
+  const [found, setFound] = useState<NhsRecord | null>(null)
+  const [imported, setImported] = useState<NhsRecord | null>(null)
 
   const [lookingUp, setLookingUp] = useState(false)
   const [lookupError, setLookupError] = useState<string | null>(null)
@@ -129,6 +145,29 @@ export default function OnboardingPage() {
     void loadWeather(code)
   }
 
+  function findRecord() {
+    const { record, error } = lookupRecord(nhsInput)
+    setFound(record)
+    setNhsError(error)
+  }
+
+  /**
+   * Take the record's answers and carry on at the location step.
+   *
+   * The postcode is filled but still confirmed rather than accepted silently: a
+   * record holds where someone is registered, which is not always where they
+   * sleep, and the whole indoor model hangs off that address.
+   */
+  function useRecord(record: NhsRecord) {
+    setImported(record)
+    setName(record.name.split(' ')[0])
+    setPostcode(record.postcode)
+    setFactors(factorsFromRecord(record))
+    setMedClasses(knownMedClasses(record))
+    setNoneApply(false)
+    go('location')
+  }
+
   function toggleFactor(id: string) {
     setNoneApply(false)
     setFactors((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]))
@@ -151,6 +190,7 @@ export default function OnboardingPage() {
       regionCode,
       postcodeOutward: outward || undefined,
       factors,
+      medClasses: medClasses.length ? medClasses : undefined,
       notes: notes.trim() || undefined,
       createdAt: new Date().toISOString(),
     }
@@ -206,7 +246,120 @@ export default function OnboardingPage() {
                 </li>
               ))}
             </ul>
-            <StepActions onNext={() => go('name')} nextLabel="Start" />
+            <StepActions onNext={() => go('nhs')} nextLabel="Start" />
+          </Step>
+        )}
+
+        {step === 'nhs' && (
+          <Step
+            title="Bring in your NHS record?"
+            intro="It fills in your conditions and medicines so you don't have to remember them. You can type everything yourself instead."
+          >
+            <p
+              className="mb-4 rounded-lg border px-3.5 py-2.5 text-[14px]"
+              style={{ borderColor: 'var(--line-strong)', color: 'var(--ink-soft)' }}
+            >
+              <strong>This is a demonstration.</strong> There is no real NHS
+              connection here. Use one of the test numbers below to see how it would
+              work.
+            </p>
+
+            <label htmlFor="nhs" className="mb-2 block font-medium">
+              NHS number
+            </label>
+            <input
+              id="nhs"
+              data-step-focus
+              value={nhsInput}
+              onChange={(e) => {
+                setNhsInput(e.target.value)
+                setNhsError(null)
+                setFound(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') findRecord()
+              }}
+              placeholder="999 000 0001"
+              inputMode="numeric"
+              enterKeyHint="search"
+              className="field"
+            />
+            {nhsError && <FieldError>{nhsError}</FieldError>}
+
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {DEMO_NHS_NUMBERS.map((number) => (
+                <button
+                  key={number}
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ minHeight: 'auto', padding: '0.35rem 0.6rem', fontSize: '13px' }}
+                  onClick={() => {
+                    setNhsInput(number)
+                    setNhsError(null)
+                    setFound(lookupRecord(number).record)
+                  }}
+                >
+                  {number}
+                </button>
+              ))}
+            </div>
+
+            {!found && (
+              <button type="button" className="btn btn-primary mt-4" onClick={findRecord}>
+                Find my record
+              </button>
+            )}
+
+            {found && (
+              <div className="card mt-4 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] faint">
+                  Record found
+                </p>
+                <p className="mt-1.5 text-[16px] font-semibold">{found.name}</p>
+                <p className="text-[13.5px] muted">
+                  {found.gpPractice} · {found.postcode} · updated {found.lastUpdated}
+                </p>
+
+                <dl className="mt-3 space-y-2 text-[14px]">
+                  <div>
+                    <dt className="text-[12px] faint">Conditions</dt>
+                    <dd>
+                      {found.conditions.length
+                        ? found.conditions.map(factorLabel).join(' · ')
+                        : 'None recorded'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[12px] faint">Repeat prescriptions</dt>
+                    <dd>{found.medicines.length ? found.medicines.join(' · ') : 'None recorded'}</dd>
+                  </div>
+                </dl>
+
+                {found.conditions.length === 0 && (
+                  /* SC-7. An empty record is thin evidence, not evidence of safety,
+                     and someone shown "nothing found" reads it as "I'm fine". */
+                  <p className="mt-3 text-[13px] muted">
+                    Nothing is coded on this record. That does not mean there is no
+                    risk — age and housing matter too, so the next questions still
+                    apply.
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  className="btn btn-primary mt-4"
+                  onClick={() => useRecord(found)}
+                >
+                  Use these details
+                </button>
+              </div>
+            )}
+
+            <StepActions
+              onBack={() => go('intro')}
+              onNext={() => go('name')}
+              nextLabel="I'll type it myself"
+            />
           </Step>
         )}
 
@@ -232,7 +385,7 @@ export default function OnboardingPage() {
               className="field"
             />
             <StepActions
-              onBack={() => go('intro')}
+              onBack={() => go('nhs')}
               onNext={() => go('location')}
               nextDisabled={!name.trim()}
             />

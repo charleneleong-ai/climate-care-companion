@@ -486,3 +486,112 @@
 .tag-interaction { color: #0b7b77; }
 .tag-self_report { color: #a8641c; }
 .tag-reason_code { display: none; }
+
+/* ── App chrome ──────────────────────────────────────────────────────────────
+ *
+ * An installed PWA draws edge to edge, so every fixed element pays the safe-area
+ * inset itself. Without this the tab bar sits under the iPhone home indicator
+ * and the tabs cannot be tapped at all — which reads as a broken app rather
+ * than a styling slip.
+ */
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-top: env(safe-area-inset-top);
+  background: color-mix(in oklab, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(1.6) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.app-bar-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem 0.7rem;
+}
+
+.app-eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.app-title {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.011em;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.app-body {
+  flex: 1;
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1.1rem 1.25rem;
+  /* Clear the tab bar plus the home indicator, or the last card is unreadable. */
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.app-tabs {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem calc(0.3rem + env(safe-area-inset-bottom));
+  background: color-mix(in oklab, var(--paper) 92%, transparent);
+  backdrop-filter: saturate(1.6) blur(12px);
+  border-top: 1px solid var(--line);
+}
+
+.app-tab {
+  flex: 1 1 0;
+  max-width: 8rem;
+  min-height: var(--tap);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.3rem 0.25rem;
+  border-radius: var(--radius);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  text-decoration: none;
+  /* NFR-07: the active tab is not signalled by colour alone. */
+  border-top: 2px solid transparent;
+}
+
+.app-tab.is-active {
+  color: var(--accent);
+  font-weight: 680;
+  border-top-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.app-tab:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-tab { transition: background-color 120ms ease, color 120ms ease; }
+}
