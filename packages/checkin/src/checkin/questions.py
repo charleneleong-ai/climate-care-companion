@@ -60,7 +60,6 @@ class Question:
     red_flag_when: bool
 
 
-
 @dataclass(frozen=True, slots=True)
 class Questionnaire:
     """One person's questions for one window.
@@ -102,7 +101,6 @@ class Questionnaire:
             drinking_fluids=fields_set.get("drinking_fluids"),
             red_flags=tuple(red_flags),
         )
-
 
 
 class QuestionBank:
@@ -183,9 +181,7 @@ class QuestionBank:
         codes = {reason.code for reason in assessment.reasons}
         return Register.SIMPLE if ReasonCode.DEMENTIA in codes else Register.STANDARD
 
-    def build_for(
-        self, person_id: str, window: DateRange, assessment: Assessment
-    ) -> Questionnaire:
+    def build_for(self, person_id: str, window: DateRange, assessment: Assessment) -> Questionnaire:
         register = self.register_for(assessment)
         if assessment.tier is Tier.LOW:
             return Questionnaire(person_id, window, register, ())

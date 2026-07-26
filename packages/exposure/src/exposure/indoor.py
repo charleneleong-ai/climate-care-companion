@@ -20,20 +20,14 @@ class IndoorModel:
         self.self_report_offset = self_report_offset
 
     @staticmethod
-    def night(
-        outdoor_night_min: float, outdoor_day_max: float, dwelling_offset: float
-    ) -> float:
+    def night(outdoor_night_min: float, outdoor_day_max: float, dwelling_offset: float) -> float:
         return 0.6 * outdoor_night_min + 0.4 * outdoor_day_max + dwelling_offset
 
     @staticmethod
-    def day(
-        outdoor_night_min: float, outdoor_day_max: float, dwelling_offset: float
-    ) -> float:
+    def day(outdoor_night_min: float, outdoor_day_max: float, dwelling_offset: float) -> float:
         return 0.3 * outdoor_night_min + 0.55 * outdoor_day_max + dwelling_offset + 2
 
-    def apply_self_report(
-        self, features: ExposureFeatures, report: SelfReport
-    ) -> ExposureFeatures:
+    def apply_self_report(self, features: ExposureFeatures, report: SelfReport) -> ExposureFeatures:
         """Correct the modelled estimate with what the person actually said.
 
         Red flags and no-answer are NOT handled here. They escalate at L4 and never

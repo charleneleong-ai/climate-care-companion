@@ -15,8 +15,8 @@ BEDFORD_19_JULY_2025 = ExposureFeatures(
     peak_apparent=29.0,
     peak_air=29.0,
     hours_above_26=7,
-    indoor_night_est=24.6,     # 0.6(17) + 0.4(29) + 2.8
-    indoor_day_est=25.85,      # 0.3(17) + 0.55(29) + 2.8 + 2
+    indoor_night_est=24.6,  # 0.6(17) + 0.4(29) + 2.8
+    indoor_day_est=25.85,  # 0.3(17) + 0.55(29) + 2.8 + 2
     spell_day=3,
     # No heat-health alert was issued in any region during Episode 4.
     # That is the entire point of this fixture.

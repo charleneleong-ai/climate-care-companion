@@ -26,6 +26,4 @@ class Predictor(Protocol):
     the import graph, not by convention.
     """
 
-    def forecast(
-        self, daily_peaks: Sequence[float], horizon_days: int
-    ) -> EpisodeForecast: ...
+    def forecast(self, daily_peaks: Sequence[float], horizon_days: int) -> EpisodeForecast: ...

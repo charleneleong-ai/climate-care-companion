@@ -30,6 +30,7 @@ RECIPIENT = "+447700900000"
 
 # ---------------------------------------------------------------- addressing
 
+
 def test_whatsapp_addresses_are_prefixed_and_sms_addresses_are_not():
     assert TwilioTransport.WHATSAPP.address(RECIPIENT) == f"whatsapp:{RECIPIENT}"
     assert TwilioTransport.SMS.address(RECIPIENT) == RECIPIENT
@@ -49,6 +50,7 @@ def test_the_same_message_goes_to_either_transport_unchanged():
 
 
 # ------------------------------------------------------------------ outbound
+
 
 def test_without_a_content_sid_a_question_is_plain_numbered_text():
     """Not a degraded mode — it is what SMS uses, and it works on WhatsApp with no
@@ -93,6 +95,7 @@ def test_an_unbound_template_still_refuses_to_send():
 
 # ------------------------------------------------------------------- inbound
 
+
 def test_a_tapped_button_is_read_from_button_payload():
     """ButtonPayload is invisible to the user and carries the question code, so a
     late reply cannot be misfiled."""
@@ -132,6 +135,7 @@ def test_a_webhook_with_no_sender_raises():
 
 # -------------------------------------------------------- webhook signatures
 
+
 def twilio_signature(url: str, params: dict[str, str], token: str) -> str:
     payload = url + "".join(f"{k}{params[k]}" for k in sorted(params))
     return base64.b64encode(
@@ -170,6 +174,7 @@ def test_the_wrong_auth_token_invalidates_the_signature():
 
 
 # --------------------------------------------------------------- SC-6 guards
+
 
 def test_dry_run_twilio_is_a_conversation_channel():
     assert isinstance(DryRunTwilio(), ConversationChannel)
@@ -214,7 +219,9 @@ def test_the_allowlist_check_ignores_the_whatsapp_prefix():
 
 def test_the_messages_url_targets_the_account():
     channel = TwilioChannel(
-        account_sid="AC123", auth_token="t", sender=SENDER,
+        account_sid="AC123",
+        auth_token="t",
+        sender=SENDER,
         allowed_recipients=frozenset({RECIPIENT}),
     )
     assert channel.url == "https://api.twilio.com/2010-04-01/Accounts/AC123/Messages.json"

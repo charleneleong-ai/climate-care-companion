@@ -104,17 +104,18 @@ a layer boundary.
 
 ```python
 @dataclass(frozen=True, slots=True)
-class ExposureFeatures:          # L1 → L3. The only thing L3 knows about weather.
+class ExposureFeatures:  # L1 → L3. The only thing L3 knows about weather.
     date: date
     overnight_min: float
     peak_apparent: float
     peak_air: float
     hours_above_26: int
-    indoor_night_est: float      # modelled — SC-5
-    indoor_day_est: float        # modelled — SC-5
+    indoor_night_est: float  # modelled — SC-5
+    indoor_day_est: float  # modelled — SC-5
     spell_day: int
-    alert_level: AlertLevel      # includes NOT_CHECKED per FR-12
-    source: ExposureSource       # LIVE | ARCHIVE | CACHE — provenance, not a mode switch
+    alert_level: AlertLevel  # includes NOT_CHECKED per FR-12
+    source: ExposureSource  # LIVE | ARCHIVE | CACHE — provenance, not a mode switch
+
 
 @dataclass(frozen=True, slots=True)
 class Reason:
@@ -123,8 +124,9 @@ class Reason:
     explanation: str
     weight: int
 
+
 @dataclass(frozen=True, slots=True)
-class Assessment:                # L3 → everything downstream
+class Assessment:  # L3 → everything downstream
     tier: Tier
     risk_score: float
     exposure_score: int
@@ -184,11 +186,11 @@ than a point forecast:
 @dataclass(frozen=True, slots=True)
 class EpisodeForecast:
     horizon_days: int
-    p_onset: float             # P(episode threshold met), from ensemble member fraction
+    p_onset: float  # P(episode threshold met), from ensemble member fraction
     expected_peak: float
     expected_duration_days: int
-    ensemble_spread: float     # model disagreement, i.e. confidence
-    lead_time_hours: int       # the number a council actually acts on
+    ensemble_spread: float  # model disagreement, i.e. confidence
+    lead_time_hours: int  # the number a council actually acts on
 ```
 
 The episode threshold matches the UKHSA definition already encoded in the national-view
@@ -245,10 +247,10 @@ class SelfReport:
     person_id: str
     window: DateRange
     answered: bool
-    bedroom_feels_hot: bool | None     # corrects the modelled indoor estimate
+    bedroom_feels_hot: bool | None  # corrects the modelled indoor estimate
     drinking_fluids: bool | None
-    red_flags: tuple[RedFlag, ...]     # SC-3 set only
-    transcript_ref: str | None         # pointer, not content
+    red_flags: tuple[RedFlag, ...]  # SC-3 set only
+    transcript_ref: str | None  # pointer, not content
 ```
 
 Two distinct paths, and keeping them distinct is what preserves L3:

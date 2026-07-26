@@ -8,6 +8,4 @@ class LearnedIndoor:
     """
 
     def estimate(self, *args: object, **kwargs: object) -> None:
-        raise NotImplementedError(
-            "Track B owns this. Needs sensor data — deferred to v0.3."
-        )
+        raise NotImplementedError("Track B owns this. Needs sensor data — deferred to v0.3.")

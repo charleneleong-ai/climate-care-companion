@@ -25,9 +25,19 @@ MAX_SEGMENTS = 2
 """A check-in question that needs three fragments is too long to answer."""
 
 REPLY_TOKENS: dict[str, bool | None] = {
-    "yes": True, "y": True, "1": True, "yeah": True, "yep": True,
-    "no": False, "n": False, "2": False, "nope": False,
-    "unsure": None, "3": None, "dunno": None, "?": None,
+    "yes": True,
+    "y": True,
+    "1": True,
+    "yeah": True,
+    "yep": True,
+    "no": False,
+    "n": False,
+    "2": False,
+    "nope": False,
+    "unsure": None,
+    "3": None,
+    "dunno": None,
+    "?": None,
 }
 """Deliberately generous on the yes/no side. Someone typing on a numeric keypad at
 eighty-eight will not match a strict grammar, and a rejected reply reads to them as

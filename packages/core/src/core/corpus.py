@@ -121,8 +121,7 @@ class Corpus:
     def read_med_classes(path: Path) -> dict[str, MedClass]:
         with path.open(newline="") as fh:
             return {
-                row["drug_name"].lower(): MedClass(row["drug_class"])
-                for row in csv.DictReader(fh)
+                row["drug_name"].lower(): MedClass(row["drug_class"]) for row in csv.DictReader(fh)
             }
 
     def check_reason_text_complete(self) -> None:

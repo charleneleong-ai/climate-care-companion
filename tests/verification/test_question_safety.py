@@ -35,9 +35,14 @@ def test_every_question_is_answerable_yes_or_no(bank):
         for text in (row.text, row.text_simple):
             assert text.rstrip().endswith("?"), f"{row.code} is not a question: {text!r}"
             opener = text.split()[0].lower()
-            assert opener not in {"what", "how", "why", "when", "where", "who"}, (
-                f"{row.code} is open-ended and cannot be answered yes or no: {text!r}"
-            )
+            assert opener not in {
+                "what",
+                "how",
+                "why",
+                "when",
+                "where",
+                "who",
+            }, f"{row.code} is open-ended and cannot be answered yes or no: {text!r}"
 
 
 def test_every_question_has_both_registers(bank):
@@ -63,9 +68,9 @@ def test_the_simplified_phrasing_is_a_single_clause(bank):
         simple = row.text_simple
         assert "," not in simple, f"{row.code}'s simplified phrasing has a second clause"
         for word in SUBORDINATORS:
-            assert word not in simple.lower(), (
-                f"{row.code}'s simplified phrasing subordinates on {word.strip()!r}"
-            )
+            assert (
+                word not in simple.lower()
+            ), f"{row.code}'s simplified phrasing subordinates on {word.strip()!r}"
 
 
 @pytest.mark.parametrize("flag", sorted(SELF_REPORTABLE_FLAGS), ids=lambda f: f.name)
@@ -85,7 +90,10 @@ def test_red_flag_screens_survive_the_length_cap(bank):
     """A truncated questionnaire must never be how an SC-3 screen goes unasked."""
     every_code = tuple(ReasonCode)
     assessment = Assessment(
-        tier=Tier.SEVERE, risk_score=20.0, exposure_score=8, vulnerability_score=15,
+        tier=Tier.SEVERE,
+        risk_score=20.0,
+        exposure_score=8,
+        vulnerability_score=15,
         reasons=tuple(Reason(c, "t", "e", 1) for c in every_code),
     )
     from contracts import DateRange
@@ -116,5 +124,3 @@ def test_a_question_writing_to_an_unknown_field_refuses_to_load(tmp_path):
     )
     with pytest.raises(ValueError, match="not a SelfReport field"):
         QuestionBank.load(path)
-
-

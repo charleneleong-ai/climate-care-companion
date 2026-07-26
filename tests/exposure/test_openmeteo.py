@@ -95,8 +95,7 @@ def test_a_timeout_falls_back_to_cache_and_says_so():
     client.http = FakeHttp(fail=True)
     fallback = client.fetch(52.13, -0.46, NOW)
     assert fallback.source is ExposureSource.CACHE
-    assert fallback.daily_air_max == {"2025-07-19": 26.0, "2025-07-20": 26.0,
-                                      "2025-07-21": 26.0}
+    assert fallback.daily_air_max == {"2025-07-19": 26.0, "2025-07-20": 26.0, "2025-07-21": 26.0}
 
 
 def test_a_first_fetch_that_fails_has_nothing_to_fall_back_to():

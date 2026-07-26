@@ -174,14 +174,31 @@ import pytest
 from contracts import AgeBand, ExposureSource, MedClass, ReasonCode, Tier
 
 EXPOSURE_CODES = {
-    "NIGHT_NO_RECOVERY", "BEDROOM_UNSAFE", "BEDROOM_WARM", "PEAK_HEAT",
-    "SUSTAINED_SPELL", "INDOOR_BELOW_18", "INDOOR_BELOW_16", "INDOOR_BELOW_12",
+    "NIGHT_NO_RECOVERY",
+    "BEDROOM_UNSAFE",
+    "BEDROOM_WARM",
+    "PEAK_HEAT",
+    "SUSTAINED_SPELL",
+    "INDOOR_BELOW_18",
+    "INDOOR_BELOW_16",
+    "INDOOR_BELOW_12",
 }
 VULNERABILITY_CODES = {
-    "AGE_85_PLUS", "AGE_75_84", "LIVES_ALONE", "DEMENTIA", "CARDIOVASCULAR",
-    "RENAL", "RESPIRATORY", "MOBILITY_LIMITED", "MED_LITHIUM", "MED_DIURETIC",
-    "MED_ANTICHOLINERGIC", "MED_ANTIPSYCHOTIC", "MED_ACE_ARB",
-    "MED_BETA_BLOCKER", "MED_SSRI",
+    "AGE_85_PLUS",
+    "AGE_75_84",
+    "LIVES_ALONE",
+    "DEMENTIA",
+    "CARDIOVASCULAR",
+    "RENAL",
+    "RESPIRATORY",
+    "MOBILITY_LIMITED",
+    "MED_LITHIUM",
+    "MED_DIURETIC",
+    "MED_ANTICHOLINERGIC",
+    "MED_ANTIPSYCHOTIC",
+    "MED_ACE_ARB",
+    "MED_BETA_BLOCKER",
+    "MED_SSRI",
 }
 
 
@@ -201,8 +218,14 @@ def test_exposure_source_records_provenance(member):
 
 def test_med_classes_cover_spec_8_3():
     assert {c.name for c in MedClass} >= {
-        "DIURETIC", "ANTICHOLINERGIC", "BETA_BLOCKER", "ACE_ARB",
-        "ANTIPSYCHOTIC", "SSRI", "LITHIUM", "HEAT_SENSITIVE",
+        "DIURETIC",
+        "ANTICHOLINERGIC",
+        "BETA_BLOCKER",
+        "ACE_ARB",
+        "ANTIPSYCHOTIC",
+        "SSRI",
+        "LITHIUM",
+        "HEAT_SENSITIVE",
     }
 
 
@@ -278,11 +301,12 @@ class AlertLevel(StrEnum):
     YELLOW = auto()
     AMBER = auto()
     RED = auto()
-    NOT_CHECKED = auto()      # FR-12 graceful degradation
+    NOT_CHECKED = auto()  # FR-12 graceful degradation
 
 
 class ExposureSource(StrEnum):
     """Provenance only. Never changes behaviour — see AC-5."""
+
     LIVE = auto()
     ARCHIVE = auto()
     CACHE = auto()
@@ -318,6 +342,7 @@ class MedClass(StrEnum):
 
 class RedFlag(StrEnum):
     """SC-3 clinical red flags. This set only — nothing else routes to 999."""
+
     UNROUSABLE = auto()
     CONFUSION = auto()
     NO_URINE_OUTPUT = auto()
@@ -328,7 +353,7 @@ class OrgType(StrEnum):
     COUNCIL = auto()
     HOSPITAL = auto()
     CARE_HOME = auto()
-    ICB = auto()              # declared, unimplemented
+    ICB = auto()  # declared, unimplemented
 
 
 class DwellingType(StrEnum):
@@ -348,13 +373,31 @@ class Aspect(StrEnum):
 ```python
 # packages/contracts/src/contracts/__init__.py
 from contracts.enums import (
-    AgeBand, AlertLevel, Aspect, Condition, DwellingType, ExposureSource,
-    MedClass, OrgType, RedFlag, ReasonCode, Tier,
+    AgeBand,
+    AlertLevel,
+    Aspect,
+    Condition,
+    DwellingType,
+    ExposureSource,
+    MedClass,
+    OrgType,
+    RedFlag,
+    ReasonCode,
+    Tier,
 )
 
 __all__ = [
-    "AgeBand", "AlertLevel", "Aspect", "Condition", "DwellingType",
-    "ExposureSource", "MedClass", "OrgType", "RedFlag", "ReasonCode", "Tier",
+    "AgeBand",
+    "AlertLevel",
+    "Aspect",
+    "Condition",
+    "DwellingType",
+    "ExposureSource",
+    "MedClass",
+    "OrgType",
+    "RedFlag",
+    "ReasonCode",
+    "Tier",
 ]
 ```
 
@@ -392,8 +435,16 @@ from datetime import date
 
 import pytest
 from contracts import (
-    AgeBand, AlertLevel, Assessment, ExposureFeatures, ExposureSource,
-    Person, Reason, ReasonCode, Tier, VulnerabilityProfile,
+    AgeBand,
+    AlertLevel,
+    Assessment,
+    ExposureFeatures,
+    ExposureSource,
+    Person,
+    Reason,
+    ReasonCode,
+    Tier,
+    VulnerabilityProfile,
 )
 
 MODELS = [ExposureFeatures, Assessment, Person, Reason, VulnerabilityProfile]
@@ -406,8 +457,9 @@ def test_models_are_frozen_and_slotted(model):
 
 
 def test_assessment_reasons_is_a_tuple_and_cannot_be_mutated():
-    a = Assessment(tier=Tier.LOW, risk_score=0.0, exposure_score=0,
-                   vulnerability_score=7, reasons=())
+    a = Assessment(
+        tier=Tier.LOW, risk_score=0.0, exposure_score=0, vulnerability_score=7, reasons=()
+    )
     assert isinstance(a.reasons, tuple)
     with pytest.raises(dataclasses.FrozenInstanceError):
         a.tier = Tier.SEVERE
@@ -415,9 +467,15 @@ def test_assessment_reasons_is_a_tuple_and_cannot_be_mutated():
 
 def test_exposure_features_carries_provenance_and_alert():
     e = ExposureFeatures(
-        date=date(2025, 7, 19), overnight_min=17.0, peak_apparent=29.0,
-        peak_air=29.0, hours_above_26=6, indoor_night_est=24.6,
-        indoor_day_est=25.85, spell_day=3, alert_level=AlertLevel.NONE,
+        date=date(2025, 7, 19),
+        overnight_min=17.0,
+        peak_apparent=29.0,
+        peak_air=29.0,
+        hours_above_26=6,
+        indoor_night_est=24.6,
+        indoor_day_est=25.85,
+        spell_day=3,
+        alert_level=AlertLevel.NONE,
         source=ExposureSource.FIXTURE,
     )
     assert e.source is ExposureSource.FIXTURE
@@ -425,8 +483,9 @@ def test_exposure_features_carries_provenance_and_alert():
 
 
 def test_person_collections_default_to_empty_not_none():
-    p = Person(id="p1", name="Doris", age_band=AgeBand.B85_PLUS,
-               lives_alone=True, mobility_limited=False)
+    p = Person(
+        id="p1", name="Doris", age_band=AgeBand.B85_PLUS, lives_alone=True, mobility_limited=False
+    )
     assert p.medications == ()
     assert p.conditions == ()
 ```
@@ -444,8 +503,16 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from contracts.enums import (
-    AgeBand, AlertLevel, Aspect, Condition, DwellingType, ExposureSource,
-    MedClass, RedFlag, ReasonCode, Tier,
+    AgeBand,
+    AlertLevel,
+    Aspect,
+    Condition,
+    DwellingType,
+    ExposureSource,
+    MedClass,
+    RedFlag,
+    ReasonCode,
+    Tier,
 )
 
 
@@ -491,13 +558,14 @@ class Place:
 @dataclass(frozen=True, slots=True)
 class ExposureFeatures:
     """L1 to L3. The only thing the scoring core knows about weather."""
+
     date: date
     overnight_min: float
     peak_apparent: float
     peak_air: float
     hours_above_26: int
-    indoor_night_est: float      # modelled — SC-5
-    indoor_day_est: float        # modelled — SC-5
+    indoor_night_est: float  # modelled — SC-5
+    indoor_day_est: float  # modelled — SC-5
     spell_day: int
     alert_level: AlertLevel
     source: ExposureSource
@@ -521,6 +589,7 @@ class VulnerabilityProfile:
 @dataclass(frozen=True, slots=True)
 class Assessment:
     """L3 output. AC-2: nothing downstream re-derives risk from raw exposure."""
+
     tier: Tier
     risk_score: float
     exposure_score: int
@@ -531,13 +600,14 @@ class Assessment:
 @dataclass(frozen=True, slots=True)
 class SelfReport:
     """Voice check-in outcome. Never enters risk fusion — see spec section 6."""
+
     person_id: str
     window: DateRange
     answered: bool
     bedroom_feels_hot: bool | None = None
     drinking_fluids: bool | None = None
     red_flags: tuple[RedFlag, ...] = field(default=())
-    transcript_ref: str | None = None      # pointer, never content
+    transcript_ref: str | None = None  # pointer, never content
 ```
 
 Add every new name to `contracts/__init__.py`'s import block and `__all__`.
@@ -609,10 +679,16 @@ def test_medication_actions_never_advise_altering_a_prescription(corpus):
 
 @pytest.mark.parametrize(
     "drug,expected",
-    [("furosemide", MedClass.DIURETIC), ("ramipril", MedClass.ACE_ARB),
-     ("lithium carbonate", MedClass.LITHIUM), ("oxybutynin", MedClass.ANTICHOLINERGIC),
-     ("bisoprolol", MedClass.BETA_BLOCKER), ("sertraline", MedClass.SSRI),
-     ("olanzapine", MedClass.ANTIPSYCHOTIC), ("insulin", MedClass.HEAT_SENSITIVE)],
+    [
+        ("furosemide", MedClass.DIURETIC),
+        ("ramipril", MedClass.ACE_ARB),
+        ("lithium carbonate", MedClass.LITHIUM),
+        ("oxybutynin", MedClass.ANTICHOLINERGIC),
+        ("bisoprolol", MedClass.BETA_BLOCKER),
+        ("sertraline", MedClass.SSRI),
+        ("olanzapine", MedClass.ANTIPSYCHOTIC),
+        ("insulin", MedClass.HEAT_SENSITIVE),
+    ],
 )
 def test_classify_resolves_spec_8_3_examples(corpus, drug, expected):
     assert corpus.classify(drug) is expected
@@ -728,8 +804,10 @@ class Corpus:
         raw = yaml.safe_load(path.read_text()) or {}
         return {
             ReasonCode(key): Reason(
-                code=ReasonCode(key), title=value["title"],
-                explanation=value["explanation"].strip(), weight=0,
+                code=ReasonCode(key),
+                title=value["title"],
+                explanation=value["explanation"].strip(),
+                weight=0,
             )
             for key, value in raw.items()
         }
@@ -738,8 +816,13 @@ class Corpus:
     def read_actions(path: Path) -> tuple[ActionRow, ...]:
         with path.open() as fh:
             return tuple(
-                ActionRow(row["reason_code"], row["tier_min"], row["text"],
-                          row["escalate_to"], int(row["ordering"]))
+                ActionRow(
+                    row["reason_code"],
+                    row["tier_min"],
+                    row["text"],
+                    row["escalate_to"],
+                    int(row["ordering"]),
+                )
                 for row in csv.DictReader(fh)
             )
 
@@ -747,8 +830,7 @@ class Corpus:
     def read_med_classes(path: Path) -> dict[str, MedClass]:
         with path.open() as fh:
             return {
-                row["drug_name"].lower(): MedClass(row["drug_class"])
-                for row in csv.DictReader(fh)
+                row["drug_name"].lower(): MedClass(row["drug_class"]) for row in csv.DictReader(fh)
             }
 
     def actions_for(self, code: ReasonCode) -> tuple[ActionRow, ...]:
@@ -794,13 +876,17 @@ from core.vulnerability import VulnerabilityScorer
 
 
 def person(**kw) -> Person:
-    base = dict(id="p", name="P", age_band=AgeBand.UNDER_65,
-                lives_alone=False, mobility_limited=False)
+    base = dict(
+        id="p", name="P", age_band=AgeBand.UNDER_65, lives_alone=False, mobility_limited=False
+    )
     return Person(**(base | kw))
 
 
 DORIS = person(
-    id="doris", name="Doris", age_band=AgeBand.B85_PLUS, lives_alone=True,
+    id="doris",
+    name="Doris",
+    age_band=AgeBand.B85_PLUS,
+    lives_alone=True,
     conditions=(Condition.DEMENTIA,),
     medications=(Med("furosemide", MedClass.DIURETIC), Med("ramipril", MedClass.ACE_ARB)),
 )
@@ -815,15 +901,17 @@ def test_doris_scores_ten_per_spec_8_6(scorer):
     p = scorer.profile(DORIS)
     assert p.score == 10
     assert set(p.codes) == {
-        ReasonCode.AGE_85_PLUS, ReasonCode.LIVES_ALONE, ReasonCode.DEMENTIA,
-        ReasonCode.MED_DIURETIC, ReasonCode.MED_ACE_ARB,
+        ReasonCode.AGE_85_PLUS,
+        ReasonCode.LIVES_ALONE,
+        ReasonCode.DEMENTIA,
+        ReasonCode.MED_DIURETIC,
+        ReasonCode.MED_ACE_ARB,
     }
 
 
 @pytest.mark.parametrize(
     "band,code,weight",
-    [(AgeBand.B85_PLUS, ReasonCode.AGE_85_PLUS, 3),
-     (AgeBand.B75_84, ReasonCode.AGE_75_84, 2)],
+    [(AgeBand.B85_PLUS, ReasonCode.AGE_85_PLUS, 3), (AgeBand.B75_84, ReasonCode.AGE_75_84, 2)],
 )
 def test_age_bands_score_per_spec_8_2(scorer, band, code, weight):
     p = scorer.profile(person(age_band=band))
@@ -837,10 +925,14 @@ def test_age_bands_are_mutually_exclusive(scorer):
 
 def test_medication_scores_on_class_not_drug_name(scorer):
     """FR-14. Two different diuretics are still one diuretic flag."""
-    p = scorer.profile(person(medications=(
-        Med("furosemide", MedClass.DIURETIC),
-        Med("bendroflumethiazide", MedClass.DIURETIC),
-    )))
+    p = scorer.profile(
+        person(
+            medications=(
+                Med("furosemide", MedClass.DIURETIC),
+                Med("bendroflumethiazide", MedClass.DIURETIC),
+            )
+        )
+    )
     assert p.codes.count(ReasonCode.MED_DIURETIC) == 1
     assert p.score == 2
 
@@ -868,7 +960,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from contracts import (
-    AgeBand, Condition, ExposureFeatures, MedClass, Person, ReasonCode,
+    AgeBand,
+    Condition,
+    ExposureFeatures,
+    MedClass,
+    Person,
+    ReasonCode,
 )
 
 
@@ -920,8 +1017,9 @@ EXPOSURE_RULES: tuple[ExposureRule, ...] = (
     ExposureRule(ReasonCode.BEDROOM_UNSAFE, lambda e: e.indoor_night_est >= 26, 3),
     ExposureRule(ReasonCode.BEDROOM_WARM, lambda e: 24 <= e.indoor_night_est < 26, 1),
     ExposureRule(ReasonCode.PEAK_HEAT, lambda e: e.peak_apparent >= 30, 2),
-    ExposureRule(ReasonCode.SUSTAINED_SPELL,
-                 lambda e: e.spell_day >= 3 and e.peak_apparent >= 24, 2),
+    ExposureRule(
+        ReasonCode.SUSTAINED_SPELL, lambda e: e.spell_day >= 3 and e.peak_apparent >= 24, 2
+    ),
     ExposureRule(ReasonCode.INDOOR_BELOW_18, lambda e: 16 <= e.indoor_day_est < 18, 2),
     ExposureRule(ReasonCode.INDOOR_BELOW_16, lambda e: 12 <= e.indoor_day_est < 16, 3),
     ExposureRule(ReasonCode.INDOOR_BELOW_12, lambda e: e.indoor_day_est < 12, 4),
@@ -981,7 +1079,11 @@ from datetime import date
 
 import pytest
 from contracts import (
-    AlertLevel, ExposureFeatures, ExposureSource, ReasonCode, Tier,
+    AlertLevel,
+    ExposureFeatures,
+    ExposureSource,
+    ReasonCode,
+    Tier,
     VulnerabilityProfile,
 )
 from core.corpus import Corpus
@@ -994,10 +1096,18 @@ def scorer() -> RiskScorer:
 
 
 def exposure(**kw) -> ExposureFeatures:
-    base = dict(date=date(2025, 7, 19), overnight_min=12.0, peak_apparent=18.0,
-                peak_air=18.0, hours_above_26=0, indoor_night_est=19.0,
-                indoor_day_est=21.0, spell_day=0, alert_level=AlertLevel.NOT_CHECKED,
-                source=ExposureSource.FIXTURE)
+    base = dict(
+        date=date(2025, 7, 19),
+        overnight_min=12.0,
+        peak_apparent=18.0,
+        peak_air=18.0,
+        hours_above_26=0,
+        indoor_night_est=19.0,
+        indoor_day_est=21.0,
+        spell_day=0,
+        alert_level=AlertLevel.NOT_CHECKED,
+        source=ExposureSource.FIXTURE,
+    )
     return ExposureFeatures(**(base | kw))
 
 
@@ -1007,8 +1117,16 @@ def vuln(score: int) -> VulnerabilityProfile:
 
 @pytest.mark.parametrize(
     "risk,expected",
-    [(0.0, Tier.LOW), (1.9, Tier.LOW), (2.0, Tier.ELEVATED), (4.9, Tier.ELEVATED),
-     (5.0, Tier.HIGH), (8.9, Tier.HIGH), (9.0, Tier.SEVERE), (30.0, Tier.SEVERE)],
+    [
+        (0.0, Tier.LOW),
+        (1.9, Tier.LOW),
+        (2.0, Tier.ELEVATED),
+        (4.9, Tier.ELEVATED),
+        (5.0, Tier.HIGH),
+        (8.9, Tier.HIGH),
+        (9.0, Tier.SEVERE),
+        (30.0, Tier.SEVERE),
+    ],
 )
 def test_tier_boundaries_per_spec_8_5(risk, expected):
     assert RiskScorer.tier_for(risk) is expected
@@ -1024,8 +1142,8 @@ def test_zero_exposure_returns_low_however_frail(scorer):
 
 def test_multiplier_is_one_plus_score_over_ten(scorer):
     a = scorer.assess(exposure(indoor_night_est=24.5), vuln(score=10))
-    assert a.exposure_score == 1                 # BEDROOM_WARM
-    assert a.risk_score == pytest.approx(2.0)    # 1 * (1 + 10/10)
+    assert a.exposure_score == 1  # BEDROOM_WARM
+    assert a.risk_score == pytest.approx(2.0)  # 1 * (1 + 10/10)
 
 
 @pytest.mark.parametrize(
@@ -1033,8 +1151,9 @@ def test_multiplier_is_one_plus_score_over_ten(scorer):
     [(26.5, ReasonCode.BEDROOM_UNSAFE), (24.5, ReasonCode.BEDROOM_WARM)],
 )
 def test_bedroom_codes_are_mutually_exclusive(scorer, indoor_night, expected_code):
-    codes = {r.code for r in scorer.assess(exposure(indoor_night_est=indoor_night),
-                                           vuln(0)).reasons}
+    codes = {
+        r.code for r in scorer.assess(exposure(indoor_night_est=indoor_night), vuln(0)).reasons
+    }
     assert codes & {ReasonCode.BEDROOM_UNSAFE, ReasonCode.BEDROOM_WARM} == {expected_code}
 
 
@@ -1046,8 +1165,7 @@ def test_reasons_carry_text_from_the_corpus_and_weight_from_the_rules(scorer):
 
 
 def test_vulnerability_codes_appear_in_the_reasons_array(scorer):
-    v = VulnerabilityProfile(person_id="p", score=3,
-                             codes=(ReasonCode.AGE_85_PLUS,))
+    v = VulnerabilityProfile(person_id="p", score=3, codes=(ReasonCode.AGE_85_PLUS,))
     codes = {r.code for r in scorer.assess(exposure(indoor_night_est=24.5), v).reasons}
     assert ReasonCode.AGE_85_PLUS in codes
 
@@ -1067,11 +1185,19 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'core.scoring'`
 ```python
 # packages/core/src/core/scoring.py
 from contracts import (
-    Assessment, ExposureFeatures, Reason, ReasonCode, Tier, VulnerabilityProfile,
+    Assessment,
+    ExposureFeatures,
+    Reason,
+    ReasonCode,
+    Tier,
+    VulnerabilityProfile,
 )
 from core.corpus import Corpus
 from core.rules import (
-    EXPOSURE_RULES, VULNERABILITY_RULES, ExposureRule, VulnerabilityRule,
+    EXPOSURE_RULES,
+    VULNERABILITY_RULES,
+    ExposureRule,
+    VulnerabilityRule,
 )
 
 
@@ -1084,7 +1210,9 @@ class RiskScorer:
     """
 
     THRESHOLDS: tuple[tuple[float, Tier], ...] = (
-        (9.0, Tier.SEVERE), (5.0, Tier.HIGH), (2.0, Tier.ELEVATED),
+        (9.0, Tier.SEVERE),
+        (5.0, Tier.HIGH),
+        (2.0, Tier.ELEVATED),
     )
 
     def __init__(
@@ -1096,8 +1224,7 @@ class RiskScorer:
         self.corpus = corpus
         self.exposure_rules = exposure_rules
         self.weights: dict[ReasonCode, int] = {
-            rule.code: rule.weight
-            for rule in (*exposure_rules, *vulnerability_rules)
+            rule.code: rule.weight for rule in (*exposure_rules, *vulnerability_rules)
         }
 
     @staticmethod
@@ -1118,18 +1245,13 @@ class RiskScorer:
             for code in codes
         )
 
-    def assess(
-        self, exposure: ExposureFeatures, vulnerability: VulnerabilityProfile
-    ) -> Assessment:
+    def assess(self, exposure: ExposureFeatures, vulnerability: VulnerabilityProfile) -> Assessment:
         triggered = [rule for rule in self.exposure_rules if rule.predicate(exposure)]
         exposure_score = sum(rule.weight for rule in triggered)
 
         # FR-18: zero exposure is Low regardless of frailty. Vulnerability modifies
         # the effect of exposure; it is not itself a harm.
-        risk = (
-            0.0 if exposure_score == 0
-            else exposure_score * (1 + vulnerability.score / 10)
-        )
+        risk = 0.0 if exposure_score == 0 else exposure_score * (1 + vulnerability.score / 10)
 
         codes = [rule.code for rule in triggered] + list(vulnerability.codes)
         return Assessment(
@@ -1169,6 +1291,7 @@ git commit -m "feat(core): L3 RiskScorer, deterministic and table-driven"
 ```python
 # tests/verification/test_worked_example.py
 """Spec section 8.6. A merge gate — it must never go red."""
+
 from datetime import date
 
 import pytest
@@ -1184,10 +1307,10 @@ BEDFORD_19_JULY_2025 = ExposureFeatures(
     peak_apparent=29.0,
     peak_air=29.0,
     hours_above_26=7,
-    indoor_night_est=24.6,     # 0.6(17) + 0.4(29) + 2.8
-    indoor_day_est=25.85,      # 0.3(17) + 0.55(29) + 2.8 + 2
+    indoor_night_est=24.6,  # 0.6(17) + 0.4(29) + 2.8
+    indoor_day_est=25.85,  # 0.3(17) + 0.55(29) + 2.8 + 2
     spell_day=3,
-    alert_level=AlertLevel.NONE,   # no alert was issued — this is the point
+    alert_level=AlertLevel.NONE,  # no alert was issued — this is the point
     source=ExposureSource.ARCHIVE,
 )
 
@@ -1213,9 +1336,13 @@ def test_doris_scores_exactly_six_and_lands_high(assessment):
 
 def test_reason_set_is_exactly_the_spec_worked_example(assessment):
     assert {r.code for r in assessment.reasons} == {
-        ReasonCode.BEDROOM_WARM, ReasonCode.SUSTAINED_SPELL,
-        ReasonCode.AGE_85_PLUS, ReasonCode.LIVES_ALONE, ReasonCode.DEMENTIA,
-        ReasonCode.MED_DIURETIC, ReasonCode.MED_ACE_ARB,
+        ReasonCode.BEDROOM_WARM,
+        ReasonCode.SUSTAINED_SPELL,
+        ReasonCode.AGE_85_PLUS,
+        ReasonCode.LIVES_ALONE,
+        ReasonCode.DEMENTIA,
+        ReasonCode.MED_DIURETIC,
+        ReasonCode.MED_ACE_ARB,
     }
 
 
@@ -1293,8 +1420,11 @@ class PersonaFile(BaseModel):
 
     def to_person(self) -> Person:
         return Person(
-            id=self.id, name=self.name, age_band=self.age_band,
-            lives_alone=self.lives_alone, mobility_limited=self.mobility_limited,
+            id=self.id,
+            name=self.name,
+            age_band=self.age_band,
+            lives_alone=self.lives_alone,
+            mobility_limited=self.mobility_limited,
             conditions=tuple(self.conditions),
             medications=tuple(Med(m.drug_name, m.drug_class) for m in self.medications),
         )
@@ -1355,6 +1485,7 @@ This task exists so adding a persona or a locality requires **no Python**. Its t
 ```python
 # tests/data/test_contribution_surfaces.py
 """Guards the two data contribution surfaces."""
+
 import pytest
 from contracts import Tier
 from core.corpus import Corpus
@@ -1430,7 +1561,7 @@ GEOGRAPHY_DIR = Path(__file__).resolve().parents[4] / "data" / "geography"
 @dataclass(frozen=True, slots=True)
 class Resource:
     id: str
-    type: str            # cool_space | pharmacy | warm_bank | council_welfare
+    type: str  # cool_space | pharmacy | warm_bank | council_welfare
     name: str
     lat: float
     lon: float
@@ -1468,7 +1599,9 @@ class LocalityFile(BaseModel):
 
     def to_locality(self) -> Locality:
         return Locality(
-            name=self.name, region=self.region, admin_district=self.admin_district,
+            name=self.name,
+            region=self.region,
+            admin_district=self.admin_district,
             wards=tuple(self.wards),
             resources=tuple(Resource(**r.model_dump()) for r in self.resources),
         )
@@ -1553,15 +1686,25 @@ from datetime import date
 
 import pytest
 from contracts import (
-    AlertLevel, DateRange, ExposureFeatures, ExposureSource, SelfReport,
+    AlertLevel,
+    DateRange,
+    ExposureFeatures,
+    ExposureSource,
+    SelfReport,
 )
 from exposure.indoor import IndoorModel
 from exposure.normalise import ExposureNormaliser
 
 BEDFORD = ExposureFeatures(
-    date=date(2025, 7, 19), overnight_min=17.0, peak_apparent=29.0,
-    peak_air=29.0, hours_above_26=7, indoor_night_est=24.6,
-    indoor_day_est=25.85, spell_day=3, alert_level=AlertLevel.NONE,
+    date=date(2025, 7, 19),
+    overnight_min=17.0,
+    peak_apparent=29.0,
+    peak_air=29.0,
+    hours_above_26=7,
+    indoor_night_est=24.6,
+    indoor_day_est=25.85,
+    spell_day=3,
+    alert_level=AlertLevel.NONE,
     source=ExposureSource.ARCHIVE,
 )
 WINDOW = DateRange(date(2025, 7, 19), date(2025, 7, 20))
@@ -1588,8 +1731,8 @@ def test_indoor_day_matches_fr_11(model):
 def test_overnight_minimum_uses_the_2200_to_0700_window_only(normaliser):
     """FR-07. The 15:00 low must be ignored; only 22:00-07:00 counts."""
     hourly = {h: 25.0 for h in range(24)}
-    hourly[15] = 5.0        # decoy, outside the window
-    hourly[3] = 18.0        # the real overnight minimum
+    hourly[15] = 5.0  # decoy, outside the window
+    hourly[3] = 18.0  # the real overnight minimum
     assert normaliser.overnight_minimum(hourly) == 18.0
 
 
@@ -1610,8 +1753,8 @@ def test_spell_day_counts_consecutive_days_only(normaliser, peaks, expected):
 def test_self_report_of_a_hot_bedroom_raises_the_indoor_estimate(model):
     """Spec section 6: a cheap partial substitute for the sensor in v0.3."""
     after = model.apply_self_report(
-        BEDFORD, SelfReport(person_id="doris", window=WINDOW, answered=True,
-                            bedroom_feels_hot=True),
+        BEDFORD,
+        SelfReport(person_id="doris", window=WINDOW, answered=True, bedroom_feels_hot=True),
     )
     assert after.indoor_night_est > BEDFORD.indoor_night_est
     assert after.source is ExposureSource.SELF_REPORT
@@ -1621,17 +1764,19 @@ def test_self_report_of_a_hot_bedroom_raises_the_indoor_estimate(model):
 def test_self_report_correction_is_bounded(model):
     """An unbounded correction would let one answer dominate the model."""
     after = model.apply_self_report(
-        BEDFORD, SelfReport(person_id="d", window=WINDOW, answered=True,
-                            bedroom_feels_hot=True),
+        BEDFORD,
+        SelfReport(person_id="d", window=WINDOW, answered=True, bedroom_feels_hot=True),
     )
     assert after.indoor_night_est - BEDFORD.indoor_night_est <= 2.0
 
 
 @pytest.mark.parametrize(
     "report",
-    [SelfReport(person_id="d", window=WINDOW, answered=False),
-     SelfReport(person_id="d", window=WINDOW, answered=True, bedroom_feels_hot=False),
-     SelfReport(person_id="d", window=WINDOW, answered=True, bedroom_feels_hot=None)],
+    [
+        SelfReport(person_id="d", window=WINDOW, answered=False),
+        SelfReport(person_id="d", window=WINDOW, answered=True, bedroom_feels_hot=False),
+        SelfReport(person_id="d", window=WINDOW, answered=True, bedroom_feels_hot=None),
+    ],
     ids=["no_answer", "said_no", "did_not_say"],
 )
 def test_exposure_untouched_unless_the_person_said_yes(model, report):
@@ -1666,18 +1811,14 @@ class IndoorModel:
         self.self_report_offset = self_report_offset
 
     @staticmethod
-    def night(outdoor_night_min: float, outdoor_day_max: float,
-              dwelling_offset: float) -> float:
+    def night(outdoor_night_min: float, outdoor_day_max: float, dwelling_offset: float) -> float:
         return 0.6 * outdoor_night_min + 0.4 * outdoor_day_max + dwelling_offset
 
     @staticmethod
-    def day(outdoor_night_min: float, outdoor_day_max: float,
-            dwelling_offset: float) -> float:
+    def day(outdoor_night_min: float, outdoor_day_max: float, dwelling_offset: float) -> float:
         return 0.3 * outdoor_night_min + 0.55 * outdoor_day_max + dwelling_offset + 2
 
-    def apply_self_report(
-        self, features: ExposureFeatures, report: SelfReport
-    ) -> ExposureFeatures:
+    def apply_self_report(self, features: ExposureFeatures, report: SelfReport) -> ExposureFeatures:
         """Correct the modelled estimate with what the person actually said.
 
         Red flags and no-answer are NOT handled here — they escalate at L4 and
@@ -1768,7 +1909,7 @@ def test_onset_is_certain_when_every_day_clears_the_threshold(predictor):
     f = predictor.forecast([30.0, 30.0, 30.0], horizon_days=3)
     assert f.p_onset == 1.0
     assert f.expected_duration_days == 3
-    assert f.ensemble_spread == 0.0       # deterministic: no disagreement to report
+    assert f.ensemble_spread == 0.0  # deterministic: no disagreement to report
 
 
 def test_no_onset_when_nothing_clears_the_threshold(predictor):
@@ -1780,7 +1921,7 @@ def test_no_onset_when_nothing_clears_the_threshold(predictor):
 def test_lead_time_counts_hours_to_the_first_qualifying_day(predictor):
     f = predictor.forecast([15.0, 15.0, 15.0, 30.0], horizon_days=4)
     assert f.p_onset == 1.0
-    assert f.lead_time_hours == 72        # three clear days ahead of onset
+    assert f.lead_time_hours == 72  # three clear days ahead of onset
 
 
 @pytest.mark.parametrize("horizon", [1, 7, 14])
@@ -1822,18 +1963,16 @@ from typing import Protocol, runtime_checkable
 @dataclass(frozen=True, slots=True)
 class EpisodeForecast:
     horizon_days: int
-    p_onset: float                 # P(episode threshold met)
+    p_onset: float  # P(episode threshold met)
     expected_peak: float
     expected_duration_days: int
-    ensemble_spread: float         # model disagreement, i.e. confidence
-    lead_time_hours: int           # the number a council acts on
+    ensemble_spread: float  # model disagreement, i.e. confidence
+    lead_time_hours: int  # the number a council acts on
 
 
 @runtime_checkable
 class Predictor(Protocol):
-    def forecast(
-        self, daily_peaks: Sequence[float], horizon_days: int
-    ) -> EpisodeForecast: ...
+    def forecast(self, daily_peaks: Sequence[float], horizon_days: int) -> EpisodeForecast: ...
 ```
 
 ```python
@@ -1856,16 +1995,17 @@ class ThresholdHeatwave:
     def __init__(self, threshold: float = EPISODE_THRESHOLD) -> None:
         self.threshold = threshold
 
-    def forecast(
-        self, daily_peaks: Sequence[float], horizon_days: int
-    ) -> EpisodeForecast:
+    def forecast(self, daily_peaks: Sequence[float], horizon_days: int) -> EpisodeForecast:
         window = list(daily_peaks[:horizon_days])
         qualifying = [i for i, peak in enumerate(window) if peak >= self.threshold]
         if not qualifying:
             return EpisodeForecast(
-                horizon_days=horizon_days, p_onset=0.0,
+                horizon_days=horizon_days,
+                p_onset=0.0,
                 expected_peak=max(window, default=0.0),
-                expected_duration_days=0, ensemble_spread=0.0, lead_time_hours=0,
+                expected_duration_days=0,
+                ensemble_spread=0.0,
+                lead_time_hours=0,
             )
         return EpisodeForecast(
             horizon_days=horizon_days,
@@ -1880,9 +2020,7 @@ class ThresholdHeatwave:
 class EnsembleHeatwave:
     """Track B. P(onset) from the fraction of ICON/GFS/ECMWF members over threshold."""
 
-    def forecast(
-        self, daily_peaks: Sequence[float], horizon_days: int
-    ) -> EpisodeForecast:
+    def forecast(self, daily_peaks: Sequence[float], horizon_days: int) -> EpisodeForecast:
         raise NotImplementedError(
             "Track B owns this. Fetch the Open-Meteo ensemble endpoint, compute "
             "p_onset as the member fraction clearing EPISODE_THRESHOLD, and report "
@@ -1942,6 +2080,7 @@ git commit -m "feat(predictors): Predictor seam with green deterministic baselin
 ```python
 # tests/verification/test_voice_utterances.py
 """Merge gate. The voice agent selects from the corpus — it never composes."""
+
 import re
 
 import pytest
@@ -1970,9 +2109,13 @@ def test_no_utterance_can_advise_altering_a_prescription(script):
 
 
 def test_selected_utterances_are_a_subset_of_the_closed_set(script):
-    a = Assessment(tier=Tier.HIGH, risk_score=6.0, exposure_score=3,
-                   vulnerability_score=10,
-                   reasons=(Reason(ReasonCode.MED_DIURETIC, "t", "e", 2),))
+    a = Assessment(
+        tier=Tier.HIGH,
+        risk_score=6.0,
+        exposure_score=3,
+        vulnerability_score=10,
+        reasons=(Reason(ReasonCode.MED_DIURETIC, "t", "e", 2),),
+    )
     assert set(script.utterances_for(a)) <= script.all_utterances
 ```
 
@@ -1991,9 +2134,13 @@ def script() -> CheckinScript:
 
 
 def assessment(tier: Tier, *codes: ReasonCode) -> Assessment:
-    return Assessment(tier=tier, risk_score=6.0, exposure_score=3,
-                      vulnerability_score=10,
-                      reasons=tuple(Reason(c, "t", "e", 1) for c in codes))
+    return Assessment(
+        tier=tier,
+        risk_score=6.0,
+        exposure_score=3,
+        vulnerability_score=10,
+        reasons=tuple(Reason(c, "t", "e", 1) for c in codes),
+    )
 
 
 def test_low_tier_produces_no_call(script):
@@ -2052,8 +2199,10 @@ class CheckinScript:
     """
 
     TIER_BY_NAME: dict[str, Tier] = {
-        "low": Tier.LOW, "elevated": Tier.ELEVATED,
-        "high": Tier.HIGH, "severe": Tier.SEVERE,
+        "low": Tier.LOW,
+        "elevated": Tier.ELEVATED,
+        "high": Tier.HIGH,
+        "severe": Tier.SEVERE,
     }
 
     def __init__(self, corpus: Corpus) -> None:
@@ -2070,9 +2219,9 @@ class CheckinScript:
         codes = {reason.code for reason in assessment.reasons}
         rows = sorted(
             (
-                row for row in self.corpus.actions
-                if row.reason_code in codes
-                and assessment.tier >= self.TIER_BY_NAME[row.tier_min]
+                row
+                for row in self.corpus.actions
+                if row.reason_code in codes and assessment.tier >= self.TIER_BY_NAME[row.tier_min]
             ),
             key=lambda row: row.ordering,
         )
@@ -2119,7 +2268,7 @@ class ConsoleVoice:
             return True
         if normalised in self.NO:
             return False
-        return None      # unrecognised is no-answer, never free text to interpret
+        return None  # unrecognised is no-answer, never free text to interpret
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -2182,25 +2331,49 @@ def engine() -> AllocationEngine:
     return AllocationEngine()
 
 
-def candidate(pid: str, tier: Tier, *, alone: bool = True, mobility_limited: bool = False,
-              lat: float = 52.13, lon: float = -0.46, has_cooling: bool = False) -> Candidate:
+def candidate(
+    pid: str,
+    tier: Tier,
+    *,
+    alone: bool = True,
+    mobility_limited: bool = False,
+    lat: float = 52.13,
+    lon: float = -0.46,
+    has_cooling: bool = False,
+) -> Candidate:
     return Candidate(
         person_id=pid,
-        assessment=Assessment(tier=tier, risk_score=float(tier) * 3, exposure_score=3,
-                              vulnerability_score=10, reasons=()),
-        lives_alone=alone, mobility_limited=mobility_limited,
-        lat=lat, lon=lon, has_cooling=has_cooling,
+        assessment=Assessment(
+            tier=tier,
+            risk_score=float(tier) * 3,
+            exposure_score=3,
+            vulnerability_score=10,
+            reasons=(),
+        ),
+        lives_alone=alone,
+        mobility_limited=mobility_limited,
+        lat=lat,
+        lon=lon,
+        has_cooling=has_cooling,
     )
 
 
 def cool_space(rid: str, lat: float, lon: float) -> Resource:
-    return Resource(id=rid, type="cool_space", name=rid, lat=lat, lon=lon,
-                    opening_hours="09:00-17:00", area_code="E07000032")
+    return Resource(
+        id=rid,
+        type="cool_space",
+        name=rid,
+        lat=lat,
+        lon=lon,
+        opening_hours="09:00-17:00",
+        area_code="E07000032",
+    )
 
 
 def test_higher_tier_outranks_lower_tier_all_else_equal(engine):
     plan = engine.rank_visits(
-        [candidate("low", Tier.ELEVATED), candidate("high", Tier.SEVERE)], capacity=2)
+        [candidate("low", Tier.ELEVATED), candidate("high", Tier.SEVERE)], capacity=2
+    )
     assert [v.person_id for v in plan.visits] == ["high", "low"]
 
 
@@ -2211,8 +2384,10 @@ def test_isolation_can_outrank_a_higher_tier(engine):
     3.0 x 2.0 x 1.15 = 6.90. The visit is worth more to the person nobody is watching.
     """
     plan = engine.rank_visits(
-        [candidate("severe_supported", Tier.SEVERE, alone=False),
-         candidate("high_alone", Tier.HIGH, alone=True)],
+        [
+            candidate("severe_supported", Tier.SEVERE, alone=False),
+            candidate("high_alone", Tier.HIGH, alone=True),
+        ],
         capacity=2,
     )
     assert plan.visits[0].person_id == "high_alone"
@@ -2221,45 +2396,50 @@ def test_isolation_can_outrank_a_higher_tier(engine):
 def test_lowering_the_isolation_factor_reverts_to_ranking_on_tier():
     """Guards the policy decision: below the Severe/High ratio, tier dominates."""
     plan = AllocationEngine(isolation_factor=1.0).rank_visits(
-        [candidate("severe_supported", Tier.SEVERE, alone=False),
-         candidate("high_alone", Tier.HIGH, alone=True)],
+        [
+            candidate("severe_supported", Tier.SEVERE, alone=False),
+            candidate("high_alone", Tier.HIGH, alone=True),
+        ],
         capacity=2,
     )
     assert plan.visits[0].person_id == "severe_supported"
 
 
 def test_capacity_is_respected_and_the_remainder_is_reported(engine):
-    plan = engine.rank_visits([candidate(f"p{i}", Tier.HIGH) for i in range(10)],
-                              capacity=4)
+    plan = engine.rank_visits([candidate(f"p{i}", Tier.HIGH) for i in range(10)], capacity=4)
     assert len(plan.visits) == 4
     assert plan.unvisited == 6
 
 
 def test_low_tier_is_never_scheduled_even_with_spare_capacity(engine):
-    plan = engine.rank_visits([candidate("a", Tier.LOW), candidate("b", Tier.LOW)],
-                              capacity=10)
+    plan = engine.rank_visits([candidate("a", Tier.LOW), candidate("b", Tier.LOW)], capacity=10)
     assert plan.visits == ()
     assert plan.unvisited == 0
 
 
 def test_every_visit_carries_its_justification(engine):
-    plan = engine.rank_visits([candidate("a", Tier.SEVERE, mobility_limited=True)],
-                              capacity=1)
+    plan = engine.rank_visits([candidate("a", Tier.SEVERE, mobility_limited=True)], capacity=1)
     assert "severe" in plan.visits[0].rationale
     assert "mobility limited" in plan.visits[0].rationale
 
 
 def test_ranking_is_stable_for_equal_priorities(engine):
     plan = engine.rank_visits(
-        [candidate("zoe", Tier.HIGH), candidate("amy", Tier.HIGH)], capacity=2)
+        [candidate("zoe", Tier.HIGH), candidate("amy", Tier.HIGH)], capacity=2
+    )
     assert [v.person_id for v in plan.visits] == ["amy", "zoe"]
 
 
 def test_coverage_gap_finds_people_beyond_the_radius(engine):
     report = engine.coverage_gap(
-        [candidate("near", Tier.SEVERE, lat=52.1364, lon=-0.4669),
-         candidate("far", Tier.SEVERE, lat=52.5000, lon=-0.4669)],
-        [cool_space("lib", 52.1364, -0.4669)], radius_km=1.0, min_tier=Tier.HIGH)
+        [
+            candidate("near", Tier.SEVERE, lat=52.1364, lon=-0.4669),
+            candidate("far", Tier.SEVERE, lat=52.5000, lon=-0.4669),
+        ],
+        [cool_space("lib", 52.1364, -0.4669)],
+        radius_km=1.0,
+        min_tier=Tier.HIGH,
+    )
     assert {u.person_id for u in report.uncovered} == {"far"}
     assert report.covered_count == 1
 
@@ -2267,7 +2447,10 @@ def test_coverage_gap_finds_people_beyond_the_radius(engine):
 def test_coverage_gap_ignores_people_below_the_minimum_tier(engine):
     report = engine.coverage_gap(
         [candidate("mild", Tier.ELEVATED, lat=52.5, lon=-0.46)],
-        [cool_space("lib", 52.1364, -0.4669)], radius_km=1.0, min_tier=Tier.HIGH)
+        [cool_space("lib", 52.1364, -0.4669)],
+        radius_km=1.0,
+        min_tier=Tier.HIGH,
+    )
     assert report.uncovered == ()
     assert report.considered == 0
 
@@ -2275,13 +2458,17 @@ def test_coverage_gap_ignores_people_below_the_minimum_tier(engine):
 def test_person_with_cooling_at_home_is_already_covered(engine):
     report = engine.coverage_gap(
         [candidate("cooled", Tier.SEVERE, lat=52.5, lon=-0.46, has_cooling=True)],
-        [cool_space("lib", 52.1364, -0.4669)], radius_km=1.0, min_tier=Tier.HIGH)
+        [cool_space("lib", 52.1364, -0.4669)],
+        radius_km=1.0,
+        min_tier=Tier.HIGH,
+    )
     assert report.uncovered == ()
 
 
 def test_uncovered_person_reports_no_nearest_when_no_resources_exist(engine):
-    report = engine.coverage_gap([candidate("alone", Tier.SEVERE)], [],
-                                 radius_km=1.0, min_tier=Tier.HIGH)
+    report = engine.coverage_gap(
+        [candidate("alone", Tier.SEVERE)], [], radius_km=1.0, min_tier=Tier.HIGH
+    )
     assert report.uncovered[0].nearest_km is None
 
 
@@ -2291,8 +2478,10 @@ def test_siting_delta_ranks_candidate_sites_by_people_newly_covered(engine):
     report = engine.coverage_gap(people, [], radius_km=1.0, min_tier=Tier.HIGH)
 
     options = engine.siting_delta(
-        report, [cool_space("cluster", 52.50, -0.46), cool_space("outlier", 53.00, -0.46)],
-        radius_km=1.0)
+        report,
+        [cool_space("cluster", 52.50, -0.46), cool_space("outlier", 53.00, -0.46)],
+        radius_km=1.0,
+    )
     assert [o.resource_id for o in options] == ["cluster", "outlier"]
     assert options[0].newly_covered == 3
     assert options[1].newly_covered == 1
@@ -2300,8 +2489,7 @@ def test_siting_delta_ranks_candidate_sites_by_people_newly_covered(engine):
 
 def test_siting_delta_with_no_uncovered_people_returns_zero_gain(engine):
     report = engine.coverage_gap([], [], radius_km=1.0, min_tier=Tier.HIGH)
-    options = engine.siting_delta(report, [cool_space("anywhere", 52.5, -0.46)],
-                                  radius_km=1.0)
+    options = engine.siting_delta(report, [cool_space("anywhere", 52.5, -0.46)], radius_km=1.0)
     assert all(o.newly_covered == 0 for o in options)
 ```
 
@@ -2338,6 +2526,7 @@ from contracts import Assessment
 @dataclass(frozen=True, slots=True)
 class Candidate:
     """A person considered for allocation, flattened to what the algorithms need."""
+
     person_id: str
     assessment: Assessment
     lives_alone: bool
@@ -2364,8 +2553,8 @@ class AllocationPlan:
 @dataclass(frozen=True, slots=True)
 class UncoveredPerson:
     person_id: str
-    nearest_km: float | None      # None when no resource exists at all
-    lat: float                    # retained so siting_delta can measure against sites
+    nearest_km: float | None  # None when no resource exists at all
+    lat: float  # retained so siting_delta can measure against sites
     lon: float
 
 
@@ -2389,7 +2578,12 @@ from collections.abc import Sequence
 
 from allocation.distance import haversine_km
 from allocation.models import (
-    AllocationPlan, Candidate, CoverageReport, SitingOption, UncoveredPerson, Visit,
+    AllocationPlan,
+    Candidate,
+    CoverageReport,
+    SitingOption,
+    UncoveredPerson,
+    Visit,
 )
 from contracts import Tier
 from geography.loader import Resource
@@ -2406,7 +2600,10 @@ class AllocationEngine:
     """
 
     TIER_WEIGHT: dict[Tier, float] = {
-        Tier.LOW: 0.0, Tier.ELEVATED: 1.0, Tier.HIGH: 3.0, Tier.SEVERE: 5.0,
+        Tier.LOW: 0.0,
+        Tier.ELEVATED: 1.0,
+        Tier.HIGH: 3.0,
+        Tier.SEVERE: 5.0,
     }
 
     def __init__(
@@ -2451,24 +2648,18 @@ class AllocationEngine:
             parts.append("no cooling at home")
         return ", ".join(parts)
 
-    def rank_visits(
-        self, candidates: Sequence[Candidate], capacity: int
-    ) -> AllocationPlan:
+    def rank_visits(self, candidates: Sequence[Candidate], capacity: int) -> AllocationPlan:
         """Order a cohort for a fixed number of welfare visits.
 
         Low tier is never scheduled: FR-18 already established it means no action
         beyond routine, and a visit spent there is a visit not spent elsewhere.
         """
-        eligible = [
-            (priority, c) for c in candidates
-            if (priority := self.priority_of(c)) > 0.0
-        ]
+        eligible = [(priority, c) for c in candidates if (priority := self.priority_of(c)) > 0.0]
         eligible.sort(key=lambda pair: (-pair[0], pair[1].person_id))
         chosen = eligible[:capacity]
         return AllocationPlan(
             visits=tuple(
-                Visit(person_id=c.person_id, priority=round(p, 3),
-                      rationale=self.rationale_for(c))
+                Visit(person_id=c.person_id, priority=round(p, 3), rationale=self.rationale_for(c))
                 for p, c in chosen
             ),
             unvisited=len(eligible) - len(chosen),
@@ -2476,14 +2667,10 @@ class AllocationEngine:
         )
 
     @staticmethod
-    def nearest_km(
-        candidate: Candidate, resources: Sequence[Resource]
-    ) -> float | None:
+    def nearest_km(candidate: Candidate, resources: Sequence[Resource]) -> float | None:
         if not resources:
             return None
-        return min(
-            haversine_km(candidate.lat, candidate.lon, r.lat, r.lon) for r in resources
-        )
+        return min(haversine_km(candidate.lat, candidate.lon, r.lat, r.lon) for r in resources)
 
     def coverage_gap(
         self,
@@ -2506,12 +2693,17 @@ class AllocationEngine:
             if c.has_cooling or (distance is not None and distance <= radius_km):
                 covered += 1
             else:
-                uncovered.append(UncoveredPerson(
-                    person_id=c.person_id, nearest_km=distance, lat=c.lat, lon=c.lon))
+                uncovered.append(
+                    UncoveredPerson(
+                        person_id=c.person_id, nearest_km=distance, lat=c.lat, lon=c.lon
+                    )
+                )
 
         return CoverageReport(
-            uncovered=tuple(uncovered), covered_count=covered,
-            considered=len(considered), radius_km=radius_km,
+            uncovered=tuple(uncovered),
+            covered_count=covered,
+            considered=len(considered),
+            radius_km=radius_km,
         )
 
     @staticmethod
@@ -2527,7 +2719,8 @@ class AllocationEngine:
             SitingOption(
                 resource_id=site.id,
                 newly_covered=sum(
-                    1 for u in report.uncovered
+                    1
+                    for u in report.uncovered
                     if haversine_km(u.lat, u.lon, site.lat, site.lon) <= radius_km
                 ),
             )
@@ -2566,6 +2759,7 @@ git commit -m "feat(allocation): AllocationEngine for visit ranking, coverage an
 ```python
 # tests/stubs/test_unclaimed_work.py
 """Every stub must fail loudly and name its owning track. Red until claimed."""
+
 import pytest
 from actions.checklist import ChecklistBuilder
 from actions.notify import NotificationPolicy
@@ -2608,8 +2802,7 @@ def test_cohort_membership_requires_a_consent_basis():
 
 
 def test_org_scopes_by_area_codes():
-    org = Org(id="o", name="Bedford BC", type=OrgType.COUNCIL,
-              area_codes=("E07000032",))
+    org = Org(id="o", name="Bedford BC", type=OrgType.COUNCIL, area_codes=("E07000032",))
     assert org.area_codes == ("E07000032",)
 ```
 
@@ -2669,7 +2862,7 @@ class Cohort:
 class CohortMember:
     cohort_id: str
     person_id: str
-    consent_basis: str      # no default — SC-6 enforced by construction
+    consent_basis: str  # no default — SC-6 enforced by construction
 ```
 
 ```python
@@ -2759,9 +2952,15 @@ def benign_season() -> list[ExposureFeatures]:
     start = date(2025, 6, 1)
     return [
         ExposureFeatures(
-            date=start + timedelta(days=i), overnight_min=12.0, peak_apparent=19.0,
-            peak_air=19.0, hours_above_26=0, indoor_night_est=19.5,
-            indoor_day_est=21.0, spell_day=0, alert_level=AlertLevel.NONE,
+            date=start + timedelta(days=i),
+            overnight_min=12.0,
+            peak_apparent=19.0,
+            peak_air=19.0,
+            hours_above_26=0,
+            indoor_night_est=19.5,
+            indoor_day_est=21.0,
+            spell_day=0,
+            alert_level=AlertLevel.NONE,
             source=ExposureSource.FIXTURE,
         )
         for i in range(92)
@@ -2771,6 +2970,7 @@ def benign_season() -> list[ExposureFeatures]:
 ```python
 # tests/verification/test_no_cry_wolf.py
 """Spec section 13. A low-vulnerability persona must return Low on all 92 days."""
+
 import pytest
 from contracts import Tier
 from core.vulnerability import VulnerabilityScorer
@@ -2782,9 +2982,7 @@ def people():
     return PersonaLoader().load()
 
 
-def test_low_vulnerability_persona_never_alarms_across_the_season(
-    scorer, benign_season, people
-):
+def test_low_vulnerability_persona_never_alarms_across_the_season(scorer, benign_season, people):
     v = VulnerabilityScorer().profile(people["margaret"])
     tiers = [scorer.assess(day, v).tier for day in benign_season]
     assert set(tiers) == {Tier.LOW}, (
@@ -2792,9 +2990,7 @@ def test_low_vulnerability_persona_never_alarms_across_the_season(
     )
 
 
-def test_even_the_frailest_persona_stays_low_in_benign_weather(
-    scorer, benign_season, people
-):
+def test_even_the_frailest_persona_stays_low_in_benign_weather(scorer, benign_season, people):
     """FR-18 across a whole season, not just one day."""
     v = VulnerabilityScorer().profile(people["doris"])
     assert v.score == 10
@@ -2804,11 +3000,10 @@ def test_even_the_frailest_persona_stays_low_in_benign_weather(
 ```python
 # tests/verification/test_safety_corpus.py
 """SC-1 merge gate. Zero matches required across the whole action corpus."""
+
 import re
 
-FORBIDDEN = re.compile(
-    r"\b(stop|reduce|skip|halt|delay|alter|discontinue)\b", re.IGNORECASE
-)
+FORBIDDEN = re.compile(r"\b(stop|reduce|skip|halt|delay|alter|discontinue)\b", re.IGNORECASE)
 MEDICATION_PREFIX = "med_"
 
 
@@ -2886,8 +3081,7 @@ def test_health_reports_the_loaded_corpus_and_persona_counts(client):
 
 
 def test_people_lists_every_seeded_persona(client):
-    assert {p["id"] for p in client.get("/people").json()} >= {
-        "doris", "harold", "margaret"}
+    assert {p["id"] for p in client.get("/people").json()} >= {"doris", "harold", "margaret"}
 
 
 def test_assessment_returns_tier_and_reasons_not_a_bare_score(client):
@@ -2943,9 +3137,16 @@ PERSONAS = PersonaLoader()
 # Track 0 replaces this with a live Open-Meteo client behind the same type, so
 # nothing downstream notices the swap. See spec section 11.
 FIXTURE_EXPOSURE = ExposureFeatures(
-    date=date(2025, 7, 19), overnight_min=17.0, peak_apparent=29.0, peak_air=29.0,
-    hours_above_26=7, indoor_night_est=24.6, indoor_day_est=25.85, spell_day=3,
-    alert_level=AlertLevel.NOT_CHECKED, source=ExposureSource.FIXTURE,
+    date=date(2025, 7, 19),
+    overnight_min=17.0,
+    peak_apparent=29.0,
+    peak_air=29.0,
+    hours_above_26=7,
+    indoor_night_est=24.6,
+    indoor_day_est=25.85,
+    spell_day=3,
+    alert_level=AlertLevel.NOT_CHECKED,
+    source=ExposureSource.FIXTURE,
 )
 
 
@@ -2961,10 +3162,7 @@ def health() -> dict[str, Any]:
 
 @app.get("/people")
 def list_people() -> list[dict[str, Any]]:
-    return [
-        {"id": p.id, "name": p.name, "age_band": p.age_band}
-        for p in PERSONAS.load().values()
-    ]
+    return [{"id": p.id, "name": p.name, "age_band": p.age_band} for p in PERSONAS.load().values()]
 
 
 @app.get("/people/{person_id}/assessment")
@@ -2981,8 +3179,7 @@ def get_assessment(person_id: str) -> dict[str, Any]:
         "exposure_score": assessment.exposure_score,
         "vulnerability_score": assessment.vulnerability_score,
         "reasons": [
-            {"code": r.code, "title": r.title, "explanation": r.explanation,
-             "weight": r.weight}
+            {"code": r.code, "title": r.title, "explanation": r.explanation, "weight": r.weight}
             for r in assessment.reasons
         ],
         "exposure": {
@@ -2993,7 +3190,7 @@ def get_assessment(person_id: str) -> dict[str, Any]:
             "peak_apparent": FIXTURE_EXPOSURE.peak_apparent,
             "source": FIXTURE_EXPOSURE.source,
         },
-        "not_medical_advice": True,      # SC-2
+        "not_medical_advice": True,  # SC-2
     }
 ```
 
@@ -3027,6 +3224,7 @@ git commit -m "feat(api): read path serving assessments with modelled labels"
 ```python
 # tests/web/test_tier_vocabulary.py
 """NFR-07: tier must never be conveyed by colour alone."""
+
 from pathlib import Path
 
 import pytest

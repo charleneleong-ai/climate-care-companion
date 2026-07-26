@@ -30,9 +30,7 @@ from contracts import (
 )
 from core.corpus import FORBIDDEN_MEDICATION_ADVICE, PROFESSIONALS
 
-INTERACTIONS_PATH = (
-    Path(__file__).resolve().parents[4] / "data" / "seed" / "interactions.csv"
-)
+INTERACTIONS_PATH = Path(__file__).resolve().parents[4] / "data" / "seed" / "interactions.csv"
 
 TIER_BY_NAME: dict[str, Tier] = {
     "low": Tier.LOW,
@@ -136,18 +134,14 @@ class InteractionTable:
                         Condition(c) for c in InteractionTable.split(row["requires_conditions"])
                     ),
                     requires_med_classes=frozenset(
-                        MedClass(m)
-                        for m in InteractionTable.split(row["requires_med_classes"])
+                        MedClass(m) for m in InteractionTable.split(row["requires_med_classes"])
                     ),
-                    requires_flags=frozenset(
-                        InteractionTable.split(row["requires_flags"])
-                    ),
+                    requires_flags=frozenset(InteractionTable.split(row["requires_flags"])),
                     requires_self_report=InteractionTable.parse_self_report(
                         row["requires_self_report"]
                     ),
                     supersedes=frozenset(
-                        ReasonCode(c)
-                        for c in InteractionTable.split(row["supersedes"])
+                        ReasonCode(c) for c in InteractionTable.split(row["supersedes"])
                     ),
                     min_tier=TIER_BY_NAME[row["min_tier"]],
                     advice_caregiver=row["advice_caregiver"],

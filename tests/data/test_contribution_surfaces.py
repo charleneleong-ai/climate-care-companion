@@ -43,8 +43,7 @@ def test_personas_discriminate_under_identical_conditions(scorer, people):
     assert len(people) >= 3, "need at least three personas to test discrimination"
     vulnerability = VulnerabilityScorer()
     tiers = {
-        scorer.assess(BEDFORD_19_JULY_2025, vulnerability.profile(p)).tier
-        for p in people.values()
+        scorer.assess(BEDFORD_19_JULY_2025, vulnerability.profile(p)).tier for p in people.values()
     }
     assert len(tiers) >= 2, f"all personas returned the same tier: {tiers}"
 

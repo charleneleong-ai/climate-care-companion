@@ -16,7 +16,7 @@ def test_onset_is_certain_when_every_day_clears_the_threshold(predictor):
     f = predictor.forecast([30.0, 30.0, 30.0], horizon_days=3)
     assert f.p_onset == 1.0
     assert f.expected_duration_days == 3
-    assert f.ensemble_spread == 0.0       # deterministic: no disagreement to report
+    assert f.ensemble_spread == 0.0  # deterministic: no disagreement to report
 
 
 def test_no_onset_when_nothing_clears_the_threshold(predictor):
@@ -44,8 +44,6 @@ def test_empty_forecast_does_not_raise(predictor):
     f = predictor.forecast([], horizon_days=7)
     assert f.p_onset == 0.0
     assert f.expected_peak == 0.0
-
-
 
 
 def test_threshold_is_configurable_without_editing_the_module(predictor):

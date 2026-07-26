@@ -26,11 +26,16 @@ def weather(night: float, day: float, offset: float = 0.5) -> ExposureFeatures:
     """Indoor figures derived from the model, never asserted."""
     model = IndoorModel()
     return ExposureFeatures(
-        date=date(2025, 1, 15), overnight_min=night, peak_apparent=day, peak_air=day,
+        date=date(2025, 1, 15),
+        overnight_min=night,
+        peak_apparent=day,
+        peak_air=day,
         hours_above_26=0,
         indoor_night_est=model.night(night, day, offset),
         indoor_day_est=model.day(night, day, offset),
-        spell_day=0, alert_level=AlertLevel.NONE, source=ExposureSource.FIXTURE,
+        spell_day=0,
+        alert_level=AlertLevel.NONE,
+        source=ExposureSource.FIXTURE,
     )
 
 
@@ -51,9 +56,11 @@ def test_no_cold_code_fires_on_a_mild_summer_day(scorer, night, day):
 
 @pytest.mark.parametrize(
     "night,day,expected",
-    [(2.0, 7.0, ReasonCode.INDOOR_BELOW_12),
-     (8.0, 15.0, ReasonCode.INDOOR_BELOW_16),
-     (14.0, 17.5, ReasonCode.INDOOR_BELOW_18)],
+    [
+        (2.0, 7.0, ReasonCode.INDOOR_BELOW_12),
+        (8.0, 15.0, ReasonCode.INDOOR_BELOW_16),
+        (14.0, 17.5, ReasonCode.INDOOR_BELOW_18),
+    ],
     ids=["freezing", "cold", "chilly"],
 )
 def test_cold_codes_still_fire_in_genuine_cold(scorer, night, day, expected):
@@ -65,8 +72,6 @@ def test_cold_codes_still_fire_in_genuine_cold(scorer, night, day, expected):
     a heated home — see the note on Place.heating_affordable in docs/deviations.md.
     """
     assert expected in fired(scorer, weather(night, day))
-
-
 
 
 def test_an_unheated_home_on_a_cold_day_still_reaches_a_tier(scorer):

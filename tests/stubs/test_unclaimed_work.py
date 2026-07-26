@@ -39,11 +39,7 @@ def test_ensemble_predictor_stub_names_track_b():
         EnsembleHeatwave().forecast([30.0], horizon_days=1)
 
 
-
-
 def test_cohort_membership_requires_a_consent_basis():
     """SC-6 enforced structurally, not remembered."""
     with pytest.raises(TypeError):
         CohortMember(cohort_id="c", person_id="p")
-
-

@@ -74,9 +74,7 @@ class AllocationEngine:
             parts.append("no cooling at home")
         return ", ".join(parts)
 
-    def rank_visits(
-        self, candidates: Sequence[Candidate], capacity: int
-    ) -> AllocationPlan:
+    def rank_visits(self, candidates: Sequence[Candidate], capacity: int) -> AllocationPlan:
         """Order a cohort for a fixed number of welfare visits.
 
         Low tier is never scheduled. FR-18 already established it means no action
@@ -103,14 +101,10 @@ class AllocationEngine:
         )
 
     @staticmethod
-    def nearest_km(
-        candidate: Candidate, resources: Sequence[Resource]
-    ) -> float | None:
+    def nearest_km(candidate: Candidate, resources: Sequence[Resource]) -> float | None:
         if not resources:
             return None
-        return min(
-            haversine_km(candidate.lat, candidate.lon, r.lat, r.lon) for r in resources
-        )
+        return min(haversine_km(candidate.lat, candidate.lon, r.lat, r.lon) for r in resources)
 
     def coverage_gap(
         self,
@@ -168,8 +162,7 @@ class AllocationEngine:
                 newly_covered=sum(
                     1
                     for person in report.uncovered
-                    if haversine_km(person.lat, person.lon, site.lat, site.lon)
-                    <= radius_km
+                    if haversine_km(person.lat, person.lon, site.lat, site.lon) <= radius_km
                 ),
             )
             for site in sites
