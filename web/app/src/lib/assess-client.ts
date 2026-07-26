@@ -105,11 +105,15 @@ export function requestBodyFor(profile: Profile) {
 }
 
 /** Ask the core. Server-side only — CORE_URL is not public. */
-export async function assessViaCore(profile: Profile): Promise<CoreAssessment> {
+export async function assessViaCore(
+  profile: Profile,
+  fixture?: 'heat',
+): Promise<CoreAssessment> {
+  const body = fixture ? { ...requestBodyFor(profile), fixture } : requestBodyFor(profile)
   const response = await fetch(`${CORE_URL}/assess`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(requestBodyFor(profile)),
+    body: JSON.stringify(body),
     cache: 'no-store',
   })
   if (!response.ok) {

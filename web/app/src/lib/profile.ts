@@ -160,7 +160,7 @@ export const DEMO_PROFILES: Profile[] = [
   {
     id: 'demo-alan',
     name: 'Alan',
-    regionCode: 'TLF', // East of England — Bedford area
+    regionCode: 'TLH', // East of England — Bedford is TLH, not TLF
     postcodeOutward: 'MK40',
     factors: ['over65', 'cardiovascular'],
     medClasses: ['beta_blocker'],
@@ -175,12 +175,13 @@ export const DEMO_PROFILES: Profile[] = [
   {
     id: 'demo-victor',
     name: 'Victor',
-    regionCode: 'TLF',
+    regionCode: 'TLH',
     postcodeOutward: 'MK40',
-    factors: ['over75', 'livesAlone', 'cardiovascular', 'renal', 'respiratory', 'medication'],
+    factors: ['over75', 'livesAlone', 'cardiovascular', 'renal', 'respiratory', 'medication', 'overheatingHome'],
     medClasses: ['diuretic', 'ace_arb', 'beta_blocker', 'ssri'],
     notes:
       'Cardiovascular + renal + COPD, on furosemide, ramipril, bisoprolol and citalopram. Lives alone. ' +
+      'Second-floor south-facing flat — does not cool below 24°C on hot nights. ' +
       'Eight interaction chains fire simultaneously. The generic "drink plenty" advice is wrong for him: ' +
       'renal_and_cardiovascular points the watch-for signs the opposite way to thirst. ' +
       'beta_blocker_exertion removes the cardiac warning that a gentle walk is dangerous.',
@@ -191,7 +192,7 @@ export const DEMO_PROFILES: Profile[] = [
   {
     id: 'demo-pat',
     name: 'Pat',
-    regionCode: 'TLF',
+    regionCode: 'TLH',
     postcodeOutward: 'MK45',
     factors: ['over65', 'dementia'],
     medClasses: [],
@@ -207,7 +208,7 @@ export const DEMO_PROFILES: Profile[] = [
   {
     id: 'demo-doris',
     name: 'Doris',
-    regionCode: 'TLF',
+    regionCode: 'TLH',
     postcodeOutward: 'MK40',
     factors: [
       'over85',
@@ -232,12 +233,12 @@ export const DEMO_PROFILES: Profile[] = [
   {
     id: 'demo-sylvia',
     name: 'Sylvia',
-    regionCode: 'TLF',
+    regionCode: 'TLH',
     postcodeOutward: 'MK41',
-    factors: ['over75', 'livesAlone', 'cardiovascular', 'mobility', 'medication'],
+    factors: ['over75', 'livesAlone', 'cardiovascular', 'mobility', 'medication', 'overheatingHome'],
     medClasses: ['antipsychotic', 'anticholinergic'],
     notes:
-      'On olanzapine and oxybutynin. Lives alone, mobility limited, third-floor west flat. ' +
+      'On olanzapine and oxybutynin. Lives alone, mobility limited, third-floor west flat — afternoon sun means it never cools below 25°C on hot nights. ' +
       'The NHS heat message says "your body will warn you — you will feel hot and start to sweat." ' +
       'For Sylvia both are switched off: olanzapine impairs temperature perception, ' +
       'oxybutynin suppresses sweating. anticholinergic_absent_sweating fires and states explicitly: ' +
@@ -249,7 +250,7 @@ export const DEMO_PROFILES: Profile[] = [
   {
     id: 'demo-ben',
     name: 'Ben',
-    regionCode: 'TLF',
+    regionCode: 'TLH',
     postcodeOutward: 'MK44',
     factors: ['livesAlone', 'cardiovascular'],
     medClasses: ['heat_sensitive', 'ace_arb'],
@@ -261,6 +262,43 @@ export const DEMO_PROFILES: Profile[] = [
       'diuretic_and_ace also fires: lisinopril blunts thirst so dehydration affecting ' +
       'insulin sensitivity goes unnoticed. Two interactions reached by following the person, not the tier.',
     createdAt: '2026-07-25T09:05:00.000Z',
+    isDemo: true,
+  },
+  // ── Regional coverage ────────────────────────────────────────────────────
+  // Marcus and Callum ensure the map shows activity in at least three regions.
+  // They also demonstrate two scenarios the paired personas cannot:
+  //   Marcus: the urban heat island and occupational exposure — the advice
+  //           the system gives him on a hot day has nothing to do with age.
+  //   Callum: cold risk dominates for most of the year. The same person who
+  //           needs insulin storage advice in July needs cold-home advice in
+  //           January. The risk engine handles both without a mode switch.
+  {
+    id: 'demo-marcus',
+    name: 'Marcus',
+    regionCode: 'TLI', // London — urban heat island, highest excess mortality risk at >29°C
+    postcodeOutward: 'E14',
+    factors: ['overheatingHome', 'outdoorWork', 'respiratory'],
+    medClasses: [],
+    notes:
+      'Cycle courier, asthmatic. Eighth-floor east-facing flat — no cross-ventilation, never cools at night. ' +
+      'On a hot day: hot air tightens the airways while the job keeps him outdoors through the peak. ' +
+      'No polypharmacy, no old age — this is the occupational and environmental risk the vulnerability score misses.',
+    createdAt: '2026-07-25T09:06:00.000Z',
+    isDemo: true,
+  },
+  {
+    id: 'demo-callum',
+    name: 'Callum',
+    regionCode: 'TLM', // Scotland — cold risk for most of the year; summer heat is a different problem
+    postcodeOutward: 'IV2',
+    factors: ['outdoorWork', 'diabetes'],
+    medClasses: ['heat_sensitive'],
+    notes:
+      'Estate worker in the Highlands. Outdoors most of the day year round. Insulin-dependent diabetic. ' +
+      'In winter: cold exposure and prolonged outdoor work are the risk. ' +
+      'In summer: heat_sensitive_storage fires — insulin degrades above 25°C in a hot vehicle or kit bag. ' +
+      'Same person, same system, different season, different plan.',
+    createdAt: '2026-07-25T09:07:00.000Z',
     isDemo: true,
   },
 ]
