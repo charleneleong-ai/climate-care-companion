@@ -19,10 +19,18 @@ def scorer() -> RiskScorer:
 
 
 def exposure(**kw) -> ExposureFeatures:
-    base = dict(date=date(2025, 7, 19), overnight_min=12.0, peak_apparent=18.0,
-                peak_air=18.0, hours_above_26=0, indoor_night_est=19.0,
-                indoor_day_est=21.0, spell_day=0, alert_level=AlertLevel.NOT_CHECKED,
-                source=ExposureSource.FIXTURE)
+    base = dict(
+        date=date(2025, 7, 19),
+        overnight_min=12.0,
+        peak_apparent=18.0,
+        peak_air=18.0,
+        hours_above_26=0,
+        indoor_night_est=19.0,
+        indoor_day_est=21.0,
+        spell_day=0,
+        alert_level=AlertLevel.NOT_CHECKED,
+        source=ExposureSource.FIXTURE,
+    )
     return ExposureFeatures(**(base | kw))
 
 
@@ -32,8 +40,16 @@ def vuln(score: int) -> VulnerabilityProfile:
 
 @pytest.mark.parametrize(
     "risk,expected",
-    [(0.0, Tier.LOW), (1.9, Tier.LOW), (2.0, Tier.ELEVATED), (4.9, Tier.ELEVATED),
-     (5.0, Tier.HIGH), (8.9, Tier.HIGH), (9.0, Tier.SEVERE), (30.0, Tier.SEVERE)],
+    [
+        (0.0, Tier.LOW),
+        (1.9, Tier.LOW),
+        (2.0, Tier.ELEVATED),
+        (4.9, Tier.ELEVATED),
+        (5.0, Tier.HIGH),
+        (8.9, Tier.HIGH),
+        (9.0, Tier.SEVERE),
+        (30.0, Tier.SEVERE),
+    ],
 )
 def test_tier_boundaries_per_spec_8_5(risk, expected):
     assert RiskScorer.tier_for(risk) is expected
@@ -49,8 +65,8 @@ def test_zero_exposure_returns_low_however_frail(scorer):
 
 def test_multiplier_is_one_plus_score_over_ten(scorer):
     a = scorer.assess(exposure(indoor_night_est=24.5), vuln(score=10))
-    assert a.exposure_score == 1                 # BEDROOM_WARM
-    assert a.risk_score == pytest.approx(2.0)    # 1 * (1 + 10/10)
+    assert a.exposure_score == 1  # BEDROOM_WARM
+    assert a.risk_score == pytest.approx(2.0)  # 1 * (1 + 10/10)
 
 
 @pytest.mark.parametrize(
@@ -58,8 +74,9 @@ def test_multiplier_is_one_plus_score_over_ten(scorer):
     [(26.5, ReasonCode.BEDROOM_UNSAFE), (24.5, ReasonCode.BEDROOM_WARM)],
 )
 def test_bedroom_codes_are_mutually_exclusive(scorer, indoor_night, expected_code):
-    codes = {r.code for r in scorer.assess(exposure(indoor_night_est=indoor_night),
-                                           vuln(0)).reasons}
+    codes = {
+        r.code for r in scorer.assess(exposure(indoor_night_est=indoor_night), vuln(0)).reasons
+    }
     assert codes & {ReasonCode.BEDROOM_UNSAFE, ReasonCode.BEDROOM_WARM} == {expected_code}
 
 
@@ -81,8 +98,11 @@ def test_cold_codes_are_mutually_exclusive(scorer):
     on a warm day a low modelled indoor figure is an artefact, not a cold home."""
     cold_day = exposure(peak_air=12.0, peak_apparent=12.0, indoor_day_est=14.0)
     codes = {r.code for r in scorer.assess(cold_day, vuln(0)).reasons}
-    cold = codes & {ReasonCode.INDOOR_BELOW_18, ReasonCode.INDOOR_BELOW_16,
-                    ReasonCode.INDOOR_BELOW_12}
+    cold = codes & {
+        ReasonCode.INDOOR_BELOW_18,
+        ReasonCode.INDOOR_BELOW_16,
+        ReasonCode.INDOOR_BELOW_12,
+    }
     assert cold == {ReasonCode.INDOOR_BELOW_16}
 
 
@@ -91,8 +111,11 @@ def test_a_low_indoor_figure_on_a_warm_day_fires_nothing(scorer):
     modelling artefact in June."""
     warm_day = exposure(peak_air=19.0, peak_apparent=19.0, indoor_day_est=14.0)
     codes = {r.code for r in scorer.assess(warm_day, vuln(0)).reasons}
-    assert not codes & {ReasonCode.INDOOR_BELOW_18, ReasonCode.INDOOR_BELOW_16,
-                        ReasonCode.INDOOR_BELOW_12}
+    assert not codes & {
+        ReasonCode.INDOOR_BELOW_18,
+        ReasonCode.INDOOR_BELOW_16,
+        ReasonCode.INDOOR_BELOW_12,
+    }
 
 
 def test_assess_is_deterministic(scorer):

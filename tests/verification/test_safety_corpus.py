@@ -27,9 +27,9 @@ def test_medication_actions_direct_to_a_professional(corpus):
     med_rows = corpus.medication_actions()
     assert med_rows, "the corpus has no medication rows to check"
     for row in med_rows:
-        assert row.escalate_to in PROFESSIONALS, (
-            f"{row.reason_code} states a medication risk without routing to a professional"
-        )
+        assert (
+            row.escalate_to in PROFESSIONALS
+        ), f"{row.reason_code} states a medication risk without routing to a professional"
 
 
 def test_no_reason_explanation_advises_altering_a_prescription(corpus):
@@ -37,7 +37,6 @@ def test_no_reason_explanation_advises_altering_a_prescription(corpus):
     offending = [
         (code, reason.explanation)
         for code, reason in corpus.reasons.items()
-        if code.startswith("med_")
-        and FORBIDDEN_MEDICATION_ADVICE.search(reason.explanation)
+        if code.startswith("med_") and FORBIDDEN_MEDICATION_ADVICE.search(reason.explanation)
     ]
     assert not offending, f"SC-1 violation in reason text: {offending}"

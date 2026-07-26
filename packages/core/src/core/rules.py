@@ -76,9 +76,7 @@ class VulnerabilityRule:
             case VulnKind.CONDITION:
                 return Condition(self.value) in person.conditions
             case VulnKind.MED_CLASS:
-                return any(
-                    med.drug_class == MedClass(self.value) for med in person.medications
-                )
+                return any(med.drug_class == MedClass(self.value) for med in person.medications)
         return False
 
 
@@ -88,26 +86,18 @@ VULNERABILITY_RULES: tuple[VulnerabilityRule, ...] = (
     VulnerabilityRule(ReasonCode.AGE_75_84, VulnKind.AGE_BAND, AgeBand.B75_84, 2),
     VulnerabilityRule(ReasonCode.LIVES_ALONE, VulnKind.FLAG, "lives_alone", 2),
     VulnerabilityRule(ReasonCode.DEMENTIA, VulnKind.CONDITION, Condition.DEMENTIA, 2),
-    VulnerabilityRule(
-        ReasonCode.CARDIOVASCULAR, VulnKind.CONDITION, Condition.CARDIOVASCULAR, 2
-    ),
+    VulnerabilityRule(ReasonCode.CARDIOVASCULAR, VulnKind.CONDITION, Condition.CARDIOVASCULAR, 2),
     VulnerabilityRule(ReasonCode.RENAL, VulnKind.CONDITION, Condition.RENAL, 2),
-    VulnerabilityRule(
-        ReasonCode.RESPIRATORY, VulnKind.CONDITION, Condition.RESPIRATORY, 1
-    ),
+    VulnerabilityRule(ReasonCode.RESPIRATORY, VulnKind.CONDITION, Condition.RESPIRATORY, 1),
     VulnerabilityRule(ReasonCode.MOBILITY_LIMITED, VulnKind.FLAG, "mobility_limited", 1),
     VulnerabilityRule(ReasonCode.MED_LITHIUM, VulnKind.MED_CLASS, MedClass.LITHIUM, 3),
     VulnerabilityRule(ReasonCode.MED_DIURETIC, VulnKind.MED_CLASS, MedClass.DIURETIC, 2),
     VulnerabilityRule(
         ReasonCode.MED_ANTICHOLINERGIC, VulnKind.MED_CLASS, MedClass.ANTICHOLINERGIC, 2
     ),
-    VulnerabilityRule(
-        ReasonCode.MED_ANTIPSYCHOTIC, VulnKind.MED_CLASS, MedClass.ANTIPSYCHOTIC, 2
-    ),
+    VulnerabilityRule(ReasonCode.MED_ANTIPSYCHOTIC, VulnKind.MED_CLASS, MedClass.ANTIPSYCHOTIC, 2),
     VulnerabilityRule(ReasonCode.MED_ACE_ARB, VulnKind.MED_CLASS, MedClass.ACE_ARB, 1),
-    VulnerabilityRule(
-        ReasonCode.MED_BETA_BLOCKER, VulnKind.MED_CLASS, MedClass.BETA_BLOCKER, 1
-    ),
+    VulnerabilityRule(ReasonCode.MED_BETA_BLOCKER, VulnKind.MED_CLASS, MedClass.BETA_BLOCKER, 1),
     VulnerabilityRule(ReasonCode.MED_SSRI, VulnKind.MED_CLASS, MedClass.SSRI, 1),
 )
 
@@ -116,15 +106,9 @@ VULNERABILITY_RULES: tuple[VulnerabilityRule, ...] = (
 #
 # The three cold codes carry the COLD_GUARD bound on peak_air. See docs/deviations.md.
 EXPOSURE_RULES: tuple[ExposureRule, ...] = (
-    ExposureRule(
-        ReasonCode.NIGHT_NO_RECOVERY, (Bound("overnight_min", minimum=20),), 3
-    ),
-    ExposureRule(
-        ReasonCode.BEDROOM_UNSAFE, (Bound("indoor_night_est", minimum=26),), 3
-    ),
-    ExposureRule(
-        ReasonCode.BEDROOM_WARM, (Bound("indoor_night_est", 24, 26),), 1
-    ),
+    ExposureRule(ReasonCode.NIGHT_NO_RECOVERY, (Bound("overnight_min", minimum=20),), 3),
+    ExposureRule(ReasonCode.BEDROOM_UNSAFE, (Bound("indoor_night_est", minimum=26),), 3),
+    ExposureRule(ReasonCode.BEDROOM_WARM, (Bound("indoor_night_est", 24, 26),), 1),
     ExposureRule(ReasonCode.PEAK_HEAT, (Bound("peak_apparent", minimum=30),), 2),
     ExposureRule(
         ReasonCode.SUSTAINED_SPELL,

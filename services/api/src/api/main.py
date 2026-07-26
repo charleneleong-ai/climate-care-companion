@@ -172,10 +172,18 @@ class PlaceRequest(BaseModel):
 
     def to_place(self, person_id: str, offset: float) -> Place:
         return Place(
-            person_id=person_id, postcode="", lat=self.lat, lon=self.lon,
-            admin_district="", region="", dwelling_type=self.dwelling_type,
-            floor=self.floor, aspect=Aspect.SOUTH, has_cooling=self.has_cooling,
-            heating_affordable=True, dwelling_offset=offset,
+            person_id=person_id,
+            postcode="",
+            lat=self.lat,
+            lon=self.lon,
+            admin_district="",
+            region="",
+            dwelling_type=self.dwelling_type,
+            floor=self.floor,
+            aspect=Aspect.SOUTH,
+            has_cooling=self.has_cooling,
+            heating_affordable=True,
+            dwelling_offset=offset,
         )
 
 
@@ -218,8 +226,7 @@ def assess(request: AssessRequest) -> dict[str, Any]:
         "exposure_score": assessment.exposure_score,
         "vulnerability_score": assessment.vulnerability_score,
         "reasons": [
-            {"code": r.code, "title": r.title, "explanation": r.explanation,
-             "weight": r.weight}
+            {"code": r.code, "title": r.title, "explanation": r.explanation, "weight": r.weight}
             for r in assessment.reasons
         ],
         "exposure": {
@@ -236,8 +243,13 @@ def assess(request: AssessRequest) -> dict[str, Any]:
         "plan": {
             "audience": plan.audience,
             "items": [
-                {"code": i.code, "text": i.text, "watch_for": i.watch_for,
-                 "escalate_to": i.escalate_to, "source": i.source}
+                {
+                    "code": i.code,
+                    "text": i.text,
+                    "watch_for": i.watch_for,
+                    "escalate_to": i.escalate_to,
+                    "source": i.source,
+                }
                 for i in plan.items
             ],
             "watch_points": list(plan.watch_points),

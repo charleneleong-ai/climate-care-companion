@@ -63,9 +63,7 @@ class PreventionPlanBuilder:
         lead_time_hours: int = 0,
         expected_peak: float | None = None,
     ) -> PreventionPlan:
-        matched = self.interactions.matching(
-            exposure, person, assessment.tier, report
-        )
+        matched = self.interactions.matching(exposure, person, assessment.tier, report)
         items = self.advice_items(matched, audience)
         superseded = {code for rule in matched for code in rule.supersedes}
         items.extend(self.reason_items(assessment, audience, superseded))

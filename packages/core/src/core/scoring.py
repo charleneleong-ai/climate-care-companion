@@ -55,20 +55,14 @@ class RiskScorer:
             for code in codes
         )
 
-    def assess(
-        self, exposure: ExposureFeatures, vulnerability: VulnerabilityProfile
-    ) -> Assessment:
+    def assess(self, exposure: ExposureFeatures, vulnerability: VulnerabilityProfile) -> Assessment:
         triggered = [rule for rule in self.exposure_rules if rule.applies(exposure)]
         exposure_score = sum(rule.weight for rule in triggered)
 
         # FR-18: zero exposure is Low regardless of frailty. Vulnerability modifies
         # the effect of exposure; it is not itself a harm. Additive scoring would
         # place a frail person permanently at an elevated tier and destroy the signal.
-        risk = (
-            0.0
-            if exposure_score == 0
-            else exposure_score * (1 + vulnerability.score / 10)
-        )
+        risk = 0.0 if exposure_score == 0 else exposure_score * (1 + vulnerability.score / 10)
 
         codes = [rule.code for rule in triggered] + list(vulnerability.codes)
         return Assessment(

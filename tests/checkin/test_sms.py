@@ -20,6 +20,7 @@ OPENER = TemplateMessage(
 
 # ------------------------------------------------------------------ rendering
 
+
 def test_a_question_renders_with_numbered_options():
     """SMS has no buttons, so the options have to be in the text."""
     text = SmsFormatter.render(QUESTION)
@@ -47,11 +48,23 @@ def test_an_over_long_message_is_rejected_rather_than_fragmented():
 
 # -------------------------------------------------------------- reply parsing
 
+
 @pytest.mark.parametrize(
     "reply,expected",
-    [("yes", True), ("YES", True), ("y", True), ("1", True), (" Yeah ", True),
-     ("no", False), ("N", False), ("2", False), ("nope.", False),
-     ("unsure", None), ("3", None), ("dunno", None)],
+    [
+        ("yes", True),
+        ("YES", True),
+        ("y", True),
+        ("1", True),
+        (" Yeah ", True),
+        ("no", False),
+        ("N", False),
+        ("2", False),
+        ("nope.", False),
+        ("unsure", None),
+        ("3", None),
+        ("dunno", None),
+    ],
 )
 def test_replies_map_onto_the_closed_answer_set(reply, expected):
     button_id = SmsFormatter.parse_reply(reply, "q_bedroom_warm")
@@ -64,7 +77,6 @@ def test_replies_map_onto_the_closed_answer_set(reply, expected):
 def test_an_unrecognised_reply_is_not_an_answer(reply):
     """Same rule as the voice channel: confusion is escalated, never interpreted."""
     assert SmsFormatter.parse_reply(reply, "q_bedroom_warm") is None
-
 
 
 def test_numeric_replies_match_the_displayed_option_order():

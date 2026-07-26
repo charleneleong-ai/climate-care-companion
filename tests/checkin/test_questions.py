@@ -13,7 +13,10 @@ def bank() -> QuestionBank:
 
 def assessment(tier: Tier, *codes: ReasonCode) -> Assessment:
     return Assessment(
-        tier=tier, risk_score=6.0, exposure_score=3, vulnerability_score=10,
+        tier=tier,
+        risk_score=6.0,
+        exposure_score=3,
+        vulnerability_score=10,
         reasons=tuple(Reason(c, "t", "e", 1) for c in codes),
     )
 
@@ -24,6 +27,7 @@ def codes_of(questionnaire) -> list[str]:
 
 # ----------------------------------------------------------------- selection
 
+
 def test_low_tier_asks_nothing(bank):
     q = bank.build_for("doris", WINDOW, assessment(Tier.LOW, ReasonCode.MED_DIURETIC))
     assert q.questions == ()
@@ -33,7 +37,9 @@ def test_only_questions_for_the_persons_own_reason_codes_are_asked(bank):
     q = bank.build_for("doris", WINDOW, assessment(Tier.ELEVATED, ReasonCode.MED_DIURETIC))
     texts = [item.text for item in q.questions]
     assert any("drink" in t for t in texts)
-    assert not any("ankles" in t for t in texts), "asked a cardiovascular question of someone without it"
+    assert not any(
+        "ankles" in t for t in texts
+    ), "asked a cardiovascular question of someone without it"
 
 
 def test_questions_with_no_reason_code_are_always_asked(bank):
@@ -45,9 +51,15 @@ def test_duplicate_question_text_is_asked_only_once(bank):
     """Five medication codes map to the same fluids question. Nobody should be
     asked the same thing five times."""
     q = bank.build_for(
-        "doris", WINDOW,
-        assessment(Tier.ELEVATED, ReasonCode.MED_DIURETIC, ReasonCode.MED_ACE_ARB,
-                   ReasonCode.MED_LITHIUM, ReasonCode.RENAL),
+        "doris",
+        WINDOW,
+        assessment(
+            Tier.ELEVATED,
+            ReasonCode.MED_DIURETIC,
+            ReasonCode.MED_ACE_ARB,
+            ReasonCode.MED_LITHIUM,
+            ReasonCode.RENAL,
+        ),
     )
     texts = [item.text for item in q.questions]
     assert len(texts) == len(set(texts))
@@ -60,9 +72,11 @@ def test_questions_below_the_tier_threshold_are_not_asked(bank):
 
 # ------------------------------------------------------------------ register
 
+
 def test_dementia_selects_the_simplified_register(bank):
-    q = bank.build_for("doris", WINDOW, assessment(Tier.ELEVATED, ReasonCode.DEMENTIA,
-                                                   ReasonCode.MED_DIURETIC))
+    q = bank.build_for(
+        "doris", WINDOW, assessment(Tier.ELEVATED, ReasonCode.DEMENTIA, ReasonCode.MED_DIURETIC)
+    )
     assert q.register is Register.SIMPLE
     assert any(item.text == "Have you had a drink?" for item in q.questions)
 
@@ -74,6 +88,7 @@ def test_without_dementia_the_standard_register_is_used(bank):
 
 
 # --------------------------------------------------------------------- length
+
 
 def test_the_questionnaire_is_capped_so_it_stays_answerable(bank):
     every_code = tuple(ReasonCode)
@@ -92,8 +107,7 @@ def test_the_simplified_register_is_capped_shorter(bank):
 def test_red_flag_questions_are_never_dropped_by_the_cap(bank):
     """SC-3. A truncated questionnaire must not be how a red flag goes unasked."""
     every_code = tuple(ReasonCode)
-    q = bank.build_for("d", WINDOW,
-                       assessment(Tier.SEVERE, ReasonCode.DEMENTIA, *every_code))
+    q = bank.build_for("d", WINDOW, assessment(Tier.SEVERE, ReasonCode.DEMENTIA, *every_code))
     asked = codes_of(q)
     for code in ("q_rf_confusion", "q_rf_urine", "q_rf_skin"):
         assert code in asked, f"{code} was dropped by the length cap"
@@ -101,10 +115,11 @@ def test_red_flag_questions_are_never_dropped_by_the_cap(bank):
 
 # ------------------------------------------------------- answers to SelfReport
 
+
 def test_answers_become_a_self_report(bank):
-    q = bank.build_for("doris", WINDOW,
-                       assessment(Tier.ELEVATED, ReasonCode.BEDROOM_WARM,
-                                  ReasonCode.MED_DIURETIC))
+    q = bank.build_for(
+        "doris", WINDOW, assessment(Tier.ELEVATED, ReasonCode.BEDROOM_WARM, ReasonCode.MED_DIURETIC)
+    )
     report = q.to_self_report({"q_bedroom_warm": True, "q_fluids_diuretic": False})
     assert report.person_id == "doris"
     assert report.answered is True
@@ -130,6 +145,7 @@ def test_unanswered_individual_questions_stay_none(bank):
 
 
 # -------------------------------------------------------------- red flags SC-3
+
 
 def test_a_yes_polarity_red_flag_fires_on_yes(bank):
     q = bank.build_for("d", WINDOW, assessment(Tier.HIGH, ReasonCode.AGE_85_PLUS))

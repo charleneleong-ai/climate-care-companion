@@ -18,9 +18,7 @@ class ThresholdHeatwave:
     def __init__(self, threshold: float = EPISODE_THRESHOLD) -> None:
         self.threshold = threshold
 
-    def forecast(
-        self, daily_peaks: Sequence[float], horizon_days: int
-    ) -> EpisodeForecast:
+    def forecast(self, daily_peaks: Sequence[float], horizon_days: int) -> EpisodeForecast:
         window = list(daily_peaks[:horizon_days])
         qualifying = [i for i, peak in enumerate(window) if peak >= self.threshold]
         if not qualifying:
@@ -45,9 +43,7 @@ class ThresholdHeatwave:
 class EnsembleHeatwave:
     """Track B. P(onset) from the fraction of ICON/GFS/ECMWF members over threshold."""
 
-    def forecast(
-        self, daily_peaks: Sequence[float], horizon_days: int
-    ) -> EpisodeForecast:
+    def forecast(self, daily_peaks: Sequence[float], horizon_days: int) -> EpisodeForecast:
         raise NotImplementedError(
             "Track B owns this. Fetch the Open-Meteo ensemble endpoint, compute "
             "p_onset as the member fraction clearing EPISODE_THRESHOLD, and report "

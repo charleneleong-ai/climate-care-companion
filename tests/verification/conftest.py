@@ -46,12 +46,8 @@ def benign_season() -> list[ExposureFeatures]:
             peak_apparent=BENIGN_DAY_MAX,
             peak_air=BENIGN_DAY_MAX,
             hours_above_26=0,
-            indoor_night_est=model.night(
-                BENIGN_NIGHT_MIN, BENIGN_DAY_MAX, MODEST_DWELLING_OFFSET
-            ),
-            indoor_day_est=model.day(
-                BENIGN_NIGHT_MIN, BENIGN_DAY_MAX, MODEST_DWELLING_OFFSET
-            ),
+            indoor_night_est=model.night(BENIGN_NIGHT_MIN, BENIGN_DAY_MAX, MODEST_DWELLING_OFFSET),
+            indoor_day_est=model.day(BENIGN_NIGHT_MIN, BENIGN_DAY_MAX, MODEST_DWELLING_OFFSET),
             spell_day=0,
             alert_level=AlertLevel.NONE,
             source=ExposureSource.FIXTURE,

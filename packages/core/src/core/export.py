@@ -56,8 +56,7 @@ class RuleExporter:
             "_banner": BANNER,
             "heating_day_max": HEATING_DAY_MAX,
             "tier_thresholds": [
-                {"floor": floor, "tier": tier.name.title()}
-                for floor, tier in RiskScorer.THRESHOLDS
+                {"floor": floor, "tier": tier.name.title()} for floor, tier in RiskScorer.THRESHOLDS
             ],
             "exposure_rules": [
                 {
@@ -88,8 +87,7 @@ class RuleExporter:
                 for rule in VULNERABILITY_RULES
             ],
             "med_classes": {
-                name: med_class.value
-                for name, med_class in sorted(self.corpus.med_classes.items())
+                name: med_class.value for name, med_class in sorted(self.corpus.med_classes.items())
             },
             "med_class_weights": {
                 rule.value: rule.weight
@@ -97,7 +95,6 @@ class RuleExporter:
                 if rule.kind is VulnKind.MED_CLASS
             },
         }
-
 
     @staticmethod
     def cases() -> tuple[ParityCase, ...]:
@@ -112,22 +109,33 @@ class RuleExporter:
 
         def exposure(**kw) -> ExposureFeatures:
             base = dict(
-                date=date(2025, 7, 19), overnight_min=12.0, peak_apparent=18.0,
-                peak_air=18.0, hours_above_26=0, indoor_night_est=19.0,
-                indoor_day_est=21.0, spell_day=0,
-                alert_level=AlertLevel.NOT_CHECKED, source=ExposureSource.FIXTURE,
+                date=date(2025, 7, 19),
+                overnight_min=12.0,
+                peak_apparent=18.0,
+                peak_air=18.0,
+                hours_above_26=0,
+                indoor_night_est=19.0,
+                indoor_day_est=21.0,
+                spell_day=0,
+                alert_level=AlertLevel.NOT_CHECKED,
+                source=ExposureSource.FIXTURE,
             )
             return ExposureFeatures(**(base | kw))
 
         def person(**kw) -> Person:
             base = dict(
-                id="case", name="Case", age_band=AgeBand.UNDER_65,
-                lives_alone=False, mobility_limited=False,
+                id="case",
+                name="Case",
+                age_band=AgeBand.UNDER_65,
+                lives_alone=False,
+                mobility_limited=False,
             )
             return Person(**(base | kw))
 
         doris = person(
-            id="doris", age_band=AgeBand.B85_PLUS, lives_alone=True,
+            id="doris",
+            age_band=AgeBand.B85_PLUS,
+            lives_alone=True,
             conditions=(Condition.DEMENTIA,),
             medications=(
                 Med("furosemide", MedClass.DIURETIC),
@@ -137,9 +145,15 @@ class RuleExporter:
         return (
             ParityCase(
                 "spec_8_6_worked_example",
-                exposure(overnight_min=17.0, peak_apparent=29.0, peak_air=29.0,
-                         hours_above_26=7, indoor_night_est=24.6,
-                         indoor_day_est=25.85, spell_day=3),
+                exposure(
+                    overnight_min=17.0,
+                    peak_apparent=29.0,
+                    peak_air=29.0,
+                    hours_above_26=7,
+                    indoor_night_est=24.6,
+                    indoor_day_est=25.85,
+                    spell_day=3,
+                ),
                 doris,
             ),
             ParityCase("zero_exposure_frail_person_stays_low", exposure(), doris),
@@ -150,17 +164,24 @@ class RuleExporter:
             ),
             ParityCase(
                 "cold_codes_fire_in_genuine_cold",
-                exposure(peak_air=7.0, peak_apparent=7.0, overnight_min=2.0,
-                         indoor_night_est=6.0, indoor_day_est=6.95),
+                exposure(
+                    peak_air=7.0,
+                    peak_apparent=7.0,
+                    overnight_min=2.0,
+                    indoor_night_est=6.0,
+                    indoor_day_est=6.95,
+                ),
                 person(age_band=AgeBand.B85_PLUS),
             ),
             ParityCase(
                 "bedroom_band_lower_edge",
-                exposure(indoor_night_est=24.0), person(age_band=AgeBand.B85_PLUS),
+                exposure(indoor_night_est=24.0),
+                person(age_band=AgeBand.B85_PLUS),
             ),
             ParityCase(
                 "bedroom_band_upper_edge_is_unsafe",
-                exposure(indoor_night_est=26.0), person(age_band=AgeBand.B85_PLUS),
+                exposure(indoor_night_est=26.0),
+                person(age_band=AgeBand.B85_PLUS),
             ),
             ParityCase(
                 "sustained_spell_needs_both_bounds",
@@ -286,7 +307,6 @@ class RuleExporter:
     @staticmethod
     def render(document: dict[str, Any]) -> str:
         return json.dumps(document, indent=2, sort_keys=False) + "\n"
-
 
     def write(self) -> tuple[Path, ...]:
         WEB_SHARED.mkdir(parents=True, exist_ok=True)

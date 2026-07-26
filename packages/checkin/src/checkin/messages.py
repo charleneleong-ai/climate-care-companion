@@ -12,9 +12,7 @@ from pathlib import Path
 
 import yaml
 
-TEMPLATES_PATH = (
-    Path(__file__).resolve().parents[4] / "data" / "seed" / "whatsapp_templates.yaml"
-)
+TEMPLATES_PATH = Path(__file__).resolve().parents[4] / "data" / "seed" / "whatsapp_templates.yaml"
 
 ANSWER_BY_TOKEN: dict[str, bool | None] = {"yes": True, "no": False, "unsure": None}
 TOKEN_BY_ANSWER: dict[bool | None, str] = {True: "yes", False: "no", None: "unsure"}
@@ -52,9 +50,7 @@ class ReplyButton:
 
     def __post_init__(self) -> None:
         if len(self.title) > BUTTON_TITLE_MAX:
-            raise ValueError(
-                f"button title {self.title!r} exceeds {BUTTON_TITLE_MAX} characters"
-            )
+            raise ValueError(f"button title {self.title!r} exceeds {BUTTON_TITLE_MAX} characters")
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,8 +100,7 @@ class ButtonMessage:
             raise ValueError("an interactive message needs at least one button")
         if len(self.buttons) > BUTTON_COUNT_MAX:
             raise ValueError(
-                f"WhatsApp allows at most {BUTTON_COUNT_MAX} reply buttons, "
-                f"got {len(self.buttons)}"
+                f"WhatsApp allows at most {BUTTON_COUNT_MAX} reply buttons, got {len(self.buttons)}"
             )
         if len(self.body) > BODY_TEXT_MAX:
             raise ValueError(f"body exceeds {BODY_TEXT_MAX} characters")

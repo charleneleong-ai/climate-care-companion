@@ -85,7 +85,9 @@ class TwilioFormatter:
         return json.dumps(variables)
 
     @staticmethod
-    def parse_inbound(form: dict[str, str], question_code: str | None = None) -> tuple[str, str | None]:
+    def parse_inbound(
+        form: dict[str, str], question_code: str | None = None
+    ) -> tuple[str, str | None]:
         """Return (sender, button_id).
 
         Prefers ButtonPayload, which carries the question code. Falls back to
@@ -107,7 +109,9 @@ class TwilioFormatter:
         return sender, None
 
     @staticmethod
-    def validate_signature(url: str, params: dict[str, str], signature: str, auth_token: str) -> bool:
+    def validate_signature(
+        url: str, params: dict[str, str], signature: str, auth_token: str
+    ) -> bool:
         """Twilio's X-Twilio-Signature check.
 
         Not optional. An unauthenticated webhook lets anyone POST "yes, my bedroom
@@ -173,9 +177,7 @@ class TwilioChannel:
         self.transport = transport
         self.content_sid = content_sid or os.environ.get("TWILIO_CONTENT_SID")
         self.allowed_recipients = (
-            allowed_recipients
-            if allowed_recipients is not None
-            else self.allowlist_from_env()
+            allowed_recipients if allowed_recipients is not None else self.allowlist_from_env()
         )
         self.client = client
 

@@ -41,7 +41,10 @@ def client() -> TestClient:
 
 def make_session(bank) -> CheckinSession:
     assessment = Assessment(
-        tier=Tier.HIGH, risk_score=6.0, exposure_score=3, vulnerability_score=10,
+        tier=Tier.HIGH,
+        risk_score=6.0,
+        exposure_score=3,
+        vulnerability_score=10,
         reasons=(Reason(ReasonCode.BEDROOM_WARM, "t", "e", 1),),
     )
     return CheckinSession(
@@ -63,6 +66,7 @@ def post(client, form: dict[str, str], headers: dict[str, str] | None = None):
 
 
 # ------------------------------------------------------------------- security
+
 
 def test_an_unsigned_request_is_rejected(client):
     """Without this anyone can inject false health data for a real person."""
@@ -100,6 +104,7 @@ def test_a_webhook_with_no_sender_is_a_bad_request(client):
 
 
 # ---------------------------------------------------------------- the exchange
+
 
 def test_a_button_reply_is_recorded_and_the_next_question_goes_out(client, bank):
     session = make_session(bank)
@@ -143,10 +148,13 @@ def test_the_whatsapp_prefix_is_stripped_when_matching_a_session(client, bank):
     webhook_module.SESSIONS.open(RECIPIENT, session)
     first = session.questionnaire.questions[0]
 
-    post(client, {
-        "From": f"whatsapp:{RECIPIENT}",
-        "ButtonPayload": encode_button_id(first.code, False),
-    })
+    post(
+        client,
+        {
+            "From": f"whatsapp:{RECIPIENT}",
+            "ButtonPayload": encode_button_id(first.code, False),
+        },
+    )
     assert session.answers[first.code] is False
 
 

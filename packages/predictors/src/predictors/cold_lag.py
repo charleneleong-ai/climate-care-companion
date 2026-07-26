@@ -4,6 +4,4 @@ class ColdLagTracker:
     which is a design change, not a threshold change."""
 
     def track(self, *args: object, **kwargs: object) -> None:
-        raise NotImplementedError(
-            "Track B owns this. Deferred to v0.4 — see spec section 12."
-        )
+        raise NotImplementedError("Track B owns this. Deferred to v0.4 — see spec section 12.")

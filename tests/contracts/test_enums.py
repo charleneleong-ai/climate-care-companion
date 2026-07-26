@@ -2,14 +2,31 @@ import pytest
 from contracts import AgeBand, ExposureSource, MedClass, ReasonCode, Tier
 
 EXPOSURE_CODES = {
-    "NIGHT_NO_RECOVERY", "BEDROOM_UNSAFE", "BEDROOM_WARM", "PEAK_HEAT",
-    "SUSTAINED_SPELL", "INDOOR_BELOW_18", "INDOOR_BELOW_16", "INDOOR_BELOW_12",
+    "NIGHT_NO_RECOVERY",
+    "BEDROOM_UNSAFE",
+    "BEDROOM_WARM",
+    "PEAK_HEAT",
+    "SUSTAINED_SPELL",
+    "INDOOR_BELOW_18",
+    "INDOOR_BELOW_16",
+    "INDOOR_BELOW_12",
 }
 VULNERABILITY_CODES = {
-    "AGE_85_PLUS", "AGE_75_84", "LIVES_ALONE", "DEMENTIA", "CARDIOVASCULAR",
-    "RENAL", "RESPIRATORY", "MOBILITY_LIMITED", "MED_LITHIUM", "MED_DIURETIC",
-    "MED_ANTICHOLINERGIC", "MED_ANTIPSYCHOTIC", "MED_ACE_ARB",
-    "MED_BETA_BLOCKER", "MED_SSRI",
+    "AGE_85_PLUS",
+    "AGE_75_84",
+    "LIVES_ALONE",
+    "DEMENTIA",
+    "CARDIOVASCULAR",
+    "RENAL",
+    "RESPIRATORY",
+    "MOBILITY_LIMITED",
+    "MED_LITHIUM",
+    "MED_DIURETIC",
+    "MED_ANTICHOLINERGIC",
+    "MED_ANTIPSYCHOTIC",
+    "MED_ACE_ARB",
+    "MED_BETA_BLOCKER",
+    "MED_SSRI",
 }
 
 
@@ -29,8 +46,14 @@ def test_exposure_source_records_provenance(member):
 
 def test_med_classes_cover_spec_8_3():
     assert {c.name for c in MedClass} >= {
-        "DIURETIC", "ANTICHOLINERGIC", "BETA_BLOCKER", "ACE_ARB",
-        "ANTIPSYCHOTIC", "SSRI", "LITHIUM", "HEAT_SENSITIVE",
+        "DIURETIC",
+        "ANTICHOLINERGIC",
+        "BETA_BLOCKER",
+        "ACE_ARB",
+        "ANTIPSYCHOTIC",
+        "SSRI",
+        "LITHIUM",
+        "HEAT_SENSITIVE",
     }
 
 

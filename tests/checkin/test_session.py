@@ -25,15 +25,17 @@ def bank() -> QuestionBank:
 def session(bank, tier=Tier.HIGH, *codes) -> CheckinSession:
     codes = codes or (ReasonCode.BEDROOM_WARM, ReasonCode.MED_DIURETIC)
     assessment = Assessment(
-        tier=tier, risk_score=6.0, exposure_score=3, vulnerability_score=10,
+        tier=tier,
+        risk_score=6.0,
+        exposure_score=3,
+        vulnerability_score=10,
         reasons=tuple(Reason(c, "t", "e", 1) for c in codes),
     )
-    return CheckinSession(
-        questionnaire=bank.build_for("doris", WINDOW, assessment), opener=OPENER
-    )
+    return CheckinSession(questionnaire=bank.build_for("doris", WINDOW, assessment), opener=OPENER)
 
 
 # ------------------------------------------------- the template-first constraint
+
 
 def test_the_first_message_is_always_the_approved_template(bank):
     """Meta permits no other way to open a business-initiated conversation."""
@@ -68,6 +70,7 @@ def test_the_window_closes_after_twenty_four_hours_of_silence(bank):
 
 
 # ----------------------------------------------------------------- progression
+
 
 def test_answers_advance_the_session_question_by_question(bank):
     s = session(bank)
@@ -113,6 +116,7 @@ def test_answering_out_of_order_still_completes(bank):
 
 # ---------------------------------------------------------------- the no answer
 
+
 def test_silence_past_the_timeout_is_overdue(bank):
     """A check-in is about tonight, so silence becomes a signal well before
     WhatsApp's 24-hour window expires."""
@@ -156,6 +160,7 @@ def test_a_partial_session_keeps_what_was_gathered(bank):
 
 
 # ------------------------------------------------------------ end to end, dry run
+
 
 def test_a_whole_check_in_runs_over_the_dry_run_channel(bank):
     s = session(bank)

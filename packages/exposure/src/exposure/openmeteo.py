@@ -90,19 +90,16 @@ class OpenMeteoClient:
             grouped.setdefault(stamp[:10], []).append(value)
         return grouped
 
-    def parse(self, body: dict[str, Any], latitude: float, longitude: float,
-              now: datetime) -> Forecast:
+    def parse(
+        self, body: dict[str, Any], latitude: float, longitude: float, now: datetime
+    ) -> Forecast:
         hourly, daily = body["hourly"], body["daily"]
         return Forecast(
             latitude=latitude,
             longitude=longitude,
             hourly_air=self.group_hourly(hourly["time"], hourly["temperature_2m"]),
-            hourly_apparent=self.group_hourly(
-                hourly["time"], hourly["apparent_temperature"]
-            ),
-            daily_air_max=dict(
-                zip(daily["time"], daily["temperature_2m_max"], strict=True)
-            ),
+            hourly_apparent=self.group_hourly(hourly["time"], hourly["apparent_temperature"]),
+            daily_air_max=dict(zip(daily["time"], daily["temperature_2m_max"], strict=True)),
             daily_apparent_max=dict(
                 zip(daily["time"], daily["apparent_temperature_max"], strict=True)
             ),
@@ -157,9 +154,7 @@ class OpenMeteoClient:
         peak_apparent = forecast.daily_apparent_max[key]
 
         ordered = sorted(forecast.daily_apparent_max)
-        peaks_to_date = [
-            forecast.daily_apparent_max[d] for d in ordered if d <= key
-        ]
+        peaks_to_date = [forecast.daily_apparent_max[d] for d in ordered if d <= key]
 
         return ExposureFeatures(
             date=day,
