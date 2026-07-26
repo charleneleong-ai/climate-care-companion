@@ -9,53 +9,12 @@ import RegionPanel from '@/components/RegionPanel'
 import type { MapRegion } from '@/components/UKMap'
 import { clearProfile, loadProfile, saveProfile } from '@/lib/client-store'
 import { DEMO_PROFILES, type Profile } from '@/lib/profile'
-import { regionByCode, REGIONS } from '@/lib/regions'
-import { assessRegionBaseline, assessRisk, BAND_COLOURS, bandLabel } from '@/lib/risk'
+import { regionByCode } from '@/lib/regions'
+import { assessRisk, BAND_COLOURS, bandLabel } from '@/lib/risk'
+import { HEAT_FIXTURE_REGIONS, type HeatRegion } from '@/lib/heat-fixture'
 import type { RegionWeather } from '@/lib/weather'
 
 type ApiRegion = RegionWeather & MapRegion & { conditions: string }
-
-// ── 19 July 2025 heatwave fixture ────────────────────────────────────────────
-// Plausible regional apparent temperatures for that day. England was at peak;
-// Scotland and NI were cooler. Overnight 17°C across England — no recovery.
-// Sources: Met Office, UKHSA episode 4 data.
-const HEAT_TEMPS: Record<string, number> = {
-  TLC: 23, // North East
-  TLD: 24, // North West
-  TLE: 25, // Yorkshire & Humber
-  TLF: 28, // East Midlands
-  TLG: 27, // West Midlands
-  TLH: 29, // East of England — Bedford (the worked example)
-  TLI: 29, // London
-  TLJ: 29, // South East
-  TLK: 26, // South West
-  TLL: 24, // Wales
-  TLM: 20, // Scotland
-  TLN: 19, // Northern Ireland
-}
-
-const HEAT_FIXTURE_REGIONS: ApiRegion[] = REGIONS.map((r) => {
-  const temp = HEAT_TEMPS[r.code] ?? 22
-  const weather: RegionWeather = {
-    regionCode: r.code,
-    regionName: r.name,
-    temperature: temp,
-    apparentTemperature: temp,
-    humidity: 45,
-    windSpeed: 10,
-    weatherCode: 0, // clear sky
-    todayMax: temp,
-    todayMin: 17,
-    todayApparentMax: temp,
-    todayApparentMin: 17,
-    observedAt: '2025-07-19T14:00:00Z',
-  }
-  return {
-    ...weather,
-    conditions: 'Clear sky',
-    ...assessRegionBaseline(weather),
-  } as ApiRegion
-})
 
 // Leaflet touches `window` on import, so it can never be server-rendered.
 const UKMap = dynamic(() => import('@/components/UKMap'), {
@@ -76,7 +35,9 @@ export default function HomePage() {
   // Heatwave scenario default — same as /personal and /caregiver.
   const [heatScenario, setHeatScenario] = useState(true)
 
-  const regions = heatScenario ? HEAT_FIXTURE_REGIONS : liveRegions
+  const regions: ApiRegion[] = heatScenario
+    ? (HEAT_FIXTURE_REGIONS as unknown as ApiRegion[])
+    : liveRegions
 
   useEffect(() => {
     const stored = loadProfile()
@@ -244,8 +205,11 @@ export default function HomePage() {
         {regions.length > 0 && <Legend />}
       </div>
 
+      {/* Tabs only where there is not room for both. Above `lg` the advice and
+          the assistant sit side by side: a question is almost always *about* the
+          advice, and hiding one to read the other means answering from memory. */}
       <nav
-        className="flex gap-1 border-y px-4 pt-2.5"
+        className="flex gap-1 border-y px-4 pt-2.5 xl:hidden"
         style={{ borderColor: 'var(--line)' }}
         role="tablist"
       >
@@ -274,17 +238,29 @@ export default function HomePage() {
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1">
-        {tab === 'advice' ? (
+      <div className="flex min-h-0 flex-1">
+        {/* Below `lg` the inactive panel is hidden rather than unmounted, so
+            switching tabs does not discard a conversation already in progress. */}
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto xl:block xl:min-w-[34rem] ${
+            tab === 'advice' ? '' : 'hidden'
+          }`}
+        >
           <RegionPanel
             profile={profile}
             region={selectedRegion}
             isOwnRegion={selectedRegion?.regionCode === profile.regionCode}
             fetchedAt={fetchedAt}
           />
-        ) : (
+        </div>
+        <div
+          className={`min-h-0 flex-1 border-l xl:flex xl:w-[24rem] xl:shrink-0 xl:grow-0 xl:flex-col ${
+            tab === 'assistant' ? 'flex flex-col' : 'hidden xl:flex'
+          }`}
+          style={{ borderColor: 'var(--line)' }}
+        >
           <Assistant profile={profile} suggestions={suggestions} />
-        )}
+        </div>
       </div>
     </main>
   )

@@ -167,11 +167,16 @@ export async function POST(request: Request) {
   const configuration = provider.configured()
   if (!configuration.ok) {
     console.error('[api/assistant] not configured:', configuration.reason)
+    // "Unavailable" reads as broken, and a reader who thinks one part is broken
+    // reasonably doubts the rest. Naming the cause as configuration says the
+    // opposite: nothing has failed, a feature simply is not switched on here —
+    // and the risk assessment never depended on it anyway.
     return Response.json(
       {
         error:
-          'The assistant is not available. Everything else in the app — your risk, ' +
-          'your plan, your alerts — works without it.',
+          'The assistant is switched off in this demo — it needs an API key that ' +
+          'is not configured here. Everything else works: your risk, your plan ' +
+          'and your alerts are all computed without it.',
       },
       { status: 503 },
     )
