@@ -37,6 +37,14 @@ interface PlanItem {
   source: 'interaction' | 'reason_code' | 'self_report'
 }
 
+interface SeriesPoint {
+  date: string
+  tier: Tier
+  risk_score: number
+  peak_air: number
+  indoor_night_est_modelled: number
+}
+
 interface Checkin {
   channel: string
   outcome: 'completed' | 'abandoned' | 'no_answer'
@@ -100,6 +108,7 @@ export default function CompanionPage() {
   const [failed, setFailed] = useState(false)
   const [audience, setAudience] = useState<'caregiver' | 'cared_for'>('caregiver')
   const [checkins, setCheckins] = useState<Checkin[]>([])
+  const [series, setSeries] = useState<SeriesPoint[]>([])
   // The heatwave scenario is the default — a Low tier on a mild day demonstrates
   // nothing. ?demo=live switches to current conditions.
   const [heatScenario, setHeatScenario] = useState(true)
@@ -169,7 +178,15 @@ export default function CompanionPage() {
       .then((r) => r.json())
       .then((body) => setCheckins(body.checkins ?? []))
       .catch(() => setCheckins([]))
-  }, [persona, profile])
+
+    // Only seeded people have a series today — an ad-hoc profile is scored for
+    // tonight alone, so the strip is absent rather than faked.
+    if (!persona) return
+    fetch(`/api/series/${persona.id}${heatScenario ? '' : '?scenario=live'}`)
+      .then((r) => r.json())
+      .then((body) => setSeries(body.points ?? []))
+      .catch(() => setSeries([]))
+  }, [persona, profile, heatScenario])
 
   // Until localStorage has been read, "nobody is set up" is not yet true — and
   // flashing the empty state at a returning user reads as data loss.
@@ -257,6 +274,8 @@ export default function CompanionPage() {
         ))}
       </Section>
 
+      {series.length > 1 && <TierSeries points={series} name={result.profile.name} />}
+
       {checkins.length > 0 && <LastCheckin checkin={checkins[checkins.length - 1]} />}
 
       <section className="mt-6">
@@ -321,6 +340,56 @@ export default function CompanionPage() {
         to a pharmacist or GP.
       </p>
     </AppShell>
+  )
+}
+
+const SERIES_TONE: Record<Tier, string> = {
+  Low: '#7fb069',
+  Elevated: '#f3c05a',
+  High: '#e07a3f',
+  Severe: '#c1362f',
+}
+
+function TierSeries({ points, name }: { points: SeriesPoint[]; name: string }) {
+  const rises = points.findIndex((p) => p.tier !== 'Low')
+  return (
+    <section className="mt-6">
+      <h2 className="section-label">The days ahead</h2>
+      <div className="card p-4">
+        <ol className="flex flex-col gap-2.5">
+          {points.map((point) => {
+            const day = new Date(point.date)
+            return (
+              <li key={point.date} className="flex items-center gap-3">
+                <span className="w-[3.5rem] shrink-0 text-[13px]">
+                  {day.toLocaleDateString('en-GB', { weekday: 'short' })}
+                </span>
+                {/* Shape and word together, never colour alone (NFR-07). */}
+                <span
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: SERIES_TONE[point.tier] }}
+                />
+                <span className="w-[4.5rem] shrink-0 text-[14px] font-semibold">{point.tier}</span>
+                <span className="text-[12.5px] tabular-nums faint">
+                  {point.peak_air}° out · bedroom{' '}
+                  <span className="underline decoration-dotted" title="Estimated, not measured">
+                    modelled
+                  </span>{' '}
+                  {point.indoor_night_est_modelled}°
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+      {rises > 0 && (
+        <p className="mt-2.5 text-[13px] muted">
+          {name} is fine for {rises === 1 ? 'a day' : `${rises} days`}, then not. That gap
+          is the time to act in — after it, advice becomes a report.
+        </p>
+      )}
+    </section>
   )
 }
 

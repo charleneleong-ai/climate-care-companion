@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -29,6 +29,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from checkin.env import load_env
 from checkin.webpush import PushPayload, PushSubscription, SubscriptionStore, WebPushChannel
+from exposure.indoor import IndoorModel
 from exposure.openmeteo import OpenMeteoClient
 from persons.loader import PersonaLoader, floor_band, load_dwelling_offsets
 
@@ -46,6 +47,8 @@ VULNERABILITY = VulnerabilityScorer()
 PERSONAS = PersonaLoader()
 PLANNER = PreventionPlanBuilder(CORPUS, InteractionTable.load())
 
+INDOOR = IndoorModel()
+
 WEATHER = OpenMeteoClient(httpx.Client())
 """Live. NFR-03 gives it three seconds, NFR-04 falls back to the last snapshot,
 and ExposureSource says which happened — so a stale figure is never presented as
@@ -55,6 +58,11 @@ a fresh one."""
 # is the section 8.6 worked example and the highest heat-mortality rate in
 # England last summer.
 FALLBACK_LAT, FALLBACK_LON = 52.1364, -0.4669
+
+FORECAST_HORIZON = 7
+"""Days to attempt. Open-Meteo currently returns three; asking for more costs
+nothing and means the view lengthens by itself when the horizon does, rather
+than silently staying short."""
 
 
 def exposure_for(place: Place, day: date) -> ExposureFeatures:
@@ -250,6 +258,39 @@ HEAT_FIXTURE = ExposureFeatures(
     spell_day=3,
     alert_level=AlertLevel.NONE,
     source=ExposureSource.FIXTURE,
+)
+
+# Episode 4 as it actually built: 17 to 19 July 2025, England, ~146 excess deaths
+# and no regional alert on any of the three days. The 19th is HEAT_FIXTURE above;
+# the two days before it are what a council would have been able to see coming.
+#
+# The point of holding all three rather than only the peak is that the argument
+# is about lead time. On the 17th the register is mostly quiet; by the 19th it is
+# not, and every hour in between was available to act in.
+HEAT_EPISODE = (
+    replace(
+        HEAT_FIXTURE,
+        date=date(2025, 7, 17),
+        overnight_min=14.0,
+        peak_apparent=26.0,
+        peak_air=26.0,
+        hours_above_26=2,
+        indoor_night_est=21.0,
+        indoor_day_est=22.8,
+        spell_day=1,
+    ),
+    replace(
+        HEAT_FIXTURE,
+        date=date(2025, 7, 18),
+        overnight_min=15.5,
+        peak_apparent=27.5,
+        peak_air=27.5,
+        hours_above_26=5,
+        indoor_night_est=22.9,
+        indoor_day_est=24.3,
+        spell_day=2,
+    ),
+    HEAT_FIXTURE,
 )
 
 
@@ -459,4 +500,147 @@ def push_test(person_id: str, audience: Audience = Audience.CAREGIVER) -> dict[s
             }
             for o in outcomes
         ],
+    }
+
+
+# ── Monitoring over the forecast horizon ─────────────────────────────────────
+
+
+@app.get("/monitoring/forecast")
+def monitoring_forecast(scenario: str | None = None) -> dict[str, Any]:
+    """The whole register scored against every day the forecast covers.
+
+    The static monitoring view argues from one day in the past. This is the same
+    argument made prospectively: who on the register crosses into risk, and how
+    much warning there is before they do.
+
+    Lead time is the point. A person who is Low today and High on Wednesday can
+    still be helped on Tuesday — moving tablets off a windowsill, settling a
+    fluid plan with the pharmacist. The same information on Wednesday evening is
+    a report rather than a prevention.
+    """
+    people = PERSONAS.load()
+    places = PERSONAS.places()
+    heat = scenario == "heat"
+    today = HEAT_EPISODE[0].date if heat else date.today()
+    horizon = len(HEAT_EPISODE) if heat else FORECAST_HORIZON
+
+    days: list[dict[str, Any]] = []
+    first_risk: dict[str, str] = {}
+
+    for offset in range(horizon):
+        day = today + timedelta(days=offset)
+        counts: dict[str, int] = {tier.name.title(): 0 for tier in Tier}
+        unavailable = 0
+        peak: float | None = None
+
+        for person_id, person in people.items():
+            try:
+                exposure = (
+                    episode_exposure(offset, places[person_id])
+                    if heat
+                    else exposure_for(places[person_id], day)
+                )
+            except (LookupError, KeyError):
+                # Beyond the horizon, or no forecast for that place. Counted
+                # rather than dropped — a day we cannot see is not a safe day.
+                unavailable += 1
+                continue
+            assessment = SCORER.assess(exposure, VULNERABILITY.profile(person))
+            counts[assessment.tier.name.title()] += 1
+            peak = exposure.peak_air if peak is None else max(peak, exposure.peak_air)
+            if assessment.tier > Tier.LOW and person_id not in first_risk:
+                first_risk[person_id] = day.isoformat()
+
+        if unavailable == len(people):
+            break
+
+        days.append(
+            {
+                "date": day.isoformat(),
+                "lead_days": offset,
+                "peak_air": peak,
+                "tiers": counts,
+                "at_risk": sum(n for tier, n in counts.items() if tier != "Low"),
+                "unavailable": unavailable,
+            }
+        )
+
+    return {
+        "register_size": len(people),
+        "scenario": "heat" if heat else "live",
+        "label": ("17–19 July 2025 · England · no alert issued" if heat else "Live forecast"),
+        "days": days,
+        # Who to act on first, and how long there is to do it.
+        "first_at_risk": [
+            {
+                "person_id": pid,
+                "name": people[pid].name,
+                "date": when,
+                "lead_days": (date.fromisoformat(when) - today).days,
+            }
+            for pid, when in sorted(first_risk.items(), key=lambda kv: kv[1])
+        ],
+    }
+
+
+def episode_exposure(offset: int, place: Place) -> ExposureFeatures:
+    """One day of Episode 4, with the bedroom modelled for this person's home.
+
+    The fixture holds the outdoor day; the indoor estimate has to come from
+    `IndoorModel` rather than a formula written here. Substituting an
+    approximation would give every person on the register a bedroom the scoring
+    core never predicted, and quietly break the worked example the verification
+    suite pins — a fixture that bypasses the model under test is not a fixture.
+    """
+    day = HEAT_EPISODE[offset]
+    return replace(
+        day,
+        indoor_night_est=INDOOR.night(day.overnight_min, day.peak_air, place.dwelling_offset),
+        indoor_day_est=INDOOR.day(day.overnight_min, day.peak_air, place.dwelling_offset),
+    )
+
+
+@app.get("/people/{person_id}/series")
+def person_series(person_id: str, scenario: str | None = None) -> dict[str, Any]:
+    """One person's tier across the days, rather than tonight alone.
+
+    The companion screen answers "is it safe tonight?". That is the right first
+    question, but it hides the shape: someone Low today and High on Saturday
+    needs to hear it on Thursday, and a caregiver who only ever sees tonight
+    cannot plan a weekend around it.
+    """
+    person = PERSONAS.load().get(person_id)
+    if person is None:
+        raise HTTPException(status_code=404, detail=f"no person with id {person_id!r}")
+
+    place = PERSONAS.places()[person_id]
+    heat = scenario == "heat"
+    start = HEAT_EPISODE[0].date if heat else date.today()
+    horizon = len(HEAT_EPISODE) if heat else FORECAST_HORIZON
+
+    points: list[dict[str, Any]] = []
+    for offset in range(horizon):
+        day = start + timedelta(days=offset)
+        try:
+            exposure = episode_exposure(offset, place) if heat else exposure_for(place, day)
+        except (LookupError, KeyError):
+            break
+        assessment = SCORER.assess(exposure, VULNERABILITY.profile(person))
+        points.append(
+            {
+                "date": day.isoformat(),
+                "tier": assessment.tier.name.title(),
+                "risk_score": assessment.risk_score,
+                "peak_air": exposure.peak_air,
+                # SC-5 travels with the number, not in a caption somewhere else.
+                "indoor_night_est_modelled": round(exposure.indoor_night_est, 1),
+            }
+        )
+
+    return {
+        "person_id": person_id,
+        "name": person.name,
+        "scenario": "heat" if heat else "live",
+        "points": points,
     }
