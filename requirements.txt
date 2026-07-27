@@ -1,0 +1,26 @@
+# For Vercel only. Local development uses uv and the lockfile; this file exists
+# because Vercel's Python preset runs `pip install -r requirements.txt`.
+#
+# Direct third-party dependencies only — the thirteen workspace packages are
+# imported from the bundle by app.py rather than installed, since pip cannot
+# resolve uv's `{ workspace = true }` sources.
+#
+# Versions are the ones uv.lock already resolved, so the deployment runs what
+# the test suite ran rather than whatever pip picks on the day. Regenerate by
+# reading every member's pyproject.toml — an earlier hand-written version of
+# this file omitted pyyaml and pydantic, which import-fails the corpus loader on
+# the first request and nowhere before it.
+cryptography==49.0.0
+fastapi==0.140.0
+httpx==0.28.1
+pydantic==2.13.4
+python-dotenv==1.2.2
+python-multipart==0.0.32
+pywebpush==2.3.0
+pyyaml==6.0.3
+
+# Pulled in by scheduler.__main__, which the cron endpoint does not import — but
+# the bundle contains it, and a stray import that works locally and fails only
+# in production is the failure mode this whole file exists to avoid.
+rich==15.0.0
+typer==0.27.0

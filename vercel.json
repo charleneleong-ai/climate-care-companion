@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app.py": {
+      "excludeFiles": "{tests/**,web/**,docs/**,logs/**,scripts/**,.venv/**,**/__pycache__/**,**/*.pyc}"
+    }
+  },
+  "crons": [
+    {
+      "path": "/cron/sweep",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}

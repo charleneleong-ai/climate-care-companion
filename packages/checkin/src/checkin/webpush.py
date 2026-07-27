@@ -22,10 +22,10 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from threading import Lock
 from typing import Any
 
 from checkin.messages import ButtonMessage, TemplateMessage
+from checkin.storage import Fields, fields_for
 from contracts import Audience, Tier
 
 SUBSCRIPTIONS_PATH = Path(os.environ.get("CLIMATISE_PUSH_STORE", "/tmp/climatise-push.json"))
@@ -80,12 +80,12 @@ class SubscriptionStore:
     and a care home tablet at once.
     """
 
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(self, path: Path | None = None, backend: Fields | None = None) -> None:
         self.path = path or SUBSCRIPTIONS_PATH
+        self.backend = backend or fields_for("climatise:push", self.path)
         self.subscriptions: dict[str, PushSubscription] = {}
-        self.lock = Lock()
         self.unreadable: str | None = None
-        """Set when the file could not be parsed, so a caller can report a
+        """Set when the store could not be parsed, so a caller can report a
         degraded store instead of guessing why nobody is registered."""
         self.read()
 
@@ -93,44 +93,35 @@ class SubscriptionStore:
         """Never raises.
 
         The API holds one of these as a module-level singleton, so a truncated
-        file used to mean the service failed to import — and every phone that had
-        registered went dark permanently, with no way for anyone to notice except
-        alerts that stopped arriving. A store that has lost its contents is bad;
-        a store that takes the whole service down with it is worse.
+        store used to mean the service failed to import — and every phone that
+        had registered went dark permanently, with no way for anyone to notice
+        except alerts that stopped arriving. A store that has lost its contents
+        is bad; a store that takes the whole service down with it is worse.
         """
-        if not self.path.exists():
-            return
         try:
-            rows = json.loads(self.path.read_text() or "[]")
-            self.subscriptions = {row["endpoint"]: PushSubscription.from_json(row) for row in rows}
-            self.unreadable = None
+            self.subscriptions = {
+                endpoint: PushSubscription.from_json(row)
+                for endpoint, row in self.backend.all().items()
+            }
         except (ValueError, KeyError, TypeError) as exc:
             self.subscriptions = {}
             self.unreadable = f"{type(exc).__name__}: {exc}"
-
-    def write(self) -> None:
-        """Atomic, because a half-written file is what `read` has to survive.
-
-        `write_text` truncates in place, so an interrupted write — or two of the
-        FastAPI thread pool's workers registering at once — leaves invalid JSON on
-        disk. Rendering to a temporary file and renaming makes the swap atomic;
-        the lock keeps two threads from interleaving the render itself.
-        """
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps([s.to_json() for s in self.subscriptions.values()], indent=2)
-        temporary = self.path.with_suffix(f"{self.path.suffix}.tmp")
-        temporary.write_text(payload)
-        temporary.replace(self.path)
+            return
+        self.unreadable = self.backend.unreadable
 
     def add(self, subscription: PushSubscription) -> None:
-        with self.lock:
-            self.subscriptions[subscription.endpoint] = subscription
-            self.write()
+        """Writes one endpoint's entry, not the whole map.
+
+        Rewriting the map is what made this unsafe to run in more than one
+        place: two people installing the app in the same second each wrote back
+        a copy that omitted the other.
+        """
+        self.backend.put(subscription.endpoint, subscription.to_json())
+        self.subscriptions[subscription.endpoint] = subscription
 
     def remove(self, endpoint: str) -> None:
-        with self.lock:
-            if self.subscriptions.pop(endpoint, None) is not None:
-                self.write()
+        if self.subscriptions.pop(endpoint, None) is not None:
+            self.backend.drop(endpoint)
 
     def for_person(self, person_id: str, audience: Audience) -> tuple[PushSubscription, ...]:
         return tuple(
