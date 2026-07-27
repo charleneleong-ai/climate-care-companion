@@ -28,7 +28,7 @@ from core.corpus import Corpus
 from core.scoring import RiskScorer
 from core.vulnerability import VulnerabilityScorer
 from exposure.openmeteo import OpenMeteoClient
-from fastapi import FastAPI, Header, Request, Response
+from fastapi import BackgroundTasks, FastAPI, Header, Request, Response
 from persons.loader import PersonaLoader
 from voice.call import TwiMLBuilder, answer_from, questionnaire_for
 
@@ -212,8 +212,47 @@ async def voice_checkin(request: Request, person: str | None = None) -> Response
     )
 
 
+URGENT: Any = None
+"""The sweep used to dispatch a red flag, built once on first use.
+
+Lazy because building it loads the corpus, the interaction table, every persona
+and a weather client — cost a webhook should not pay at import, and should never
+pay at all on a deployment where nobody ever reports a red flag.
+"""
+
+
+def escalate(person_id: str) -> None:
+    """Tell somebody, now, that this person has just reported a red flag.
+
+    Never raises. It runs after the response has gone, so an exception here
+    cannot reach Twilio and would otherwise be a silent traceback in a log
+    nobody reads — the failure has to be visible as itself.
+    """
+    global URGENT
+    try:
+        if URGENT is None:
+            from scheduler.build import build_sweep
+
+            URGENT = build_sweep(send=SEND_FOR_REAL)
+        dispatch = URGENT.escalate_now(person_id)
+    except Exception as exc:
+        print(f"[voice] urgent escalation for {person_id} failed: {type(exc).__name__}: {exc}")
+        return
+    if dispatch is None:
+        # Nobody to tell. A real state worth naming — it is the case the
+        # council view exists to find — not a failure.
+        print(f"[voice] {person_id} reported a red flag and has no one to contact")
+    else:
+        print(f"[voice] {person_id} reported a red flag — told {dispatch.contact.name}")
+
+
+SEND_FOR_REAL = os.environ.get("CLIMATISE_VOICE_DISPATCH") == "1"
+"""Off by default. On, a red flag heard on a call sends a real message to a real
+handset, and the first person to ring the demo number triggers it."""
+
+
 @app.post("/voice/answer")
-async def voice_answer(request: Request, q: int = 0) -> Response:
+async def voice_answer(request: Request, background: BackgroundTasks, q: int = 0) -> Response:
     form = {k: str(v) for k, v in (await request.form()).items()}
     call_sid = form.get("CallSid", "unknown")
     builder = TwiMLBuilder(public_base_url(request))
@@ -253,6 +292,15 @@ async def voice_answer(request: Request, q: int = 0) -> Response:
         )
     )
     CALLS.pop(call_sid, None)
+
+    # Recorded first, then acted on — the escalation reads the log entry above,
+    # so writing it is what makes the dispatch possible rather than merely
+    # tidy. In the background because Twilio times the webhook out in seconds
+    # and dispatch fetches a forecast; a caller must never wait in silence for
+    # a message being sent to somebody else.
+    if report.red_flags:
+        background.add_task(escalate, state.questionnaire.person_id)
+
     return Response(
         builder.document(builder.closing(bool(report.red_flags)), builder.hangup()),
         media_type="application/xml",

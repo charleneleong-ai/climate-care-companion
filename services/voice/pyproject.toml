@@ -3,7 +3,7 @@ name = "climatise-voice"
 version = "0.1.0"
 description = "Inbound webhook handler for check-in conversations."
 requires-python = ">=3.13"
-dependencies = ["climatise-contracts", "climatise-core", "climatise-checkin", "climatise-persons", "fastapi>=0.115", "python-multipart>=0.0.20"]
+dependencies = ["climatise-contracts", "climatise-core", "climatise-checkin", "climatise-scheduler", "climatise-persons", "fastapi>=0.115", "python-multipart>=0.0.20"]
 
 [build-system]
 requires = ["hatchling"]
@@ -17,3 +17,4 @@ climatise-checkin = { workspace = true }
 climatise-contracts = { workspace = true }
 climatise-core = { workspace = true }
 climatise-persons = { workspace = true }
+climatise-scheduler = { workspace = true }

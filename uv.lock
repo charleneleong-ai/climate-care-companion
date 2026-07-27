@@ -566,6 +566,7 @@ dependencies = [
     { name = "climatise-contracts" },
     { name = "climatise-core" },
     { name = "climatise-persons" },
+    { name = "climatise-scheduler" },
     { name = "fastapi" },
     { name = "python-multipart" },
 ]
@@ -576,6 +577,7 @@ requires-dist = [
     { name = "climatise-contracts", editable = "packages/contracts" },
     { name = "climatise-core", editable = "packages/core" },
     { name = "climatise-persons", editable = "packages/persons" },
+    { name = "climatise-scheduler", editable = "services/scheduler" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "python-multipart", specifier = ">=0.0.20" },
 ]
