@@ -188,6 +188,57 @@ class HeatSweep:
                 sent.append(dispatch)
         return sent
 
+    def escalate_now(self, person_id: str, now: datetime | None = None) -> Dispatch | None:
+        """A red flag heard on a call, acted on now rather than at the next sweep.
+
+        The gap this closes: someone told the questionnaire they were confused
+        and unsteady, heard the call end warmly, and nobody was contacted until
+        the next pass — three hours away, or a day once the sweep runs on a
+        daily cron. The one moment the system is told directly that something is
+        wrong was the one moment it did nothing.
+
+        **Deliberately bypasses `NotificationPolicy`.** FR-21 gates on an upward
+        tier transition and FR-22 on a six-hour window, and a red flag is
+        neither: somebody reporting new confusion an hour after their morning
+        Elevated message has not changed tier, so both rules would suppress the
+        most urgent thing this system ever hears. Rate limiting exists to stop
+        repeated *forecasts* becoming noise, not to ration a person saying they
+        feel unwell.
+
+        The send is still recorded against the policy, so the sweep that runs
+        twenty minutes later does not say the same thing again.
+
+        Returns None when there is nobody to tell — a real state, and the case
+        the council view exists to surface, not an error.
+        """
+        now = now or datetime.now(UTC)
+        person = self.personas.load().get(person_id)
+        if person is None:
+            return None
+
+        place = self.personas.places()[person_id]
+        exposure = self.exposure_for(place, now)
+        assessment = self.scorer.assess(exposure, self.vulnerability.profile(person))
+
+        escalation = self.escalation_for(person, assessment)
+        if escalation.responder is Responder.NOBODY:
+            return None
+
+        state = self.policy.seen(person_id)
+        notification = Notification(
+            person_id=person_id,
+            audience=Audience.CAREGIVER,
+            from_tier=state.last_notified_tier,
+            to_tier=assessment.tier,
+            at=now,
+        )
+        dispatch = self.dispatch(notification, person, exposure, assessment)
+        if dispatch is not None:
+            state.last_notified_tier = assessment.tier
+            state.last_sent_at = now
+            state.last_tier = assessment.tier
+        return dispatch
+
     def dispatch(
         self,
         notification: Notification,
