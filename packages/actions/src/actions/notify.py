@@ -13,6 +13,7 @@ telling again at four.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
 
 from contracts import Audience, Tier
 
@@ -50,14 +51,57 @@ class PersonState:
     """The tier the person was actually told about. Rises are measured from here."""
     last_sent_at: datetime | None = None
 
+    def to_json(self) -> dict[str, Any]:
+        """`is not None`, never truthiness: `Tier.LOW` is 0 and therefore falsy.
+
+        Written the obvious way, a fall to Low serialised as "never assessed" —
+        so the next run measured the following rise against nothing and treated
+        it as a first alert. The one tier that means "this person is fine" was
+        the one tier that could not be remembered.
+        """
+        return {
+            "last_tier": self.last_tier.name if self.last_tier is not None else None,
+            "last_notified_tier": (
+                self.last_notified_tier.name if self.last_notified_tier is not None else None
+            ),
+            "last_sent_at": (
+                self.last_sent_at.isoformat() if self.last_sent_at is not None else None
+            ),
+        }
+
+    @classmethod
+    def from_json(cls, raw: dict[str, Any]) -> "PersonState":
+        """Tiers by name rather than by value.
+
+        A name survives someone inserting a tier in the middle of the enum; a
+        stored ordinal silently becomes a different severity, and the direction
+        of every subsequent comparison changes with it.
+        """
+        return cls(
+            last_tier=Tier[name] if (name := raw.get("last_tier")) is not None else None,
+            last_notified_tier=(
+                Tier[told] if (told := raw.get("last_notified_tier")) is not None else None
+            ),
+            last_sent_at=(
+                datetime.fromisoformat(sent)
+                if (sent := raw.get("last_sent_at")) is not None
+                else None
+            ),
+        )
+
 
 @dataclass(slots=True)
 class NotificationPolicy:
     """Decides whether an assessment is worth interrupting someone for.
 
     Holds the previous tier per person, because "upward transition" is a claim
-    about two assessments and cannot be answered from one. In memory for the
-    scaffold; the surface is small enough that a durable store is a drop-in.
+    about two assessments and cannot be answered from one.
+
+    In memory, and deliberately still pure — it has no store of its own. The
+    caller loads `state` before a pass and saves it after, which is what
+    `scheduler.build.run_sweep` does. That keeps the decision testable without a
+    filesystem, and it is what lets the same policy run in a long-lived process
+    and in a cron invocation that exists for four seconds.
     """
 
     state: dict[str, PersonState] = field(default_factory=dict)

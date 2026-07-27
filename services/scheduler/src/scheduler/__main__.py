@@ -10,29 +10,23 @@ people the first time someone tries it.
 
 import os
 import time
-from dataclasses import replace
 from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import quote
 
 import httpx
 import typer
-from typing import Any
-from actions.checklist import PreventionPlanBuilder
-from actions.interactions import InteractionTable
 from checkin.env import load_env
-from checkin.messages import ButtonMessage, TemplateLibrary, TemplateMessage
+from checkin.messages import TemplateLibrary
+from checkin.preferences import PreferenceBook
 from checkin.twilio import TwilioChannel
 from checkin.webpush import WebPushChannel
-from core.corpus import Corpus
-from contracts import ExposureFeatures, Tier
-from core.scoring import RiskScorer
-from exposure.openmeteo import OpenMeteoClient
-from persons.loader import PersonaLoader
+from contracts import Tier
 from rich.console import Console
-from checkin.preferences import PreferenceBook
+from scheduler.build import build_sweep
 from scheduler.calls import CallDispatcher
 from scheduler.contacts import ContactBook
-from scheduler.sweep import HeatSweep, SweepResult, next_sweep_at
+from scheduler.sweep import SweepResult, next_sweep_at
 
 # Before any channel is constructed. Credentials live in a gitignored .env at the
 # repo root; without this they sit on disk and every send reports them as absent.
@@ -40,63 +34,6 @@ load_env()
 
 app = typer.Typer(help="Climatise proactive sweep. Demonstrator — SC-6.")
 console = Console()
-
-
-class DryRunChannel:
-    """Prints instead of sending. The default, deliberately."""
-
-    def __init__(self) -> None:
-        self.sent: list[tuple[str, TemplateMessage | ButtonMessage]] = []
-
-    def send(self, to: str, message: TemplateMessage | ButtonMessage) -> str:
-        self.sent.append((to, message))
-        return f"dry-run-{len(self.sent)}"
-
-
-class SimulatedHeat:
-    """A real forecast with the temperature raised, for demonstrating the push path.
-
-    Necessary because the system is built not to fire on an ordinary warm day, so
-    on most days there is nothing to show. Everything downstream is untouched —
-    the same rules, the same corpus, the same thresholds — which is the point: the
-    weather is the only thing being pretended about.
-    """
-
-    def __init__(self, inner: OpenMeteoClient, peak: float) -> None:
-        self.inner = inner
-        self.peak = peak
-
-    def fetch(self, latitude: float, longitude: float, when: datetime):
-        return self.inner.fetch(latitude, longitude, when)
-
-    def features_for(self, forecast, day, dwelling_offset: float) -> ExposureFeatures:
-        real = self.inner.features_for(forecast, day, dwelling_offset)
-        lift = self.peak - real.peak_air
-        return replace(
-            real,
-            peak_air=self.peak,
-            peak_apparent=real.peak_apparent + lift,
-            overnight_min=real.overnight_min + lift,
-            indoor_day_est=real.indoor_day_est + lift,
-            indoor_night_est=real.indoor_night_est + lift,
-            hours_above_26=max(real.hours_above_26, 8),
-            spell_day=max(real.spell_day, 3),
-        )
-
-
-def build_sweep(send: bool, simulate_peak: float | None = None) -> HeatSweep:
-    corpus = Corpus.load()
-    weather = OpenMeteoClient(httpx.Client())
-    return HeatSweep(
-        personas=PersonaLoader(),
-        weather=SimulatedHeat(weather, simulate_peak) if simulate_peak else weather,
-        scorer=RiskScorer(corpus),
-        planner=PreventionPlanBuilder(corpus, InteractionTable.load()),
-        contacts=ContactBook.load(),
-        # TwilioChannel takes its HTTP client by injection and refuses to send
-        # without one, so it has to be handed in here rather than defaulted.
-        channel=TwilioChannel(client=httpx.Client()) if send else DryRunChannel(),
-    )
 
 
 def report(result: SweepResult, sent_for_real: bool) -> None:

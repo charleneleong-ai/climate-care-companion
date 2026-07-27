@@ -73,6 +73,73 @@ Share that URL. The tunnel stays alive as long as the process runs.
 
 ---
 
+## Vercel
+
+Two projects from this one repository. They are separate because they run on
+different runtimes, not because the code is split — the web tier calls the core
+server-side and never exposes it to the browser.
+
+| Project | Root Directory | Preset | Serves |
+|---|---|---|---|
+| `climatise-core` | `./` | Python | The FastAPI risk engine |
+| `climatise-web` | `web/app` | Next.js | The app people open |
+
+**Deploy the core first** — the web project needs its URL.
+
+`app.py` is the entrypoint. It exists because Vercel's Python preset runs
+`pip install -r requirements.txt`, and pip cannot resolve the thirteen workspace
+members that reference each other through uv's `{ workspace = true }`. It does
+not have to: Vercel bundles every project file, so the packages are already
+there and only need to be importable. `app.py` adds each `src` to `sys.path`.
+`requirements.txt` therefore lists third-party dependencies only, pinned to the
+versions `uv.lock` already resolved.
+
+### Environment variables
+
+On `climatise-core`:
+
+| Variable | Why |
+|---|---|
+| `CLIMATISE_PUSH_TOKEN` | Required before `/push/subscribe` will accept anything. Without it registration returns 503 — it fails closed, because an open endpoint lets a stranger point their own phone at a named person's alerts. |
+| `CRON_SECRET` | Vercel generates and sends this. Without it `/cron/sweep` returns 503. |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | Injected by the Upstash integration. Without them the stores fall back to a local file, which on serverless means every invocation starts empty. |
+| `TWILIO_*` | Only needed if the sweep should actually send. |
+
+On `climatise-web`: `CORE_API_URL` set to the core project's URL, plus the
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `ANTHROPIC_API_KEY` from the table below.
+
+### Storage
+
+`vercel install upstash`, then attach it to `climatise-core`. Serverless has no
+writable filesystem that survives an invocation, so without this the check-in
+log and the push subscriptions are empty on every request — the feature appears
+to work and silently keeps nothing.
+
+### The sweep
+
+`vercel.json` schedules `/cron/sweep` daily at 07:00. **Hobby accounts cannot
+run cron more than once per day, and fire anywhere within the hour.** The design
+assumes a three-hourly pass, so a Hobby deployment samples the day once rather
+than eight times: a risk that rises after the morning sweep waits until
+tomorrow. Pro lifts this to per-minute.
+
+The endpoint does **not** send unless asked — `POST /cron/sweep?send=true`. The
+default is a dry run for the same reason the CLI's is: otherwise the first
+person to curl it messages five people.
+
+### What is unverified
+
+The image has never been built here and the deployment has never run. Three
+things can only be confirmed on a first deploy:
+
+- Whether the bundle stays under the 250 MB limit
+- Whether `parents[4]` still resolves to the project root inside the function,
+  which is how `persons.loader` finds the persona corpus
+- Whether cold-start latency is tolerable, given the core loads the corpus, the
+  interaction table and every persona at import
+
+---
+
 ## Environment variables
 
 | Variable | Where | Purpose |

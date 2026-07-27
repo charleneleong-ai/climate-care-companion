@@ -1,3 +1,5 @@
+import hmac
+import os
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
@@ -25,7 +27,7 @@ from core.scoring import RiskScorer
 from core.vulnerability import VulnerabilityScorer
 from actions.checklist import PreventionPlanBuilder
 from actions.interactions import InteractionTable
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from checkin.env import load_env
 from checkin.webpush import PushPayload, PushSubscription, SubscriptionStore, WebPushChannel
@@ -432,6 +434,37 @@ def assess(request: AssessRequest) -> dict[str, Any]:
 
 SUBSCRIPTIONS = SubscriptionStore()
 
+PUSH_TOKEN = os.environ.get("CLIMATISE_PUSH_TOKEN")
+"""Shared secret the app sends when registering a device.
+
+Without this, registration was open to anyone who could reach the service: call
+`GET /people`, choose a name, register your own phone against it, and receive
+that person's health alerts from then on. While the only address was an
+unguessable tunnel that was survivable; a stable public URL removes even that,
+and a URL is precisely what deploying creates.
+
+A shared secret is not user authentication and does not pretend to be — it is
+the weakest thing that closes an open subscription to somebody else's health
+data, which is what a demonstrator with fictional personas actually needs.
+"""
+
+
+def require_push_token(x_climatise_token: str = Header(default="")) -> None:
+    """Fails closed. An unset token disables registration rather than opening it.
+
+    The tempting version — allow when unconfigured, require when configured —
+    means the one deployment that forgets the variable is the one running wide
+    open, and it looks identical to a working one from the outside.
+    """
+    if not PUSH_TOKEN:
+        raise HTTPException(
+            503,
+            "Push registration is not configured on this deployment. Set "
+            "CLIMATISE_PUSH_TOKEN to enable it.",
+        )
+    if not hmac.compare_digest(x_climatise_token, PUSH_TOKEN):
+        raise HTTPException(401, "Bad or missing X-Climatise-Token.")
+
 
 class SubscribeRequest(BaseModel):
     endpoint: str
@@ -446,7 +479,9 @@ class UnsubscribeRequest(BaseModel):
 
 
 @app.post("/push/subscribe")
-def push_subscribe(request: SubscribeRequest) -> dict[str, Any]:
+def push_subscribe(
+    request: SubscribeRequest, _: None = Depends(require_push_token)
+) -> dict[str, Any]:
     if request.person_id not in PERSONAS.load():
         raise HTTPException(404, f"no person {request.person_id}")
     SUBSCRIPTIONS.add(
@@ -462,7 +497,9 @@ def push_subscribe(request: SubscribeRequest) -> dict[str, Any]:
 
 
 @app.delete("/push/subscribe")
-def push_unsubscribe(request: UnsubscribeRequest) -> dict[str, Any]:
+def push_unsubscribe(
+    request: UnsubscribeRequest, _: None = Depends(require_push_token)
+) -> dict[str, Any]:
     SUBSCRIPTIONS.remove(request.endpoint)
     return {"registered": False, "devices": len(SUBSCRIPTIONS.subscriptions)}
 
@@ -499,6 +536,63 @@ def push_test(person_id: str, audience: Audience = Audience.CAREGIVER) -> dict[s
             }
             for o in outcomes
         ],
+    }
+
+
+# ── The scheduled sweep ──────────────────────────────────────────────────────
+#
+# The sweep is the only part of the system that initiates. As a long-running
+# process it keeps its own clock; on a platform that has no long-running
+# processes it has to be woken from outside, which is what this is for.
+
+CRON_SECRET = os.environ.get("CRON_SECRET")
+"""Vercel generates this and sends it as `Authorization: Bearer …` on every
+cron invocation. Without it the endpoint is a button, reachable by anyone, that
+sends real messages to real phones."""
+
+
+def require_cron_secret(authorization: str) -> None:
+    """Fails closed, for the same reason push registration does."""
+    if not CRON_SECRET:
+        raise HTTPException(
+            503, "The scheduled sweep is not configured on this deployment. Set CRON_SECRET."
+        )
+    if not hmac.compare_digest(authorization, f"Bearer {CRON_SECRET}"):
+        raise HTTPException(401, "Bad or missing cron authorization.")
+
+
+@app.post("/cron/sweep")
+def cron_sweep(send: bool = False, authorization: str = Header(default="")) -> dict[str, Any]:
+    """One pass over the register, triggered by the platform's scheduler.
+
+    `send` defaults to false for the same reason the CLI's `once` does: the
+    alternative is an endpoint that messages five people the first time anybody
+    curls it. Turn it on deliberately, in the cron's own URL.
+    """
+    require_cron_secret(authorization)
+    try:
+        # Imported here rather than at module scope: the scheduler pulls in the
+        # weather client and the whole corpus, and every other endpoint in this
+        # service would pay that import cost on a cold start without using it.
+        from scheduler.build import run_sweep
+    except ImportError as exc:
+        raise HTTPException(503, f"The scheduler is not available here: {exc}") from exc
+
+    try:
+        result = run_sweep(send=send)
+    except (ValueError, PermissionError) as exc:
+        # A channel that refuses to exist without credentials, which is the
+        # ordinary state of a deployment that has not been given Twilio keys.
+        raise HTTPException(503, f"The sweep could not be dispatched: {exc}") from exc
+
+    return {
+        "at": result.at.isoformat(),
+        "assessed": result.assessed,
+        "completed": result.completed,
+        "dispatched": len(result.dispatched),
+        "unreachable": [{"person_id": p, "audience": a} for p, a in result.unreachable],
+        "failed": [{"person_id": p, "reason": r} for p, r in result.failed],
+        "sent_for_real": send,
     }
 
 

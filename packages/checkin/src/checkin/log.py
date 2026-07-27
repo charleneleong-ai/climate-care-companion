@@ -20,14 +20,14 @@ Two properties that are not incidental:
   derived it will change.
 """
 
-import json
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum, auto
 from pathlib import Path
-from threading import Lock
 from typing import Any
+
+from checkin.storage import Rows, rows_for
 
 CHECKIN_LOG_PATH = Path(os.environ.get("CLIMATISE_CHECKIN_LOG", "/tmp/climatise-checkins.json"))
 
@@ -91,35 +91,32 @@ class CheckinLog:
     cannot start because one file is malformed takes every user down with it.
     """
 
-    def __init__(self, path: Path | None = None) -> None:
+    def __init__(self, path: Path | None = None, backend: Rows | None = None) -> None:
         self.path = path or CHECKIN_LOG_PATH
+        self.backend = backend or rows_for("climatise:checkins", self.path)
         self.records: list[CheckinRecord] = []
-        self.lock = Lock()
         self.unreadable: str | None = None
         self.read()
 
     def read(self) -> None:
-        if not self.path.exists():
-            return
         try:
-            rows = json.loads(self.path.read_text() or "[]")
-            self.records = [CheckinRecord.from_json(row) for row in rows]
-            self.unreadable = None
+            self.records = [CheckinRecord.from_json(row) for row in self.backend.all()]
         except (ValueError, KeyError, TypeError) as exc:
             self.records = []
             self.unreadable = f"{type(exc).__name__}: {exc}"
-
-    def write(self) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        payload = json.dumps([r.to_json() for r in self.records], indent=2)
-        temporary = self.path.with_suffix(f"{self.path.suffix}.tmp")
-        temporary.write_text(payload)
-        temporary.replace(self.path)
+            return
+        self.unreadable = self.backend.unreadable
 
     def record(self, entry: CheckinRecord) -> None:
-        with self.lock:
-            self.records.append(entry)
-            self.write()
+        """Appends through the backend rather than rewriting the collection.
+
+        The whole-file rewrite this replaces read every record into memory,
+        added one, and wrote them all back — so a second writer's check-in
+        disappeared. A missed call that the log has silently dropped is exactly
+        the event the escalation ladder exists to notice.
+        """
+        self.backend.append(entry.to_json())
+        self.records.append(entry)
 
     def for_person(self, person_id: str) -> tuple[CheckinRecord, ...]:
         return tuple(r for r in self.records if r.person_id == person_id)
