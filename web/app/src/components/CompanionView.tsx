@@ -13,73 +13,21 @@
  */
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
+import {
+  ESCALATION,
+  SOURCE_LABEL,
+  TIER,
+  useCoreAssessment,
+  type AssessmentResult as Result,
+  type PlanItem,
+  type Tier,
+} from '@/lib/assessment'
 import { loadProfile } from '@/lib/client-store'
 import type { Profile } from '@/lib/profile'
 
-type Tier = 'Low' | 'Elevated' | 'High' | 'Severe'
 type Audience = 'caregiver' | 'cared_for'
-
-interface Reason {
-  code: string
-  title: string
-  explanation: string
-  weight: number
-}
-
-interface PlanItem {
-  code: string
-  text: string
-  watch_for: string | null
-  escalate_to: string | null
-  source: 'interaction' | 'reason_code' | 'self_report'
-}
-
-interface Result {
-  profile: { name: string }
-  assessment: {
-    tier: Tier
-    bandLabel: string
-    riskScore: number
-    exposureScore: number
-    vulnerabilityScore: number
-    indoorNightEstimateModelled: number
-    source: string
-    reasons: Reason[]
-  }
-  plan: {
-    items: PlanItem[]
-    watch_points: string[]
-    escalate_to: string[]
-  }
-  error?: string
-}
-
-const TIER: Record<Tier, { shape: string; tone: string; act: string }> = {
-  Low: { shape: 'circle', tone: 'low', act: 'No action beyond routine.' },
-  Elevated: { shape: 'square', tone: 'elevated', act: 'Check in today.' },
-  High: { shape: 'triangle', tone: 'high', act: 'Act before this evening.' },
-  Severe: {
-    shape: 'diamond',
-    tone: 'severe',
-    act: 'Act now. Do not leave them alone overnight.',
-  },
-}
-
-const SOURCE_LABEL: Record<PlanItem['source'], string> = {
-  interaction: 'combination',
-  self_report: 'they told us',
-  reason_code: '',
-}
-
-const ESCALATION: Record<string, string> = {
-  gp: 'Ring the GP',
-  pharmacist: 'Ask the pharmacist',
-  council: 'Council welfare',
-}
-
-const CACHE_KEY = 'climatise:last-assessment'
 
 // 19 July 2025 conditions — Bedford, no regional alert.
 const HEAT_FIXTURE_CONTEXT = {
@@ -109,9 +57,6 @@ export default function CompanionView({
   otherRoute,
 }: CompanionViewProps) {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [result, setResult] = useState<Result | null>(null)
-  const [stale, setStale] = useState(false)
-  const [failed, setFailed] = useState(false)
   const [audience, setAudience] = useState<Audience>(defaultAudience)
   // Heatwave scenario is the default — it is the demo's point.
   const [heatScenario, setHeatScenario] = useState(true)
@@ -124,40 +69,7 @@ export default function CompanionView({
     }
   }, [])
 
-  const load = useCallback(async (p: Profile, scenario: boolean) => {
-    const cacheKey = scenario ? `${CACHE_KEY}:heat` : CACHE_KEY
-    const cached =
-      typeof localStorage !== 'undefined' ? localStorage.getItem(cacheKey) : null
-    if (cached) {
-      try {
-        setResult(JSON.parse(cached) as Result)
-        setStale(true)
-      } catch {
-        /* corrupt cache */
-      }
-    }
-    try {
-      const url = scenario ? '/api/assess?demo=heat' : '/api/assess'
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ profile: p }),
-      })
-      if (!response.ok) throw new Error(String(response.status))
-      const body = (await response.json()) as Result
-      if (body.error) throw new Error(body.error)
-      setResult(body)
-      setStale(false)
-      setFailed(false)
-      localStorage.setItem(cacheKey, JSON.stringify(body))
-    } catch {
-      setFailed(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (profile) void load(profile, heatScenario)
-  }, [profile, load, heatScenario])
+  const { result, stale, failed } = useCoreAssessment(profile, heatScenario, audience)
 
   if (!profile) {
     return (
@@ -297,7 +209,7 @@ export default function CompanionView({
           <span aria-hidden="true" className={`glyph glyph-${tier.shape}`} />
           <span className="text-[22px] font-bold tracking-tight">{a.tier}</span>
         </div>
-        <p className="mt-2.5 text-[15px] muted">{tier.act}</p>
+        <p className="mt-2.5 text-[15px] muted">{tier.act[audience]}</p>
 
         <dl className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-lg">
           {(

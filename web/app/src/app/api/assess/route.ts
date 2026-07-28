@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { DEMO_PROFILES, isValidProfile, type Profile } from '@/lib/profile'
 import { regionByCode } from '@/lib/regions'
-import { assessViaCore } from '@/lib/assess-client'
+import { assessViaCore, type Audience } from '@/lib/assess-client'
 import { bandForTier, bandLabel, directionForCodes } from '@/lib/risk'
 import { describeWeatherCode, fetchAllRegions } from '@/lib/weather'
 
@@ -22,6 +22,7 @@ async function assessProfiles(
   profiles: Profile[],
   atTemperature?: number,
   fixture?: 'heat',
+  audience: Audience = 'caregiver',
 ) {
   const snapshot = await fetchAllRegions().catch(() => null)
 
@@ -31,7 +32,7 @@ async function assessProfiles(
 
       let core
       try {
-        core = await assessViaCore(profile, fixture)
+        core = await assessViaCore(profile, fixture, audience)
       } catch (error) {
         // The core being unreachable is a fact to report, not an exception to
         // swallow. A caregiver told "no assessment available" can act on that;
@@ -104,6 +105,8 @@ export async function GET(request: Request) {
   const demo = params.get('demo')
   const fixture = demo === 'heat' ? ('heat' as const) : undefined
 
+  const audience: Audience = params.get('audience') === 'cared_for' ? 'cared_for' : 'caregiver'
+
   const at = parseAt(params.get('at'))
   if (at.error) return NextResponse.json({ error: at.error }, { status: 400 })
 
@@ -128,7 +131,7 @@ export async function GET(request: Request) {
       {
         atTemperature: at.value ?? null,
         fixture: fixture ?? null,
-        results: await assessProfiles(profiles, at.value, fixture),
+        results: await assessProfiles(profiles, at.value, fixture, audience),
       },
       { headers: { 'Cache-Control': 'no-store' } },
     )
@@ -144,6 +147,7 @@ export async function POST(request: Request) {
   const params = new URL(request.url).searchParams
   const demo = params.get('demo')
   const fixture = demo === 'heat' ? ('heat' as const) : undefined
+  const audience: Audience = params.get('audience') === 'cared_for' ? 'cared_for' : 'caregiver'
 
   let body: unknown
   try {
@@ -162,7 +166,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const [result] = await assessProfiles([profile], undefined, fixture)
+    const [result] = await assessProfiles([profile], undefined, fixture, audience)
     return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('[api/assess] failed', error)
