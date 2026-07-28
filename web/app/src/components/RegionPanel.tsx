@@ -182,8 +182,12 @@ export default function RegionPanel({
         </section>
       )}
 
+      {/* `open` by default: these reasons are the answer to the question the
+          product exists to answer, so collapsing them by default asks the
+          reader to go looking for the one thing that makes the tier mean
+          anything. Still collapsible, for a reader who has already read it. */}
       {mine && mine.assessment.reasons.length > 0 && (
-        <details className="card mb-5 px-4 py-3.5">
+        <details open className="card mb-5 px-4 py-3.5">
           <summary className="cursor-pointer font-semibold">Why this is different for you</summary>
           <ul className="mt-2.5 space-y-2 text-[16px]">
             {mine.assessment.reasons.map((reason) => (
