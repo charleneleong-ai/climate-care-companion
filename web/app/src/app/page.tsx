@@ -12,6 +12,7 @@ import { clearProfile, loadProfile, saveProfile } from '@/lib/client-store'
 import { DEMO_PROFILES, type Profile } from '@/lib/profile'
 import { regionByCode } from '@/lib/regions'
 import { BAND_COLOURS } from '@/lib/risk'
+import { suggestionsFor } from '@/lib/suggestions'
 import { HEAT_FIXTURE_REGIONS, type HeatRegion } from '@/lib/heat-fixture'
 import type { RegionWeather } from '@/lib/weather'
 
@@ -93,24 +94,20 @@ export default function HomePage() {
     failed,
   } = useCoreAssessment(profile, heatScenario, 'cared_for')
 
-  const suggestions = useMemo(() => {
-    if (!myAssessment) return ['What should I do today?']
-    const base = ['What should I do right now?']
-    const { direction } = myAssessment.assessment
-    if (direction === 'heat') {
-      base.push('How do I cool my home down?', 'How much should I be drinking?')
-    } else if (direction === 'cold') {
-      base.push('Which room should I heat?', 'How do I keep my heating bill down?')
-    } else {
-      base.push('What should I watch out for later?')
-    }
-    // Asked of the forecast rather than the assessment, because it is a
-    // question about the day, not about them. Like for like: both apparent.
-    if (myRegion && myRegion.todayApparentMax - myRegion.apparentTemperature >= 2) {
-      base.push('What changes later today?')
-    }
-    return base
-  }, [myAssessment, myRegion])
+  const suggestions = useMemo(
+    () =>
+      suggestionsFor(
+        profile,
+        myAssessment && {
+          direction: myAssessment.assessment.direction,
+          // Asked of the forecast rather than the assessment, because it is a
+          // question about the day, not about them. Like for like: both apparent.
+          worseningToday:
+            !!myRegion && myRegion.todayApparentMax - myRegion.apparentTemperature >= 2,
+        },
+      ),
+    [profile, myAssessment, myRegion],
+  )
 
   if (!ready) {
     return (
