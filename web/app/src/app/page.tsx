@@ -248,7 +248,7 @@ export default function HomePage() {
       </nav>
 
       <div className="flex min-h-0 flex-1">
-        {/* Below `lg` the inactive panel is hidden rather than unmounted, so
+        {/* Below `xl` the inactive panel is hidden rather than unmounted, so
             switching tabs does not discard a conversation already in progress. */}
         <div
           className={`min-h-0 flex-1 overflow-y-auto xl:block xl:min-w-[34rem] ${
@@ -265,8 +265,12 @@ export default function HomePage() {
             failed={failed}
           />
         </div>
+        {/* `xl:flex-none`, not `grow-0`: `flex-1` sets flex-basis to 0%, which
+            beats `width` on the main axis, so with growth also disabled the
+            column collapsed to min-content and wrapped the reply after three
+            words. `flex-none` restores `flex: 0 0 auto` so the width applies. */}
         <div
-          className={`min-h-0 flex-1 border-l xl:flex xl:w-[24rem] xl:shrink-0 xl:grow-0 xl:flex-col ${
+          className={`min-h-0 flex-1 border-l xl:flex xl:w-[28rem] xl:flex-none xl:flex-col ${
             tab === 'assistant' ? 'flex flex-col' : 'hidden xl:flex'
           }`}
           style={{ borderColor: 'var(--line)' }}
