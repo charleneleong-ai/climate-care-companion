@@ -159,10 +159,9 @@ All views default to the **19 July 2025 heatwave scenario** — repeatable regar
 |---|---|---|---|
 | `/` | Map + Your advice | — | UK map goes amber/red in England; "Your advice" shows heatwave risk |
 | `/personal` | Personal view | Person themselves | "Your situation tonight" |
-| `/caregiver` | Caregiver view | Caregiver | Escalation routes prominent; Watch-fors prominent |
+| `/companion` | Caregiver view | Caregiver | Escalation routes prominent; Watch-fors prominent |
 | `/monitoring` | Population dashboard | — | Cohort risk across the three days of the episode, plus the UK choropleth |
 | `/onboarding` | Set up a profile | — | Collects name, postcode, conditions, meds |
-| `/companion` | Legacy companion | Caregiver | Same as `/caregiver`; kept for backward compat |
 
 Toggle between heatwave and live weather using the banner button on each view, or:
 - `?demo=live` in the URL pre-selects live weather
@@ -181,18 +180,18 @@ Toggle between heatwave and live weather using the banner button on each view, o
 
 ### Demo cohort tiers on that day
 
-| Profile | Tier | Vuln | Interactions | Demo argument |
+| Profile | Tier | Vuln | Plan items | Demo argument |
 |---|---|---|---|---|
-| Victor | **HIGH** | 14 | 14 | "Drink plenty" is the wrong advice; fluid tightrope |
-| Doris | **HIGH** | 13 | 11 | Same dementia diagnosis as Pat; 5× more interactions |
+| Victor | **HIGH** | 18 | 16 | "Drink plenty" is the wrong advice; fluid tightrope |
+| Doris | **HIGH** | 15 | 12 | Same dementia diagnosis as Pat; 5× more interactions |
 | Sylvia | **HIGH** | 11 | 10 | Body warning signs (sweat, heat sensation) switched off |
-| Elsie | HIGH | 13 | 4 | Lithium toxicity; cannot self-report early tremor |
-| Iris | HIGH | 12 | 4 | Silent multi-organ failure; cannot sweat or self-rescue |
+| Elsie | HIGH | 13 | 10 | Lithium toxicity; cannot self-report early tremor |
+| Iris | HIGH | 12 | 10 | Silent multi-organ failure; cannot sweat or self-rescue |
 | Alan | Elevated | 3 | 3 | Same cardiovascular diagnosis as Victor; fraction of the risk |
 | Pat | Elevated | 2 | 2 | Same dementia diagnosis as Doris; caregiver present |
 | Ben | Elevated | 5 | 5 | Low score — insulin storage failure is life-critical |
 
-**The demo move:** select Victor → High, 14 plan items, "drink plenty" inverted.
+**The demo move:** select Victor → High, 16 plan items, "drink plenty" inverted.
 Then select Alan → Elevated, 3 plan items, standard advice.
 Same GP diagnosis. Same weather. Completely different plan.
 

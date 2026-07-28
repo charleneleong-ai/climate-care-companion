@@ -338,7 +338,7 @@ export default function MonitoringPage() {
 
       {/* Quick links */}
       <div className="mt-8 flex gap-3">
-        <Link href="/caregiver" className="btn btn-primary flex-1 text-center">
+        <Link href="/companion" className="btn btn-primary flex-1 text-center">
           Caregiver view
         </Link>
         <Link href="/personal" className="btn btn-secondary flex-1 text-center">

@@ -34,7 +34,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [tab, setTab] = useState<'advice' | 'assistant'>('advice')
-  // Heatwave scenario default — same as /personal and /caregiver.
+  // Heatwave scenario default — same as /personal and /companion.
   const [heatScenario, setHeatScenario] = useState(true)
 
   const regions: ApiRegion[] = heatScenario

@@ -1,8 +1,28 @@
 import type { Metadata, Viewport } from 'next'
+import { Newsreader, Signika } from 'next/font/google'
 
 import ServiceWorker from '@/components/ServiceWorker'
 
 import './globals.css'
+
+// CoolBuddy's pairing: Signika carries the interface, Newsreader the sentences
+// written in a human voice. `next/font` self-hosts both — a CDN link would put a
+// render-blocking third party in front of advice someone opened because they
+// were worried, and would fail outright on the offline path NFR-04 requires.
+const signika = Signika({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-ui',
+  display: 'swap',
+})
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  style: ['normal', 'italic'],
+  variable: '--font-prose',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Climatise — UK heat and cold advice',
@@ -29,7 +49,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB">
+    <html lang="en-GB" className={`${signika.variable} ${newsreader.variable}`}>
       <body className="min-h-dvh">
         {children}
         <ServiceWorker />

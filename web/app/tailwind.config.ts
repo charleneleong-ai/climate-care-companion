@@ -18,7 +18,11 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // CoolBuddy's pairing. System fonts stay as the fallback chain so a
+        // failed webfont degrades to something legible rather than to serif
+        // defaults — this audience cannot afford a broken-looking screen.
+        sans: ['var(--font-ui)', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        prose: ['var(--font-prose)', 'ui-serif', 'Georgia', 'serif'],
       },
     },
   },

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Shared assessment view used by /personal and /caregiver.
+ * Shared assessment view used by /personal and /companion.
  *
  * The only difference between the two routes is the default audience and
  * the framing copy. Everything else — heatwave scenario, tier badge, reasons,
@@ -246,7 +246,7 @@ export default function CompanionView({
               +{r.weight}
             </span>
             <p className="text-[15px] font-semibold">{r.title}</p>
-            <p className="mt-1 text-[13.5px] muted">{r.explanation}</p>
+            <p className="prose-voice mt-1 muted">{r.explanation}</p>
           </div>
         ))}
       </Section>
@@ -281,7 +281,7 @@ export default function CompanionView({
                     <span className={`tag tag-${item.source}`}>{SOURCE_LABEL[item.source]}</span>
                   </p>
                 )}
-                <p className="text-[15px]">{item.text}</p>
+                <p className="prose-voice">{item.text}</p>
               </div>
             ))
           )}
