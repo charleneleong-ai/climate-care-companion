@@ -20,6 +20,7 @@ import type { Profile } from './profile'
 const CORE_URL = process.env.CORE_API_URL ?? 'http://127.0.0.1:8000'
 
 export type Tier = 'Low' | 'Elevated' | 'High' | 'Severe'
+export type Audience = 'caregiver' | 'cared_for'
 
 export interface CoreReason {
   code: string
@@ -133,8 +134,17 @@ export function requestBodyFor(profile: Profile) {
 export async function assessViaCore(
   profile: Profile,
   fixture?: 'heat',
+  audience: Audience = 'caregiver',
 ): Promise<CoreAssessment> {
-  const body = fixture ? { ...requestBodyFor(profile), fixture } : requestBodyFor(profile)
+  // The core withholds watch-points from CARED_FOR on purpose — asking someone
+  // to watch for their own confusion inverts the safeguard. Defaulting the
+  // field away meant every screen, including the person's own, got the
+  // caregiver's wording.
+  const body = {
+    ...requestBodyFor(profile),
+    audience,
+    ...(fixture ? { fixture } : {}),
+  }
   const response = await fetch(`${CORE_URL}/assess`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

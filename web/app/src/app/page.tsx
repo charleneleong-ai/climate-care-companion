@@ -7,10 +7,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Assistant from '@/components/Assistant'
 import RegionPanel from '@/components/RegionPanel'
 import type { MapRegion } from '@/components/UKMap'
+import { useCoreAssessment } from '@/lib/assessment'
 import { clearProfile, loadProfile, saveProfile } from '@/lib/client-store'
 import { DEMO_PROFILES, type Profile } from '@/lib/profile'
 import { regionByCode } from '@/lib/regions'
-import { assessRisk, BAND_COLOURS, bandLabel } from '@/lib/risk'
+import { BAND_COLOURS } from '@/lib/risk'
 import { HEAT_FIXTURE_REGIONS, type HeatRegion } from '@/lib/heat-fixture'
 import type { RegionWeather } from '@/lib/weather'
 
@@ -84,24 +85,32 @@ export default function HomePage() {
     [regions, profile],
   )
 
-  const myAssessment = useMemo(
-    () => (profile && myRegion ? assessRisk(profile, myRegion) : null),
-    [profile, myRegion],
-  )
+  // `/` is the person's own screen — the header greets them by name. Asking
+  // for the caregiver's plan here hands them instructions written about them.
+  const {
+    result: myAssessment,
+    stale,
+    failed,
+  } = useCoreAssessment(profile, heatScenario, 'cared_for')
 
   const suggestions = useMemo(() => {
     if (!myAssessment) return ['What should I do today?']
     const base = ['What should I do right now?']
-    if (myAssessment.direction === 'heat') {
+    const { direction } = myAssessment.assessment
+    if (direction === 'heat') {
       base.push('How do I cool my home down?', 'How much should I be drinking?')
-    } else if (myAssessment.direction === 'cold') {
+    } else if (direction === 'cold') {
       base.push('Which room should I heat?', 'How do I keep my heating bill down?')
     } else {
       base.push('What should I watch out for later?')
     }
-    if (myAssessment.worseningToday) base.push('What changes later today?')
+    // Asked of the forecast rather than the assessment, because it is a
+    // question about the day, not about them. Like for like: both apparent.
+    if (myRegion && myRegion.todayApparentMax - myRegion.apparentTemperature >= 2) {
+      base.push('What changes later today?')
+    }
     return base
-  }, [myAssessment])
+  }, [myAssessment, myRegion])
 
   if (!ready) {
     return (
@@ -113,7 +122,7 @@ export default function HomePage() {
 
   if (!profile) return <Welcome onPickDemo={switchToDemo} />
 
-  const bandColour = myAssessment ? BAND_COLOURS[myAssessment.band] : undefined
+  const bandColour = myAssessment ? BAND_COLOURS[myAssessment.assessment.band] : undefined
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[34rem] flex-col">
@@ -166,7 +175,7 @@ export default function HomePage() {
             )}
             <span className="truncate">
               {regionByCode(profile.regionCode)?.name ?? profile.regionCode}
-              {myAssessment && ` — ${bandLabel(myAssessment.band)}`}
+              {myAssessment && ` — ${myAssessment.assessment.bandLabel}`}
             </span>
           </p>
         </div>
@@ -239,7 +248,7 @@ export default function HomePage() {
       </nav>
 
       <div className="flex min-h-0 flex-1">
-        {/* Below `lg` the inactive panel is hidden rather than unmounted, so
+        {/* Below `xl` the inactive panel is hidden rather than unmounted, so
             switching tabs does not discard a conversation already in progress. */}
         <div
           className={`min-h-0 flex-1 overflow-y-auto xl:block xl:min-w-[34rem] ${
@@ -251,10 +260,17 @@ export default function HomePage() {
             region={selectedRegion}
             isOwnRegion={selectedRegion?.regionCode === profile.regionCode}
             fetchedAt={fetchedAt}
+            assessment={myAssessment}
+            stale={stale}
+            failed={failed}
           />
         </div>
+        {/* `xl:flex-none`, not `grow-0`: `flex-1` sets flex-basis to 0%, which
+            beats `width` on the main axis, so with growth also disabled the
+            column collapsed to min-content and wrapped the reply after three
+            words. `flex-none` restores `flex: 0 0 auto` so the width applies. */}
         <div
-          className={`min-h-0 flex-1 border-l xl:flex xl:w-[24rem] xl:shrink-0 xl:grow-0 xl:flex-col ${
+          className={`min-h-0 flex-1 border-l xl:flex xl:w-[28rem] xl:flex-none xl:flex-col ${
             tab === 'assistant' ? 'flex flex-col' : 'hidden xl:flex'
           }`}
           style={{ borderColor: 'var(--line)' }}
