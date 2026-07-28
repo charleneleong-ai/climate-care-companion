@@ -261,6 +261,22 @@
       "value": "ssri",
       "title": "Antidepressant and sodium levels",
       "why": "This class carries a risk of low blood sodium, which heat and heavy sweating can worsen."
+    },
+    {
+      "code": "MULTIMORBIDITY",
+      "weight": 2,
+      "kind": "condition_count",
+      "value": "3",
+      "title": "Several conditions together",
+      "why": "Three or more long-term conditions place demands on the same systems heat already strains: the heart, the kidneys and the body's ability to keep fluid and salt in balance. Each condition is manageable on an ordinary day. On a hot one they draw on the same reserve, and it is smaller than the list of diagnoses suggests."
+    },
+    {
+      "code": "MED_POLYPHARMACY",
+      "weight": 2,
+      "kind": "med_class_count",
+      "value": "3",
+      "title": "Several medicines that each affect heat",
+      "why": "Three or more of the medicines taken here act on how the body handles heat \u2014 fluid balance, blood pressure, or the ability to shed heat through the skin. Their effects overlap rather than sitting side by side, so the combined burden is greater than any single one. Every one of them is worth taking; a pharmacist can review how they work together in hot weather."
     }
   ],
   "med_classes": {

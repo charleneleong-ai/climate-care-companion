@@ -36,6 +36,15 @@ class ReasonCode(StrEnum):
     MED_ACE_ARB = auto()
     MED_BETA_BLOCKER = auto()
     MED_SSRI = auto()
+    # Compounding — not in spec 8.2. See docs/deviations.md.
+    #
+    # Every rule above answers "does this person have X?" and the score is their
+    # sum, which assumes each factor acts alone. Three conditions and four
+    # medicines is not three-and-four separate problems; the mechanisms overlap,
+    # and the person carrying all of them is in a different position from
+    # someone carrying any one. These two codes say so.
+    MULTIMORBIDITY = auto()
+    MED_POLYPHARMACY = auto()
 
 
 class AlertLevel(StrEnum):

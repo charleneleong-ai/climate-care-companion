@@ -58,6 +58,12 @@ class VulnKind(StrEnum):
     """A boolean attribute on Person — lives_alone, mobility_limited."""
     CONDITION = auto()
     MED_CLASS = auto()
+    CONDITION_COUNT = auto()
+    """At least N conditions. `value` carries the threshold."""
+    MED_CLASS_COUNT = auto()
+    """At least N *distinct* medicine classes. Distinct, because two medicines
+    of one class are a single mechanism dosed twice, not two mechanisms — and
+    it is overlapping mechanisms that make heat dangerous."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +83,10 @@ class VulnerabilityRule:
                 return Condition(self.value) in person.conditions
             case VulnKind.MED_CLASS:
                 return any(med.drug_class == MedClass(self.value) for med in person.medications)
+            case VulnKind.CONDITION_COUNT:
+                return len(set(person.conditions)) >= int(self.value)
+            case VulnKind.MED_CLASS_COUNT:
+                return len({med.drug_class for med in person.medications}) >= int(self.value)
         return False
 
 
@@ -99,6 +109,20 @@ VULNERABILITY_RULES: tuple[VulnerabilityRule, ...] = (
     VulnerabilityRule(ReasonCode.MED_ACE_ARB, VulnKind.MED_CLASS, MedClass.ACE_ARB, 1),
     VulnerabilityRule(ReasonCode.MED_BETA_BLOCKER, VulnKind.MED_CLASS, MedClass.BETA_BLOCKER, 1),
     VulnerabilityRule(ReasonCode.MED_SSRI, VulnKind.MED_CLASS, MedClass.SSRI, 1),
+    # Compounding. Not in spec 8.2 — see docs/deviations.md.
+    #
+    # Every rule above is a yes/no about one factor, and the score is their sum,
+    # which treats each as acting alone. It does not: three conditions and three
+    # medicine classes overlap in the systems heat already strains — fluid
+    # balance, blood pressure, the ability to shed heat through the skin. The
+    # person carrying all of them is not in the same position as someone
+    # carrying any one, and adding the parts up does not say so.
+    #
+    # Threshold 3, not 5. The usual polypharmacy definition counts every
+    # medicine a person takes; this counts only classes that already matter in
+    # heat, so three here is a heavier burden than five on the usual measure.
+    VulnerabilityRule(ReasonCode.MULTIMORBIDITY, VulnKind.CONDITION_COUNT, "3", 2),
+    VulnerabilityRule(ReasonCode.MED_POLYPHARMACY, VulnKind.MED_CLASS_COUNT, "3", 2),
 )
 
 # Spec 8.1. SUSTAINED_SPELL's "peak >= 24" is read as peak_apparent — the reading

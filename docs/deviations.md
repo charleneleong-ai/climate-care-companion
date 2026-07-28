@@ -124,3 +124,40 @@ cost once — the COLD_GUARD above existed in one engine and not the other.
 threshold and the fusion formula match across both. It compares *constants*, not
 behaviour. **The proper fix is a shared fixture corpus both engines are run against**,
 and until that exists this gate narrows the drift rather than closing it.
+
+---
+
+## Compounding: two rules the spec does not have
+
+Spec 8.2 is a table of independent factors, and the vulnerability score is their
+sum. That arithmetic assumes each factor acts alone. It does not.
+
+Three long-term conditions and three heat-acting medicine classes overlap in the
+systems heat already strains — fluid balance, blood pressure, and shedding heat
+through the skin. The person carrying all of them is not in the same position as
+someone carrying any one of them, and adding the parts up says nothing about it.
+
+Two rules were added:
+
+| Code | Fires when | Weight |
+|---|---|---|
+| `MULTIMORBIDITY` | 3 or more conditions | 2 |
+| `MED_POLYPHARMACY` | 3 or more **distinct** medicine classes | 2 |
+
+**Distinct classes, not medicine count.** Two medicines of one class are a single
+mechanism dosed twice. The usual polypharmacy definition counts every medicine a
+person takes; this counts only classes that already matter in heat, which is why
+the threshold is 3 rather than the conventional 5 — three here is a heavier
+burden than five on the usual measure.
+
+**What it changed.** Scores rose for Doris (13 → 15), Reg (12 → 14), Victor
+(14 → 18) and Winifred (13 → 15). **No persona changed tier**, on the 19 July
+2025 worked-example day or anywhere in the 92-day benign season, so the
+no-cry-wolf gate holds unaltered. The effect is on ranking and on what the
+reader is told, not on who gets alerted.
+
+**What it cost.** The 8.6 worked example now yields 15 rather than 13 and its
+reason set gains `MED_POLYPHARMACY`, so `test_worked_example.py` no longer
+reproduces the spec's literal figures. It had already stopped doing so when the
+personas were enriched; this widens that gap, and the test now pins the scenario
+rather than the spec's arithmetic.

@@ -31,3 +31,5 @@ renal,elevated,"Fluid balance is finer for them than for most people. Ask the GP
 respiratory,elevated,"Keep the room ventilated but shaded, and keep their inhaler within reach.",,150
 mobility_limited,elevated,"Put drinks, a fan control and a phone within arm's reach before you leave.",,155
 mobility_limited,high,"They cannot reach a cool space on their own. Arrange transport or bring the cooling to them.",council,160
+multimorbidity,elevated,"Several conditions draw on the same reserve in heat. Keep to the plan for each of them, and treat a bad day as a reason to ring someone rather than to wait it out.",gp,12
+med_polypharmacy,elevated,"Several of these medicines affect how the body handles heat, and their effects overlap. Ask the pharmacist for a review of the combination in hot weather. Keep taking all of them exactly as prescribed.",pharmacist,11

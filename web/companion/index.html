@@ -377,7 +377,16 @@ const VULN_RULES = [
    why:'Beta blockers reduce blood flow to the skin, which is how the body sheds heat.'},
   {code:'MED_SSRI', w:1, test:v=> v.classes.includes('SSRI'),
    title:'Taking an SSRI antidepressant',
-   why:'SSRIs raise the risk of low blood sodium, which heat and heavy fluid loss push in the same direction.'}
+   why:'SSRIs raise the risk of low blood sodium, which heat and heavy fluid loss push in the same direction.'},
+  // Compounding. Every rule above asks "does this person have X?" and the score
+  // is their sum, which treats each factor as acting alone. These two say that
+  // several together is not the same as several separately.
+  {code:'MULTIMORBIDITY', w:2, test:v=> v.conditions.length >= 3,
+   title:'Several conditions together',
+   why:'Three or more long-term conditions draw on the same reserve heat already strains \u2014 the heart, the kidneys, and keeping fluid and salt in balance.'},
+  {code:'MED_POLYPHARMACY', w:2, test:v=> new Set(v.classes).size >= 3,
+   title:'Several medicines that each affect heat',
+   why:'Three or more medicines here act on how the body handles heat, and their effects overlap rather than sitting side by side.'}
 ];
 
 // AC-1: pure.
