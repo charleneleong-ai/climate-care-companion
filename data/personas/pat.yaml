@@ -18,8 +18,9 @@
 # dementia combined with no caregiver, no cooling, polypharmacy, and a
 # hot building. Each factor that Pat lacks is a factor Doris cannot escape.
 #
-# vulnerability 4: dementia (2) + lives alone — wait, she lives with spouse.
-# vulnerability 2: dementia (2) only
+# vulnerability 2: dementia (2) only. She lives with her spouse, so LIVES_ALONE
+# does not fire, and with no medicines recorded neither does MED_POLYPHARMACY —
+# which is the contrast, not an omission.
 id: pat
 name: Pat
 age_band: b65_74
