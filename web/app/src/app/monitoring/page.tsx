@@ -66,6 +66,11 @@ const STATS = [
 
 // Demo cohort results on that day, pre-computed so the monitoring page loads
 // instantly with no API call. Source: demo_compare.py against the fixture.
+//
+// A copy of engine output, so it goes stale when the engine changes and
+// nothing about the page looks wrong when it does — it drifted once already,
+// when the compounding rules landed and this still showed Victor at 14.
+// tests/web/test_monitoring_cohort.py recomputes these and fails on drift.
 const COHORT: {
   name: string
   condition: string
@@ -78,16 +83,16 @@ const COHORT: {
     name: 'Doris',
     condition: 'Dementia · COPD',
     tier: 'High',
-    vuln: 13,
-    interactions: 11,
+    vuln: 15,
+    interactions: 12,
     note: 'Cannot self-report, cannot self-rescue',
   },
   {
     name: 'Victor',
     condition: 'Cardiovascular · Renal · COPD',
     tier: 'High',
-    vuln: 14,
-    interactions: 14,
+    vuln: 18,
+    interactions: 16,
     note: '"Drink plenty" is the wrong advice for him',
   },
   {
@@ -103,7 +108,7 @@ const COHORT: {
     condition: 'Dementia · Cardiovascular',
     tier: 'High',
     vuln: 13,
-    interactions: 4,
+    interactions: 10,
     note: 'Lithium toxicity risk — cannot self-report tremor',
   },
   {
@@ -111,7 +116,7 @@ const COHORT: {
     condition: 'Cardiovascular · Renal',
     tier: 'High',
     vuln: 12,
-    interactions: 4,
+    interactions: 10,
     note: 'Silent overheater — no sweat, cannot self-rescue',
   },
   {
@@ -119,7 +124,7 @@ const COHORT: {
     condition: 'Cardiovascular',
     tier: 'Elevated',
     vuln: 3,
-    interactions: 2,
+    interactions: 3,
     note: 'Same diagnosis as Victor, fraction of the risk',
   },
   {
@@ -127,7 +132,7 @@ const COHORT: {
     condition: 'Dementia',
     tier: 'Elevated',
     vuln: 2,
-    interactions: 1,
+    interactions: 2,
     note: 'Same condition as Doris — caregiver present',
   },
   {
