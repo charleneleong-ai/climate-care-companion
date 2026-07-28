@@ -37,9 +37,9 @@ def test_only_questions_for_the_persons_own_reason_codes_are_asked(bank):
     q = bank.build_for("doris", WINDOW, assessment(Tier.ELEVATED, ReasonCode.MED_DIURETIC))
     texts = [item.text for item in q.questions]
     assert any("drink" in t for t in texts)
-    assert not any(
-        "ankles" in t for t in texts
-    ), "asked a cardiovascular question of someone without it"
+    assert not any("ankles" in t for t in texts), (
+        "asked a cardiovascular question of someone without it"
+    )
 
 
 def test_questions_with_no_reason_code_are_always_asked(bank):

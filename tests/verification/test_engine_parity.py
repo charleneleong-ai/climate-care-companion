@@ -32,18 +32,18 @@ def companion_source() -> str:
 def test_every_exposure_code_and_weight_appears_in_the_companion(rule, companion_source):
     match = re.search(rf"code:'{rule.code.name}',\s*w:(\d+)", companion_source)
     assert match, f"{rule.code.name} is missing from the companion engine"
-    assert (
-        int(match.group(1)) == rule.weight
-    ), f"{rule.code.name} weighs {rule.weight} in Python and {match.group(1)} in the companion"
+    assert int(match.group(1)) == rule.weight, (
+        f"{rule.code.name} weighs {rule.weight} in Python and {match.group(1)} in the companion"
+    )
 
 
 @pytest.mark.parametrize("rule", VULNERABILITY_RULES, ids=lambda r: r.code.name)
 def test_every_vulnerability_code_and_weight_appears_in_the_companion(rule, companion_source):
     match = re.search(rf"code:'{rule.code.name}',\s*w:(\d+)", companion_source)
     assert match, f"{rule.code.name} is missing from the companion engine"
-    assert (
-        int(match.group(1)) == rule.weight
-    ), f"{rule.code.name} weighs {rule.weight} in Python and {match.group(1)} in the companion"
+    assert int(match.group(1)) == rule.weight, (
+        f"{rule.code.name} weighs {rule.weight} in Python and {match.group(1)} in the companion"
+    )
 
 
 def test_the_cold_guard_is_present_in_both_engines(companion_source):
@@ -74,6 +74,6 @@ def test_tier_thresholds_agree(risk, tier, companion_source):
 def test_the_multiplier_formula_appears_in_the_companion(companion_source):
     """risk = exposure x (1 + vulnerability/10). If the companion switched to
     addition, a frail person would sit permanently at Elevated there (FR-18)."""
-    assert re.search(
-        r"1\s*\+\s*\(?\s*\w+\s*/\s*10", companion_source
-    ), "companion does not appear to use the multiplicative fusion from section 8.4"
+    assert re.search(r"1\s*\+\s*\(?\s*\w+\s*/\s*10", companion_source), (
+        "companion does not appear to use the multiplicative fusion from section 8.4"
+    )

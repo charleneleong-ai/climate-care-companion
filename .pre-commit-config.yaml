@@ -1,8 +1,11 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    # Must match the ruff in uv.lock. They were eight minor versions apart, and
+    # the two disagree on formatting — so a file's style flipped depending on
+    # whether `uv run ruff format` or `pre-commit` touched it last.
+    rev: v0.16.0
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix]
       - id: ruff-format
 

@@ -68,9 +68,9 @@ def test_the_simplified_phrasing_is_a_single_clause(bank):
         simple = row.text_simple
         assert "," not in simple, f"{row.code}'s simplified phrasing has a second clause"
         for word in SUBORDINATORS:
-            assert (
-                word not in simple.lower()
-            ), f"{row.code}'s simplified phrasing subordinates on {word.strip()!r}"
+            assert word not in simple.lower(), (
+                f"{row.code}'s simplified phrasing subordinates on {word.strip()!r}"
+            )
 
 
 @pytest.mark.parametrize("flag", sorted(SELF_REPORTABLE_FLAGS), ids=lambda f: f.name)

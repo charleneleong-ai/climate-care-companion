@@ -57,9 +57,9 @@ def test_the_generated_clinical_content_matches_the_interaction_table():
     cannot depend on actions without a circular package dependency."""
     assert CLINICAL_PATH.exists(), REGENERATE
     exporter = ClinicalExporter.load()
-    assert (
-        CLINICAL_PATH.read_text() == exporter.render()
-    ), f"{CLINICAL_PATH.name} is stale — run: uv run python -m actions.export"
+    assert CLINICAL_PATH.read_text() == exporter.render(), (
+        f"{CLINICAL_PATH.name} is stale — run: uv run python -m actions.export"
+    )
 
 
 def test_every_interaction_exports_its_gating():
@@ -76,6 +76,6 @@ def test_the_generated_questions_match_the_bank():
     from checkin.export import QUESTIONS_PATH, QuestionExporter
 
     assert QUESTIONS_PATH.exists(), REGENERATE
-    assert (
-        QUESTIONS_PATH.read_text() == QuestionExporter.load().render()
-    ), f"{QUESTIONS_PATH.name} is stale — run: uv run python -m checkin.export"
+    assert QUESTIONS_PATH.read_text() == QuestionExporter.load().render(), (
+        f"{QUESTIONS_PATH.name} is stale — run: uv run python -m checkin.export"
+    )
