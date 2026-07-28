@@ -27,6 +27,9 @@ VULNERABILITY_CODES = {
     "MED_ACE_ARB",
     "MED_BETA_BLOCKER",
     "MED_SSRI",
+    # Not in the spec tables. Compounding rules — see docs/deviations.md.
+    "MULTIMORBIDITY",
+    "MED_POLYPHARMACY",
 }
 
 

@@ -12,8 +12,8 @@ def test_health_reports_the_loaded_corpus_and_persona_counts(client):
     body = client.get("/health").json()
     assert body["status"] == "ok"
     assert body["personas"] >= 3
-    assert body["reason_codes"] == 23
-    assert body["reasons_loaded"] == 23
+    assert body["reason_codes"] == 25
+    assert body["reasons_loaded"] == 25
 
 
 def test_people_lists_every_seeded_persona(client):

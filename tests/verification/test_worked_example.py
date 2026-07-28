@@ -37,16 +37,18 @@ def assessment(doris):
     )
 
 
-def test_doris_scores_exactly_six_and_lands_high(assessment):
+def test_doris_lands_high_on_the_worked_example_day(assessment):
     assert assessment.exposure_score == 3
-    assert assessment.vulnerability_score == 13  # enriched: +respiratory +ssri +mobility
-    assert assessment.risk_score == pytest.approx(6.9)
+    assert assessment.vulnerability_score == 15  # enriched, then +2 for polypharmacy
+    assert assessment.risk_score == pytest.approx(7.5)  # 3 x (1 + 15/10)
     assert assessment.tier is Tier.HIGH
 
 
 def test_reason_set_is_exactly_the_spec_worked_example(assessment):
     # Doris enriched with COPD + sertraline + mobility_limited (realistic 85+
-    # dementia presentation). Reason set extended accordingly.
+    # dementia presentation), then MED_POLYPHARMACY once compounding was
+    # modelled. Reason set extended accordingly — this is no longer the spec's
+    # literal 8.6 set, and the name is kept for the scenario it still pins.
     assert {r.code for r in assessment.reasons} == {
         ReasonCode.BEDROOM_WARM,
         ReasonCode.SUSTAINED_SPELL,
@@ -58,6 +60,9 @@ def test_reason_set_is_exactly_the_spec_worked_example(assessment):
         ReasonCode.MED_DIURETIC,
         ReasonCode.MED_ACE_ARB,
         ReasonCode.MED_SSRI,
+        # Three medicine classes acting on heat, so the compounding rule fires
+        # as well as each medicine on its own.
+        ReasonCode.MED_POLYPHARMACY,
     }
 
 
