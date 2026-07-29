@@ -23,21 +23,32 @@ from tests.scheduler.test_sweep import FixedWeather, RecordingChannel, sweep_wit
 T0 = datetime(2025, 7, 19, 21, 0, tzinfo=UTC)
 
 
-def logged(red_flags: tuple[str, ...], person_id: str = "doris") -> CheckinLog:
+def logged(
+    red_flags: tuple[str, ...],
+    person_id: str = "doris",
+    outcome: Outcome = Outcome.COMPLETED,
+    times: int = 1,
+) -> CheckinLog:
     """A check-in already written, which is the state the voice service leaves
     behind before it asks for an escalation."""
     log = CheckinLog(Path(mkdtemp()) / "checkins.json")
-    log.record(
-        CheckinRecord(
-            person_id=person_id,
-            channel=Channel.VOICE,
-            outcome=Outcome.COMPLETED,
-            started_at=T0.isoformat(),
-            completed_at=T0.isoformat(),
-            red_flags=red_flags,
+    for _ in range(times):
+        log.record(
+            CheckinRecord(
+                person_id=person_id,
+                channel=Channel.VOICE,
+                outcome=outcome,
+                started_at=T0.isoformat(),
+                completed_at=T0.isoformat(),
+                red_flags=red_flags,
+            )
         )
-    )
     return log
+
+
+@pytest.fixture
+def hot() -> FixedWeather:
+    return FixedWeather(peak=33.0, indoor_night=26.0)
 
 
 @pytest.fixture
@@ -116,3 +127,57 @@ class TestTheRateLimitDoesNotApply:
 
         assert sweep.policy.seen("doris").last_sent_at == T0
         assert not sweep.policy.should_notify("doris", Tier.LOW, T0)
+
+
+class TestAMissedCallIsGradedNotAssumed:
+    """The voice service escalates every missed call. What that is worth is
+    decided here, and "somebody did not pick up" is not on its own an alarm.
+    """
+
+    def test_silence_on_a_mild_day_tells_nobody(self, mild):
+        """The commonest case by far: they were in the garden, and it is 21
+        degrees. Paging a caregiver for this is how the system gets muted."""
+        channel = RecordingChannel()
+        sweep = sweep_with(mild, channel, checkins=logged((), outcome=Outcome.NO_ANSWER))
+
+        assert sweep.escalate_now("doris", T0) is None
+        assert not channel.sent
+
+    def test_silence_in_dangerous_weather_sends_someone(self, hot):
+        """Nobody knows how they are, and the reasons for not answering overlap
+        with the reasons to worry."""
+        channel = RecordingChannel()
+        sweep = sweep_with(hot, channel, checkins=logged((), outcome=Outcome.NO_ANSWER))
+
+        dispatch = sweep.escalate_now("doris", T0)
+
+        assert dispatch is not None, "nobody was sent to a silent High-tier person"
+        assert channel.sent
+
+    def test_repeated_silence_on_a_mild_day_still_tells_nobody(self, mild):
+        """Documents a real boundary rather than the one I assumed.
+
+        `EscalationPolicy` returns nothing at Tier.LOW *before* it looks at how
+        many calls were missed, so a run of silence in 21-degree weather raises
+        no one however long it goes on. Defensible for a heat-health service —
+        repeated non-answer on a mild day is not a heat risk — but it does mean
+        this system will not notice a person who has stopped answering the
+        phone in general. That is a welfare question it does not claim to
+        answer, and the boundary is worth being explicit about.
+        """
+        channel = RecordingChannel()
+        sweep = sweep_with(mild, channel, checkins=logged((), outcome=Outcome.NO_ANSWER, times=2))
+
+        assert sweep.escalate_now("doris", T0) is None
+
+    def test_a_second_silence_in_dangerous_weather_raises_the_urgency(self, hot):
+        """One missed call asks for a visit; two in a row is a pattern and asks
+        for one now. The policy reads the run, not just the latest call."""
+        channel = RecordingChannel()
+        once = sweep_with(hot, RecordingChannel(), checkins=logged((), outcome=Outcome.NO_ANSWER))
+        twice = sweep_with(hot, channel, checkins=logged((), outcome=Outcome.NO_ANSWER, times=2))
+
+        assert once.escalate_now("doris", T0) is not None
+        assert twice.escalate_now("doris", T0) is not None
+        _, message = channel.sent[0]
+        assert message.is_bound

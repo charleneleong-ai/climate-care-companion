@@ -308,12 +308,23 @@ async def voice_answer(request: Request, background: BackgroundTasks, q: int = 0
 
 
 @app.post("/voice/status")
-async def voice_status(request: Request) -> Response:
+async def voice_status(request: Request, background: BackgroundTasks) -> Response:
     """Twilio's end-of-call callback.
 
     Records the calls nobody answered. Without this the log would contain only
     conversations that happened, and a person who never picks up — the exact
     case the escalation ladder exists for — would leave no trace at all.
+
+    Recording it was not enough. `consecutive_missed` only advanced when the
+    sweep next read the log, so silence — the signal this system exists to
+    catch — was the slowest thing in it: three hours, and a whole day once the
+    sweep runs on a daily cron. It is now escalated the moment the call ends,
+    on the same path a red flag takes.
+
+    Not every missed call is an alarm, and none of that judgement lives here.
+    `EscalationPolicy` already grades it: Low tier returns nobody, one miss in
+    warm weather asks for a visit today, and a second in a row or a High tier
+    asks for one now.
     """
     form = {k: str(v) for k, v in (await request.form()).items()}
     call_sid = form.get("CallSid", "")
@@ -325,17 +336,29 @@ async def voice_status(request: Request) -> Response:
         return Response(status_code=204)
 
     outcome = Outcome.ABANDONED if state else Outcome.NO_ANSWER
+    person_id = state.questionnaire.person_id if state else DEMO_PERSON
+
+    # Red flags from a call that dropped part-way. Previously only the
+    # completed path derived these, so somebody who said they were confused and
+    # then lost the line had that answer stored and never read as a flag — the
+    # worst of both, since the record looks complete.
+    report = state.questionnaire.to_self_report(state.answers) if state else None
+
     CHECKINS.record(
         CheckinRecord(
-            person_id=state.questionnaire.person_id if state else DEMO_PERSON,
+            person_id=person_id,
             channel=Channel.VOICE,
             outcome=outcome,
             started_at=state.started_at if state else now_iso(),
             completed_at=now_iso(),
             answers=dict(state.answers) if state else {},
+            red_flags=tuple(f.value for f in report.red_flags) if report else (),
             reference=call_sid,
         )
     )
+
+    # After the record, which is what the escalation reads.
+    background.add_task(escalate, person_id)
     return Response(status_code=204)
 
 

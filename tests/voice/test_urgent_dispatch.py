@@ -11,7 +11,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
-from checkin.log import CheckinLog
+from checkin.log import CheckinLog, Outcome
 from fastapi.testclient import TestClient
 
 from tests.scheduler.test_sweep import FixedWeather
@@ -120,3 +120,57 @@ def test_a_failing_escalation_never_reaches_the_caller(monkeypatch, capsys):
     voice.escalate("doris")
 
     assert "failed" in capsys.readouterr().out
+
+
+class TestSilenceIsActedOnToo:
+    """A missed call was recorded and then waited for the sweep.
+
+    That made silence the slowest signal in the system — three hours, and a
+    whole day once the sweep runs on a daily cron — when it is the one the
+    escalation ladder was built for. Nobody knows how the person is, and the
+    reasons someone does not answer overlap heavily with the reasons to worry.
+    """
+
+    def test_an_unanswered_call_escalates_immediately(self, client, escalated):
+        client.post("/voice/status", data={"CallSid": "CA-missed", "CallStatus": "no-answer"})
+        assert escalated == ["doris"], "a missed call told nobody until the next sweep"
+
+    def test_it_is_recorded_before_it_is_escalated(self, client, escalated):
+        """The escalation reads the log entry, so a dispatch that fires first
+        judges the person on their previous call rather than this one."""
+        client.post("/voice/status", data={"CallSid": "CA-missed", "CallStatus": "no-answer"})
+        latest = voice.CHECKINS.latest_for("doris")
+        assert latest is not None and latest.outcome is Outcome.NO_ANSWER
+
+    def test_a_completed_call_does_not_escalate_twice(self, client, escalated):
+        """The answer handler already recorded and escalated it. Twilio still
+        sends a status callback afterwards, and acting on both would double
+        every alert."""
+        assert start_call(client), "hot weather produced no questions to ask"
+        answer_every_question(client, "CA-test", concerning=True)
+        before = list(escalated)
+
+        client.post("/voice/status", data={"CallSid": "CA-test", "CallStatus": "completed"})
+
+        assert escalated == before, "the status callback re-escalated a finished call"
+
+
+class TestAnAbandonedCallKeepsWhatItHeard:
+    def test_red_flags_survive_the_line_dropping(self, client, escalated):
+        """Someone who says they are confused and then loses the call had that
+        answer stored and never read as a flag: only the completed path derived
+        them. The record looked whole, which is what made it dangerous."""
+        assert start_call(client), "hot weather produced no questions to ask"
+        state = voice.CALLS["CA-test"]
+        flagged = next(q for q in state.questionnaire.questions if q.red_flag is not None)
+        client.post(
+            "/voice/answer?q=" + str(state.questionnaire.questions.index(flagged)),
+            data={"CallSid": "CA-test", "SpeechResult": "yes" if flagged.red_flag_when else "no"},
+        )
+
+        client.post("/voice/status", data={"CallSid": "CA-test", "CallStatus": "completed"})
+
+        latest = voice.CHECKINS.latest_for("doris")
+        assert latest is not None
+        assert latest.outcome is Outcome.ABANDONED
+        assert latest.red_flags, "a red flag heard before the drop was discarded"
