@@ -5,7 +5,7 @@
  *
  * Everything that shows a tier goes through here. The alternative — each view
  * scoring for itself — is what put the assistant and the advice panel side by
- * side describing different days, and `/` and `/caregiver` on different
+ * side describing different days, and `/` and `/companion` on different
  * engines. There is one risk model and it is in `packages/core`; this is the
  * client half of the wire to it.
  */
@@ -55,7 +55,7 @@ export interface AssessmentResult {
   error?: string
 }
 
-/** What the tier means in terms of when to act. Shared so `/` and `/caregiver`
+/** What the tier means in terms of when to act. Shared so `/` and `/companion`
  *  cannot describe the same tier differently.
  *
  *  Two voices, because the plan the core returns has two and this line sits

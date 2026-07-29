@@ -7,7 +7,7 @@ export default function PersonalPage() {
     <CompanionView
       defaultAudience="cared_for"
       viewLabel="personal"
-      otherRoute={{ href: '/caregiver', label: 'Caregiver view →' }}
+      otherRoute={{ href: '/companion', label: 'Caregiver view →' }}
     />
   )
 }

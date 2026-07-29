@@ -151,7 +151,7 @@ export default function RegionPanel({
                   }}
                   aria-hidden="true"
                 />
-                <span className="text-[16px]">
+                <span className="prose-voice">
                   {item.text}
                   {(item.escalate_to || SOURCE_LABEL[item.source]) && (
                     <span className="ml-1.5 text-[13px] font-semibold uppercase tracking-wide faint">
@@ -193,7 +193,7 @@ export default function RegionPanel({
             {mine.assessment.reasons.map((reason) => (
               <li key={reason.code}>
                 <span className="font-medium">{reason.title}</span>
-                <span className="muted"> — {reason.explanation}</span>
+                <span className="prose-voice muted"> — {reason.explanation}</span>
               </li>
             ))}
           </ul>

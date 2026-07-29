@@ -22,27 +22,42 @@
   :root {
     color-scheme: light dark;
 
-    /* Surfaces — warm paper, not clinical white. Reads calmer on a phone. */
-    --paper: #faf8f3;
-    --paper-sunk: #f2efe7;
+    /* Surfaces — CoolBuddy's neutral beige, its flat theme rather than the
+       condition-tinted one. The tinted variant recolours the whole background
+       by how hot it is, which makes the temperature legible from across a room
+       and makes colour the primary carrier of severity. NFR-07 forbids that:
+       tier is carried by shape and word, and colour only ever agrees with them.
+       The tint survives as an accent edge instead — see --condition-* below. */
+    --paper: #fbf6ee;
+    --paper-sunk: #f3ece0;
     --surface: #ffffff;
     --surface-raised: #ffffff;
 
-    /* Text */
-    --ink: #191814;
-    --ink-soft: #55524b;
-    --ink-faint: #78756c;
+    /* Text — CoolBuddy neutral ink, darkened from its #2A2320 to hold AAA
+       contrast on the lighter card white this app uses. */
+    --ink: #241d1a;
+    --ink-soft: #5f544d;
+    --ink-faint: #857a72;
 
     /* Lines */
-    --line: #e3ded2;
-    --line-strong: #c9c3b4;
+    --line: #e7ddcd;
+    --line-strong: #cdbfa9;
 
-    /* Accent — deep teal. Cool enough to sit beside the cold/heat scale
-       without competing with it, dark enough for AAA text contrast. */
-    --accent: #1c5f75;
-    --accent-hover: #164e60;
-    --accent-wash: #e7f0f3;
-    --accent-ring: #4a97b0;
+    /* Condition accents — CoolBuddy's four temperature states, used as an
+       edge and a dot rather than as a page wash. Paired with a word and a
+       shape everywhere they appear. */
+    --condition-cold: #3c7ca8;
+    --condition-mild: #5c9b6b;
+    --condition-warm: #d9832f;
+    --condition-hot: #b93712;
+
+    /* Accent — CoolBuddy's warm terracotta, darkened to #A44317 for AAA text
+       contrast. Its #C2521F is the alert accent and stays that, so the two do
+       not compete: one means "act on this", the other means "this is a link". */
+    --accent: #a44317;
+    --accent-hover: #8a3712;
+    --accent-wash: #fbeadf;
+    --accent-ring: #c2521f;
 
     /* Feedback */
     --danger: #a8322b;
@@ -54,32 +69,47 @@
     --shadow-md: 0 2px 8px rgba(25, 24, 20, 0.07), 0 1px 2px rgba(25, 24, 20, 0.04);
     --shadow-lg: 0 8px 28px rgba(25, 24, 20, 0.1);
 
-    --radius: 14px;
-    --radius-lg: 20px;
+    /* CoolBuddy: cards 16–22px, buttons 20–22px. */
+    --radius: 18px;
+    --radius-lg: 22px;
     --radius-pill: 999px;
 
+    /* CoolBuddy asks 70–88px for primary calls to action and 44px+ for
+       everything else. The old floor was 48px everywhere, which is the
+       accessible minimum rather than a comfortable target for the hands this
+       is built for. */
     --tap: 48px; /* minimum interactive dimension */
+    --tap-primary: 72px; /* primary calls to action */
+    --gutter: 22px; /* CoolBuddy screen padding, 20–26px */
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper: #14140f;
-      --paper-sunk: #0e0e0a;
-      --surface: #1e1d19;
-      --surface-raised: #26251f;
+      /* CoolBuddy's voice screen is the only dark surface it specifies, so
+         its backdrop and card become the dark neutrals here. */
+      --paper: #221c18;
+      --paper-sunk: #191411;
+      --surface: #2c231d;
+      --surface-raised: #35291f;
 
       --ink: #f4f2ec;
       --ink-soft: #b3afa5;
       --ink-faint: #918d83;
 
-      --line: #322f28;
-      --line-strong: #45413a;
+      --line: #423428;
+      --line-strong: #574535;
 
-      /* Lifted for contrast against a dark surface. */
-      --accent: #7cc2d8;
-      --accent-hover: #98d2e4;
-      --accent-wash: #16282f;
-      --accent-ring: #7cc2d8;
+      /* Terracotta lifted for contrast against the dark surface. */
+      --accent: #e9915d;
+      --accent-hover: #f2a97b;
+      --accent-wash: #3a2118;
+      --accent-ring: #e9915d;
+
+      /* Condition accents, lifted the same way. */
+      --condition-cold: #7fb4d6;
+      --condition-mild: #8fc79c;
+      --condition-warm: #eda963;
+      --condition-hot: #e8734b;
 
       --danger: #f0938c;
       --danger-wash: #2c1614;
@@ -161,6 +191,16 @@
     color: var(--ink-faint);
   }
 
+  /* The human-voiced sentences — explanations, reasons, what the assistant
+     says. CoolBuddy sets these in Newsreader and keeps Signika for interface
+     furniture; the serif is what makes advice read as written rather than
+     generated. */
+  .prose-voice {
+    font-family: theme('fontFamily.prose');
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
   /* ── Buttons ─────────────────────────────────────────────────────────── */
   .btn {
     display: inline-flex;
@@ -169,7 +209,7 @@
     gap: 0.5rem;
     min-height: var(--tap);
     padding: 0.75rem 1.25rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-lg);
     font-weight: 600;
     letter-spacing: -0.01em;
     cursor: pointer;
@@ -190,6 +230,13 @@
   .btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+  }
+
+  /* CoolBuddy's 70–88px call to action. Only the primary button grows: making
+     every button that tall turns a screen of choices into a screen of slabs. */
+  .btn-primary {
+    min-height: var(--tap-primary);
+    font-size: 18px;
   }
 
   .btn-primary {
